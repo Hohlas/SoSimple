@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import inspect
+import json
 from pathlib import Path
 
 from ML.baseline.mt5_execution_diagnostics import (
@@ -9,6 +11,7 @@ from ML.baseline.mt5_execution_diagnostics import (
     load_error_rows,
     read_error_csv_sample,
     summarize_error_rows,
+    write_error_outputs,
     _source_bucket,
 )
 
@@ -92,3 +95,24 @@ def test_load_and_summarize_error_rows(tmp_path: Path) -> None:
     assert summary["by_source_file"]["ERROR_SoSimple_2.csv"] == 2
     assert summary["by_source_bucket"]["other"] == 2
     assert summary["unknowns"]["missing_magic_column_files"] == []
+
+
+def test_write_error_outputs_summarizes_without_concat(tmp_path: Path) -> None:
+    path = tmp_path / "ERROR_SoSimple_3.csv"
+    path.write_text(
+        HEADER
+        + "run;XAUUSD60;-2022.12.20 06:00:00;1792.48/1792.28/1;0.20;0.00/13;MLP_OpenLimitOrder: invalid stops! ERROR-130;2022.12.21 03:00/2022.12.21 03:00\n",
+        encoding="utf-8",
+    )
+    output_csv = tmp_path / "classified.csv"
+    output_json = tmp_path / "summary.json"
+
+    source = inspect.getsource(write_error_outputs)
+    assert "pd.concat" not in source
+
+    write_error_outputs([path], output_csv, output_json)
+
+    summary = json.loads(output_json.read_text(encoding="utf-8"))
+    assert output_csv.exists()
+    assert summary["total_rows"] == 1
+    assert summary["by_error_class"]["INVALID_STOPS"] == 1

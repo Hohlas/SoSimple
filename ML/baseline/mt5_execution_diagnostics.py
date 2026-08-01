@@ -16,6 +16,7 @@ import argparse
 import hashlib
 import json
 import re
+from collections import Counter
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -202,6 +203,61 @@ def summarize_error_rows(rows: pd.DataFrame) -> dict[str, object]:
     }
 
 
+def _counter_to_dict(counter: Counter[str]) -> dict[str, int]:
+    return {str(key): int(value) for key, value in counter.most_common()}
+
+
+def _empty_error_summary() -> dict[str, object]:
+    return {
+        "status": "DIAGNOSTIC_ONLY",
+        "total_rows": 0,
+        "by_source_bucket": {},
+        "by_source_file": {},
+        "by_magic": {},
+        "by_error_code": {},
+        "by_error_class": {},
+        "unknowns": {"missing_magic_column_files": []},
+    }
+
+
+class _ErrorSummaryAccumulator:
+    def __init__(self) -> None:
+        self.total_rows = 0
+        self.by_source_bucket: Counter[str] = Counter()
+        self.by_source_file: Counter[str] = Counter()
+        self.by_magic: Counter[str] = Counter()
+        self.by_error_code: Counter[str] = Counter()
+        self.by_error_class: Counter[str] = Counter()
+        self.missing_magic_column_files: set[str] = set()
+
+    def add(self, frame: pd.DataFrame) -> None:
+        self.total_rows += int(len(frame))
+        self.by_source_bucket.update(frame["source_bucket"].fillna("UNKNOWN").astype(str))
+        self.by_source_file.update(frame["source_file"].fillna("UNKNOWN").astype(str))
+        self.by_magic.update(frame["Magic"].fillna("UNKNOWN").astype(str))
+        self.by_error_code.update(frame["error_code"].fillna("UNKNOWN").astype(str))
+        self.by_error_class.update(frame["error_class"].fillna("UNKNOWN").astype(str))
+        missing = frame.loc[
+            frame["missing_magic_column"].astype(bool),
+            "missing_magic_column_file",
+        ]
+        self.missing_magic_column_files.update(str(value) for value in missing.tolist() if str(value))
+
+    def summary(self) -> dict[str, object]:
+        if self.total_rows == 0:
+            return _empty_error_summary()
+        return {
+            "status": "DIAGNOSTIC_ONLY",
+            "total_rows": self.total_rows,
+            "by_source_bucket": _counter_to_dict(self.by_source_bucket),
+            "by_source_file": _counter_to_dict(self.by_source_file),
+            "by_magic": _counter_to_dict(self.by_magic),
+            "by_error_code": _counter_to_dict(self.by_error_code),
+            "by_error_class": _counter_to_dict(self.by_error_class),
+            "unknowns": {"missing_magic_column_files": sorted(self.missing_magic_column_files)},
+        }
+
+
 def write_error_outputs(paths: list[Path], output_csv: Path, output_json: Path) -> None:
     """Writes classified error rows and the summary JSON for a set of CSV paths."""
     output_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -209,21 +265,18 @@ def write_error_outputs(paths: list[Path], output_csv: Path, output_json: Path) 
     if output_csv.exists():
         output_csv.unlink()
 
-    frames: list[pd.DataFrame] = []
     wrote_header = False
+    accumulator = _ErrorSummaryAccumulator()
 
     for frame in _load_error_rows_iter(paths):
         frame.to_csv(output_csv, sep=";", index=False, mode="a", header=not wrote_header)
         wrote_header = True
-        frames.append(frame)
+        accumulator.add(frame)
 
-    if frames:
-        rows = pd.concat(frames, ignore_index=True)
-    else:
-        rows = _empty_error_rows_frame()
-        rows.to_csv(output_csv, sep=";", index=False)
+    if not wrote_header:
+        _empty_error_rows_frame().to_csv(output_csv, sep=";", index=False)
 
-    write_json(summarize_error_rows(rows), output_json)
+    write_json(accumulator.summary(), output_json)
 
 
 def build_error_inventory(root: Path = REPO_ROOT) -> dict[str, object]:
