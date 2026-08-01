@@ -14,37 +14,37 @@
 
 ## ACTIVE
 
-### MT5 execution hygiene -> post-batch diagnostics
+### MT5 saved-batch frozen probe execution
 
-Status: execution hygiene report completed as `DIAGNOSTIC_ONLY`.
-Available repo `ERROR_SoSimple_*.csv`, reference events, 32 batch event files,
-and post-batch failure modes are classified. Historical
-`ERROR_SoSimple_163856259.csv` and cumulative tester-agent `ERROR-4756` log are
-abandoned as non-reproducible inputs and no longer block current batch follow-up.
-Future MT5 diagnostic runs write execution context directly into `events.csv`.
+Status: plan ready, awaiting execution.
+
+Current facts:
+
+- The frozen probe plan exists at
+  `docs/superpowers/plans/2026-08-01-mt5-saved-batch-fill-rate-probe.md`.
+- The plan targets fill-rate mechanics over saved batch artifacts only.
+- MT5 timing contract rerun is complete as `DIAGNOSTIC_ONLY`.
+- LiveUpdate startup interception is handled in `run_mt5_batch.py`.
+- Fresh batch summary has `n_candidates=32`, `n_valid=32`, `n_eligible=11`,
+  `verdict=BATCH_NO_WINNER`.
+- Post-batch hygiene classified available error artifacts and preserved
+  `BATCH_NO_WINNER`.
+- `locked_test` remains unopened.
 
 Next action:
 
-1. Plan the next frozen probe using only current saved batch artifacts.
+1. Execute the fill-rate probe plan: implement Tasks 1-4 (artifact contract
+   and fill-rate core, CLI phase and diagnostic artifacts, evidence review
+   and hypothesis decision, report and project state sync).
+2. Allowed max verdict for any output of the probe: `DIAGNOSTIC_ONLY`
+   (or `research_hypothesis` only if artifacts clearly support it and the
+   user explicitly accepts it).
+3. No threshold, model, profile, side, horizon, entry/exit rule, stop,
+   spread, cost or PnL convention may be selected from this probe.
 
 ---
 
 ## NEXT_AFTER_MT5_HYGIENE
-
-### `post-batch diagnostic attribution`
-
-Цель: разобрать `BATCH_NO_WINNER` без выбора нового winner: trade count,
-bootstrap variance, BUY/SELL/year concentration, fill rate, costs and split
-ceilings.
-
-Условия старта:
-
-- `ERROR-4756` / `ERROR_SoSimple_*.csv` / `ORDER_EXPIRED` классифицированы или
-  явно признаны не влияющими на batch metrics;
-- нет PnL/PF/trading claims без cost model, split disclosure and locked-test
-  protocol;
-- любые найденные зоны оформляются только как `research_hypothesis` с
-  `origin_bias`, а не как candidate.
 
 ### `fractal0_price entry mechanics frozen probe`
 

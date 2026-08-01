@@ -2,7 +2,7 @@
 
 ## Current Active State
 
-- active track: `MT5 diagnostic timing contract -> LiveUpdate-safe full-batch rerun`
+- active track: `MT5 saved-batch frozen probe planning`
 - latest report: `docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md`
 - latest plan: `docs/superpowers/plans/2026-08-01-mt5-diagnostic-timing-contract.md`
 - latest spec: `docs/superpowers/specs/2026-08-01-mt5-diagnostic-timing-contract-design.md`
@@ -42,7 +42,11 @@ MT5 diagnostic timing contract is implemented as `DIAGNOSTIC_ONLY`.
 
 ## Next Step
 
-Keep the LiveUpdate recovery path in future MT5 batch runs and preserve event-file freshness checks. Keep verdict at `DIAGNOSTIC_ONLY` unless separate methodology gates are passed.
+Create a frozen probe plan using only current saved batch artifacts. The plan
+must choose one bounded target: fill-rate mechanics, cost/stress sensitivity,
+yearly/side concentration, or `fractal0_price` entry mechanics. Do not open
+`locked_test`, do not select a new winner, and do not change thresholds/models
+from this planning step.
 
 ## Verification
 

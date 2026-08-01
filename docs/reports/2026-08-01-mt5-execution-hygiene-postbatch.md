@@ -15,7 +15,7 @@ Search/post-mortem diagnostic stage. This report does not create a candidate and
 - **lifecycle_status**: DIAGNOSTIC_ONLY
 - **execution_hygiene_status**: EXECUTION_HYGIENE_PARTIAL
 - **origin_bias**: post-mortem after `BATCH_NO_WINNER`; no new selection
-- **research_priority**: infrastructure first, then post-batch diagnostics
+- **research_priority**: medium; infrastructure first, then post-batch diagnostics
 - **current_search_budget**: 0 new model/search configurations
 - **diagnostic_checks_budget**: 6 diagnostic groups: error classes, source buckets, event anomaly categories, trade-count buckets, top-11 candidate slices, profit concentration slice
 - **cumulative_search_budget**: inherits 64 benchmark -> 32 shortlist -> 32 MT5 tester -> 11 eligible from 2026-07-31 batch
@@ -92,11 +92,11 @@ Final documentation/wiki commit modified:
 - `error_inventory.json`: `fc7d10705bedec6b092501f6d1d46727cceca96794f127af09e5a29cb22d9efe`
 - `error_summary.json`: `57be2f56f862d76f07fc603b91855a26463c9d1419db0201094d219ab60a49f0`
 - `error_rows_classified.csv`: `79d5978b45c31aa690d88247712af7554ff69c3a3d73927b7212ae622da32017`
-- `event_anomaly_summary.json`: `ebc27151d8b7fb817ead8fbf237b26c204e0ad2af01607d2668ca18b25df69b0`
-- `event_anomalies.csv`: `439d436610523a60d1c843701751ebf04af6e28fef8f837085889aa67f9493c4`
+- `event_anomaly_summary.json`: `8a32bb2df4881b3417544fa7fb9c0b13ec0417f9eadf11166eb88bff34bbb59b`
+- `event_anomalies.csv`: `fe759538db6999c8491333d961ed1c1691592aebf7be0fc0f2dfea6c54bacea9`
 - `post_batch_diagnostics.json`: `41932413b42a9983bfb4428021fa6206544ed24bbd6649bc443e83a69951d491`
 - `post_batch_top_candidates.csv`: `ed73d7d960309c482645d1b287b2ed60eb0ee85b322f2beda21482be01c00b48`
-- `batch_summary.json`: `215fa1322a2df30ea79bdf49ae4d5c933fbfe4b11dfc6919373ab63a657beafe`
+- `batch_summary.json`: `bbe2bf19a3a2b42c1fefb0f3207a29c6636eca5c5a8e0d4e37743cceb767e897`
 - `mt5_execution_metrics_20260731_tx_lifecycle.json`: `e550d8bce1e364bba5424f725b93a002ddc822d0a6a0ce1b20b517facd182d28`
 - `mt5_execution_metrics_20260730_entry_quality_filter.json`: `9a5af9bc89170d26f10cd06da14fa98b3e8ad767e238ee75c13ecc4c18c10494`
 
@@ -125,7 +125,7 @@ Final documentation/wiki commit modified:
 | Scope | Period / split role | Rows / events / signals / trades | Source |
 |-------|---------------------|----------------------------------|--------|
 | Reference event artifacts | historical diagnostic validation | 23050 events | `event_anomaly_summary.json.reference_runs.total_rows` |
-| Batch event artifacts | XAUUSD H1 validation 2021.01.04-2022.12.02 / validation diagnostic | 54094 events across 32 candidate runs | `event_anomaly_summary.json.batch_runs.total_rows`, `batch_run_count` |
+| Batch event artifacts | XAUUSD H1 validation 2021.01.04-2022.12.02 / validation diagnostic | 54078 events across 32 candidate runs | `event_anomaly_summary.json.batch_runs.total_rows`, `batch_run_count` |
 | Batch candidate table | XAUUSD H1 validation 2021.01.04-2022.12.02 / validation diagnostic | 32 valid candidate runs, 11 eligible top candidates | `post_batch_diagnostics.json.n_valid`, `n_eligible` |
 | Eligible top candidates | XAUUSD H1 validation 2021.01.04-2022.12.02 / validation diagnostic | 1424 trades | `post_batch_diagnostics.json.sample_sizes.eligible_top_candidate_trades` |
 | Eligible top candidate signals | XAUUSD H1 validation 2021.01.04-2022.12.02 / validation diagnostic | 14954 active signal rows; buy 7092, sell 7862 | `post_batch_diagnostics.json.sample_sizes` |
