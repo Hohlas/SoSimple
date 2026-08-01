@@ -893,3 +893,6 @@
 - 2026-07-27: Added MT4 fixed11 retained-rule switch: `ML_RuleSlot` plus `BackTest=1..5` maps tester rows to `ml_signals_fixed11_rule01..05.csv`; parity still pending until per-rule exports, external compile/tester run and reconciliation.
 - 2026-07-27: Refreshed retained-subset MT4 parity wiki after current report rewrite; old `parity_blocked` feasibility wording is superseded by `DIAGNOSTIC_ONLY / parity_in_progress`. Current slot 1 tester artifact `ML_Trade_Events_SoSimple_1709200448.csv` has `ORDER_PLACED=1132`, `OPEN=1072`, `CLOSE=1072`, `MLClose=826`, `StopLoss=23`, profit sum `62238.59`; remaining blocker is one-H1-late `MLClose` timing.
 - 2026-07-29: Ingested `2026-07-29-fixed11-python-h1-chronology-fix.md`; corrected Python H1 chronology removes same-H1 `ML_CLOSE` and records M5 fill timestamp, but diagnostic fixed11 rerun has `PF max=0.938880`, `kept_candidates=0`, so old positive fixed11 locked-test chain is invalidated.
+# 2026-08-01
+
+- Ingested MT5 execution-loop research page covering reports from 2026-07-29 through 2026-08-01, including `EXECUTION_HYGIENE_PARTIAL` and missing `ERROR-4756` linkage artifacts.

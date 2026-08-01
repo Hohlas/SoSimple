@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-08-01] — MT5 execution hygiene and post-batch diagnostics (EXECUTION_HYGIENE_PARTIAL)
+- **report**: `docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md`
+- **topics**: `mt5`, `execution_hygiene`, `error_4756`, `post_batch_diagnostics`
+- **summary**: Classified available MT5 execution error artifacts and summarized post-batch failure modes without selecting a new winner.
+- **artifacts**: `ML/reports/mt5_execution_loop/diagnostics/error_summary.json`, `ML/reports/mt5_execution_loop/diagnostics/post_batch_diagnostics.json`
+- **decision**: `EXECUTION_HYGIENE_PARTIAL`; repo artifacts are classified, but missing expected error CSV / cumulative agent log keep row-level `ERROR-4756` linkage `UNKNOWN`.
+- **notes**: Result remains `DIAGNOSTIC_ONLY`; no trading or model-quality conclusion.
+
 ## [2026-07-31] — MT5 Batch Selection: 32 candidates (BATCH_NO_WINNER)
 - **report**: `docs/reports/2026-07-31-mt5-batch-selection.md`
 - **topics**: `mt5`, `batch_selection`, `movement_filter`, `bootstrap`, `holm_bonferroni`

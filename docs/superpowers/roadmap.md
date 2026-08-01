@@ -14,36 +14,41 @@
 
 ## ACTIVE
 
-### MT5 execution-loop prototype
+### MT5 execution hygiene -> post-batch diagnostics
 
-Status: OnTradeTransaction lifecycle closed (DIAGNOSTIC_ONLY,
-2026-07-31); Nero parity closed as PARITY_PARTIAL (structural PASS,
-numeric FAIL — MT4 reference from older build). ERROR-4756 classification
-not closed.
+Status: execution hygiene report completed as `EXECUTION_HYGIENE_PARTIAL` /
+`DIAGNOSTIC_ONLY`. Available repo `ERROR_SoSimple_*.csv`, reference events, 32
+batch event files, and post-batch failure modes are classified. Full ERROR-4756
+linkage remains open because `ERROR_SoSimple_163856259.csv` and the cumulative
+tester agent log are missing.
+
 Next action:
 
-1. Classify `ERROR-4756` send failures and `ERROR_SoSimple_*.csv`;
-   link them to the 15 unexplained cancelled pendings + 9 ORDER_EXPIRED
-   remainders from the 2026-07-31 reconciliation.
-2. Reconcile event/deal rows before treating tester metrics as usable.
-3. (Optional) Regenerate MT4 `Nero_XAUUSD.csv` with current build for
-   numeric PARITY_PASS — separate plan.
+1. Retrieve missing artifacts: `ERROR_SoSimple_163856259.csv` and the
+   cumulative tester agent log containing the 690 `ERROR-4756` lines.
+2. If retrieval is impossible, explicitly accept `EXECUTION_HYGIENE_PARTIAL`
+   before choosing the next frozen probe plan.
+3. Only after retrieval or explicit partial acceptance, choose between
+   `fractal0_price entry mechanics frozen probe` and `H3/H6 live-safe direction`.
 
 ---
 
-## NEXT_AFTER_MT5_SINGLE_RULE
+## NEXT_AFTER_MT5_HYGIENE
 
-### MT5 batch selection for 20-50 candidates
+### `post-batch diagnostic attribution`
 
-Цель: после успешного single-rule MT5-контура проверять 20-50 заранее
-отобранных кандидатов через MT5 tester, а не через Python trade PF/PnL.
+Цель: разобрать `BATCH_NO_WINNER` без выбора нового winner: trade count,
+bootstrap variance, BUY/SELL/year concentration, fill rate, costs and split
+ceilings.
 
 Условия старта:
 
-- single-rule MT5 execution loop пишет корректные entry/open/close events;
-- `Nero.csv` producer parity доказан или явно ограничен диагностическим статусом;
-- selection идёт на validation, не на opened locked_test;
-- есть отдельный план с fixed rules, split roles, costs и stop conditions.
+- `ERROR-4756` / `ERROR_SoSimple_*.csv` / `ORDER_EXPIRED` классифицированы или
+  явно признаны не влияющими на batch metrics;
+- нет PnL/PF/trading claims без cost model, split disclosure and locked-test
+  protocol;
+- любые найденные зоны оформляются только как `research_hypothesis` с
+  `origin_bias`, а не как candidate.
 
 ### `fractal0_price entry mechanics frozen probe`
 
