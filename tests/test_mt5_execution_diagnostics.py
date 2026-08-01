@@ -333,6 +333,9 @@ def test_summarize_batch_failure_does_not_fill_missing_metrics(tmp_path: Path) -
                 "profit_factor": 1.23,
                 "gross_profit": 999.0,
                 "gross_loss": 888.0,
+                "pf_by_year": {"2024": 1.23},
+                "gross_profit_by_year": {"2024": 999.0},
+                "pnl_by_trade": [1.0, -1.0],
             }
         ],
     }
@@ -357,4 +360,7 @@ def test_summarize_batch_failure_does_not_fill_missing_metrics(tmp_path: Path) -
     candidate = summary["top_candidates"][0]
     assert candidate["gross_profit"] is None
     assert candidate["gross_loss"] is None
+    assert candidate["pf_by_year"] is None
+    assert candidate["gross_profit_by_year"] is None
+    assert candidate["pnl_by_trade"] is None
     assert summary["unknowns"]["missing_per_run_inputs"] == {"a": ["metrics.json"]}
