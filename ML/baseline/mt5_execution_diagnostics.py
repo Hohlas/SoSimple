@@ -335,7 +335,7 @@ def _complete_legacy_timing_rows(events: pd.DataFrame) -> pd.Series:
 
 def summarize_timing_contract(events: pd.DataFrame) -> dict[str, object]:
     contract = "feature_time <= signal_time < feature_available_time <= decision_time <= execution_time"
-    if events.empty:
+    if events.empty or "event" not in events.columns:
         return {
             "status": "DIAGNOSTIC_ONLY",
             "contract": contract,

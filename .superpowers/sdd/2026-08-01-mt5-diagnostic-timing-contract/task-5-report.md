@@ -69,3 +69,17 @@
   - `./.venv/bin/python -m ML.baseline.mt5_execution_diagnostics --phase events --output-json ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json --output-csv ML/reports/mt5_execution_loop/diagnostics/event_anomalies.csv`
   - Result: exit `0`; command rewrote `ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json` and `ML/reports/mt5_execution_loop/diagnostics/event_anomalies.csv`
   - Scope note: generated diagnostics artifacts changed during verification and are intentionally left out of this final Task 5 review-fix commit.
+
+## Final Review Finding Fix (2026-08-01)
+- Review finding: `summarize_event_anomalies()` kept its protective early return for frames without `event`, but the added `timing_contract` branch called `summarize_timing_contract(events)`, which accessed `events["event"]` and raised `KeyError` on a non-empty malformed frame.
+- Fix applied:
+  - restored the safe path by treating `event`-less input as a diagnostic-only empty timing summary inside `summarize_timing_contract()`;
+  - kept the existing protective `summarize_event_anomalies()` return shape unchanged for non-empty frames missing `event`.
+- Regression coverage:
+  - added `test_summarize_event_anomalies_handles_non_empty_frame_without_event_column`;
+  - the test proves the function now returns the protective summary plus an empty `timing_contract` block instead of raising.
+- Verification:
+  - `./.venv/bin/python -m pytest tests/test_mt5_execution_diagnostics.py -k non_empty_frame_without_event_column -q`
+  - Result: `1 failed` before the fix with `KeyError: 'event'`
+  - `./.venv/bin/python -m pytest tests/test_mt5_execution_diagnostics.py -q`
+  - Result: `21 passed`

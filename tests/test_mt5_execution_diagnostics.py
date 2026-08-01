@@ -306,6 +306,33 @@ def test_summarize_timing_contract_reports_legacy_violation_without_signal_time(
     assert summary["violations_by_rule"]["feature_time <= feature_available_time (legacy_no_signal_time)"] == 1
 
 
+def test_summarize_event_anomalies_handles_non_empty_frame_without_event_column() -> None:
+    events = pd.DataFrame(
+        [
+            {
+                "feature_time": "2023.01.02 09:00",
+                "signal_time": "2023.01.02 09:30",
+            }
+        ]
+    )
+
+    summary = summarize_event_anomalies(events)
+
+    assert summary["status"] == "DIAGNOSTIC_ONLY"
+    assert summary["total_rows"] == 0
+    assert summary["event_counts"] == {}
+    assert summary["timing_contract"] == {
+        "status": "DIAGNOSTIC_ONLY",
+        "contract": "feature_time <= signal_time < feature_available_time <= decision_time <= execution_time",
+        "checked_rows": 0,
+        "violation_rows": 0,
+        "tx_rows_excluded": 0,
+        "timing_violation_event_count": 0,
+        "invalid_timestamp_rows": 0,
+        "violations_by_rule": {},
+    }
+
+
 def test_discover_batch_event_paths_excludes_smoke(tmp_path: Path) -> None:
     from tests.test_parse_mt5_execution_report import _event_row
 
