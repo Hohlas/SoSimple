@@ -18,7 +18,8 @@
 - `ML/baseline/export_mt5_entry_signals.py` экспортирует `entry_signals.csv` и
   `entry_signals.json`.
 - `ML/baseline/run_mt5_batch.py` регенерирует сигналы, запускает MT5 tester и
-  собирает `batch_summary.json`.
+  собирает `batch_summary.json`; при перехвате запуска MT5 LiveUpdate ждёт
+  завершения обновления и повторяет тот же `.ini`.
 - `ML/baseline/mt5_execution_diagnostics.py` строит read-only diagnostics по
   event logs.
 - `MT/MQL5/Include/lib_ML_Signal.mqh` читает signal CSV, проверяет timing guard
@@ -81,5 +82,7 @@ feature_time <= signal_time < feature_available_time <= decision_time <= executi
   участвует в winner selection.
 - `TIMING_VIOLATION` означает, что MQL5 увидел строку signal CSV с нарушением
   timing contract; такая строка не должна размещать ордер.
-- Full batch зависит от MT5/Wine окружения. Если tester не пишет ожидаемые
-  event-файлы, runtime verification получает статус `UNKNOWN`.
+- Full batch зависит от MT5/Wine окружения. Если запуск терминала уходит в
+  LiveUpdate, runner должен считать этот tester-run невалидным, дождаться
+  завершения обновления и повторить тот же `.ini`; отсутствие ожидаемого
+  event-файла после успешного запуска остаётся ошибкой runtime verification.

@@ -325,27 +325,139 @@
   },
   "batch_runs": {
     "status": "DIAGNOSTIC_ONLY",
-    "total_rows": 2483,
+    "total_rows": 54078,
     "event_counts": {
-      "ML_EVAL": 1160,
-      "OPEN_FAILED": 602,
-      "ORDER_PLACED": 150,
-      "TX_CLOSE": 146,
-      "TX_OPEN": 146,
-      "OPEN": 136,
-      "CLOSE": 107,
-      "ML_CLOSE": 31,
-      "ORDER_EXPIRED": 3,
-      "INIT": 2
+      "OPEN_FAILED": 22767,
+      "ML_EVAL": 19443,
+      "ORDER_PLACED": 2601,
+      "TX_CLOSE": 2508,
+      "TX_OPEN": 2508,
+      "OPEN": 2367,
+      "CLOSE": 1160,
+      "ML_CLOSE": 625,
+      "ORDER_EXPIRED": 67,
+      "INIT": 32
     },
     "open_failed_reasons": {
-      "position_or_pending_order_exists": 592,
-      "pending_order_not_found_after_order_placed": 10
+      "position_or_pending_order_exists": 22619,
+      "pending_order_not_found_after_order_placed": 148
     },
     "order_expired_reasons": {
-      "pending_order_not_active_after_max_fill_lag_bars": 3
+      "pending_order_not_active_after_max_fill_lag_bars": 67
     },
     "reconciliation_by_run": {
+      "simple_combined_extra_trees_small_12h_thr0.05": {
+        "position_count": 16,
+        "class_counts": {
+          "CLOSED_TX": 16,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 1,
+        "tx_open_count": 16,
+        "tx_close_count": 16,
+        "signal_linked_tx_open_count": 16
+      },
+      "simple_combined_extra_trees_small_12h_thr0.1": {
+        "position_count": 49,
+        "class_counts": {
+          "CLOSED_TX": 49,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 0,
+        "tx_open_count": 49,
+        "tx_close_count": 49,
+        "signal_linked_tx_open_count": 49
+      },
+      "simple_combined_extra_trees_small_12h_thr0.2": {
+        "position_count": 101,
+        "class_counts": {
+          "CLOSED_TX": 101,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 2,
+        "tx_open_count": 101,
+        "tx_close_count": 101,
+        "signal_linked_tx_open_count": 99
+      },
+      "simple_combined_extra_trees_small_12h_thr0.3": {
+        "position_count": 121,
+        "class_counts": {
+          "CLOSED_TX": 121,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 4,
+        "tx_open_count": 121,
+        "tx_close_count": 121,
+        "signal_linked_tx_open_count": 118
+      },
+      "simple_combined_extra_trees_small_24h_thr0.05": {
+        "position_count": 44,
+        "class_counts": {
+          "CLOSED_TX": 44,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 1,
+        "tx_open_count": 44,
+        "tx_close_count": 44,
+        "signal_linked_tx_open_count": 43
+      },
+      "simple_combined_extra_trees_small_24h_thr0.1": {
+        "position_count": 23,
+        "class_counts": {
+          "CLOSED_TX": 23,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 0,
+        "tx_open_count": 23,
+        "tx_close_count": 23,
+        "signal_linked_tx_open_count": 23
+      },
+      "simple_combined_extra_trees_small_24h_thr0.2": {
+        "position_count": 51,
+        "class_counts": {
+          "CLOSED_TX": 51,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 2,
+        "tx_open_count": 51,
+        "tx_close_count": 51,
+        "signal_linked_tx_open_count": 49
+      },
+      "simple_combined_extra_trees_small_24h_thr0.3": {
+        "position_count": 78,
+        "class_counts": {
+          "CLOSED_TX": 78,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 1,
+        "tx_open_count": 78,
+        "tx_close_count": 78,
+        "signal_linked_tx_open_count": 77
+      },
       "simple_combined_extra_trees_small_3h_thr0.05": {
         "position_count": 58,
         "class_counts": {
@@ -373,19 +485,357 @@
         "tx_open_count": 88,
         "tx_close_count": 88,
         "signal_linked_tx_open_count": 81
+      },
+      "simple_combined_extra_trees_small_3h_thr0.2": {
+        "position_count": 131,
+        "class_counts": {
+          "CLOSED_TX": 131,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 14,
+        "tx_open_count": 131,
+        "tx_close_count": 131,
+        "signal_linked_tx_open_count": 117
+      },
+      "simple_combined_extra_trees_small_3h_thr0.3": {
+        "position_count": 143,
+        "class_counts": {
+          "CLOSED_TX": 143,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 14,
+        "tx_open_count": 143,
+        "tx_close_count": 143,
+        "signal_linked_tx_open_count": 129
+      },
+      "simple_combined_extra_trees_small_6h_thr0.05": {
+        "position_count": 33,
+        "class_counts": {
+          "CLOSED_TX": 33,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 1,
+        "tx_open_count": 33,
+        "tx_close_count": 33,
+        "signal_linked_tx_open_count": 32
+      },
+      "simple_combined_extra_trees_small_6h_thr0.1": {
+        "position_count": 62,
+        "class_counts": {
+          "CLOSED_TX": 62,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 3,
+        "tx_open_count": 62,
+        "tx_close_count": 62,
+        "signal_linked_tx_open_count": 59
+      },
+      "simple_combined_extra_trees_small_6h_thr0.2": {
+        "position_count": 123,
+        "class_counts": {
+          "CLOSED_TX": 123,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 6,
+        "tx_open_count": 123,
+        "tx_close_count": 123,
+        "signal_linked_tx_open_count": 117
+      },
+      "simple_combined_extra_trees_small_6h_thr0.3": {
+        "position_count": 151,
+        "class_counts": {
+          "CLOSED_TX": 151,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 6,
+        "tx_open_count": 151,
+        "tx_close_count": 151,
+        "signal_linked_tx_open_count": 145
+      },
+      "time_plus_atr_extra_trees_small_12h_thr0.05": {
+        "position_count": 23,
+        "class_counts": {
+          "CLOSED_TX": 23,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 1,
+        "tx_open_count": 23,
+        "tx_close_count": 23,
+        "signal_linked_tx_open_count": 23
+      },
+      "time_plus_atr_extra_trees_small_12h_thr0.1": {
+        "position_count": 22,
+        "class_counts": {
+          "CLOSED_TX": 22,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 0,
+        "tx_open_count": 22,
+        "tx_close_count": 22,
+        "signal_linked_tx_open_count": 22
+      },
+      "time_plus_atr_extra_trees_small_12h_thr0.2": {
+        "position_count": 102,
+        "class_counts": {
+          "CLOSED_TX": 102,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 7,
+        "tx_open_count": 102,
+        "tx_close_count": 102,
+        "signal_linked_tx_open_count": 96
+      },
+      "time_plus_atr_extra_trees_small_12h_thr0.3": {
+        "position_count": 149,
+        "class_counts": {
+          "CLOSED_TX": 149,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 9,
+        "tx_open_count": 149,
+        "tx_close_count": 149,
+        "signal_linked_tx_open_count": 140
+      },
+      "time_plus_atr_extra_trees_small_24h_thr0.05": {
+        "position_count": 27,
+        "class_counts": {
+          "CLOSED_TX": 27,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 0,
+        "tx_open_count": 27,
+        "tx_close_count": 27,
+        "signal_linked_tx_open_count": 27
+      },
+      "time_plus_atr_extra_trees_small_24h_thr0.1": {
+        "position_count": 56,
+        "class_counts": {
+          "CLOSED_TX": 56,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 4,
+        "tx_open_count": 56,
+        "tx_close_count": 56,
+        "signal_linked_tx_open_count": 52
+      },
+      "time_plus_atr_extra_trees_small_24h_thr0.2": {
+        "position_count": 36,
+        "class_counts": {
+          "CLOSED_TX": 36,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 1,
+        "tx_open_count": 36,
+        "tx_close_count": 36,
+        "signal_linked_tx_open_count": 35
+      },
+      "time_plus_atr_extra_trees_small_24h_thr0.3": {
+        "position_count": 85,
+        "class_counts": {
+          "CLOSED_TX": 85,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 6,
+        "tx_open_count": 85,
+        "tx_close_count": 85,
+        "signal_linked_tx_open_count": 79
+      },
+      "time_plus_atr_extra_trees_small_6h_thr0.05": {
+        "position_count": 55,
+        "class_counts": {
+          "CLOSED_TX": 55,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 3,
+        "tx_open_count": 55,
+        "tx_close_count": 55,
+        "signal_linked_tx_open_count": 52
+      },
+      "time_plus_atr_extra_trees_small_6h_thr0.1": {
+        "position_count": 64,
+        "class_counts": {
+          "CLOSED_TX": 64,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 3,
+        "tx_open_count": 64,
+        "tx_close_count": 64,
+        "signal_linked_tx_open_count": 61
+      },
+      "time_plus_atr_extra_trees_small_6h_thr0.2": {
+        "position_count": 150,
+        "class_counts": {
+          "CLOSED_TX": 150,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 12,
+        "tx_open_count": 150,
+        "tx_close_count": 150,
+        "signal_linked_tx_open_count": 138
+      },
+      "time_plus_atr_extra_trees_small_6h_thr0.3": {
+        "position_count": 74,
+        "class_counts": {
+          "CLOSED_TX": 74,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 3,
+        "tx_open_count": 74,
+        "tx_close_count": 74,
+        "signal_linked_tx_open_count": 71
+      },
+      "time_plus_atr_hist_gradient_boosting_3h_thr0.05": {
+        "position_count": 49,
+        "class_counts": {
+          "CLOSED_TX": 49,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 5,
+        "tx_open_count": 49,
+        "tx_close_count": 49,
+        "signal_linked_tx_open_count": 45
+      },
+      "time_plus_atr_hist_gradient_boosting_3h_thr0.1": {
+        "position_count": 92,
+        "class_counts": {
+          "CLOSED_TX": 92,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 8,
+        "tx_open_count": 92,
+        "tx_close_count": 92,
+        "signal_linked_tx_open_count": 85
+      },
+      "time_plus_atr_hist_gradient_boosting_3h_thr0.2": {
+        "position_count": 146,
+        "class_counts": {
+          "CLOSED_TX": 146,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 14,
+        "tx_open_count": 146,
+        "tx_close_count": 146,
+        "signal_linked_tx_open_count": 133
+      },
+      "time_plus_atr_hist_gradient_boosting_3h_thr0.3": {
+        "position_count": 106,
+        "class_counts": {
+          "CLOSED_TX": 106,
+          "OPEN_AT_END": 0,
+          "UNEXPLAINED": 0
+        },
+        "unexplained_position_ids": [],
+        "open_at_end_position_ids": [],
+        "same_h1_count": 8,
+        "tx_open_count": 106,
+        "tx_close_count": 106,
+        "signal_linked_tx_open_count": 99
       }
     },
     "run_ids": [
+      "simple_combined_extra_trees_small_12h_thr0.05",
+      "simple_combined_extra_trees_small_12h_thr0.1",
+      "simple_combined_extra_trees_small_12h_thr0.2",
+      "simple_combined_extra_trees_small_12h_thr0.3",
+      "simple_combined_extra_trees_small_24h_thr0.05",
+      "simple_combined_extra_trees_small_24h_thr0.1",
+      "simple_combined_extra_trees_small_24h_thr0.2",
+      "simple_combined_extra_trees_small_24h_thr0.3",
       "simple_combined_extra_trees_small_3h_thr0.05",
-      "simple_combined_extra_trees_small_3h_thr0.1"
+      "simple_combined_extra_trees_small_3h_thr0.1",
+      "simple_combined_extra_trees_small_3h_thr0.2",
+      "simple_combined_extra_trees_small_3h_thr0.3",
+      "simple_combined_extra_trees_small_6h_thr0.05",
+      "simple_combined_extra_trees_small_6h_thr0.1",
+      "simple_combined_extra_trees_small_6h_thr0.2",
+      "simple_combined_extra_trees_small_6h_thr0.3",
+      "time_plus_atr_extra_trees_small_12h_thr0.05",
+      "time_plus_atr_extra_trees_small_12h_thr0.1",
+      "time_plus_atr_extra_trees_small_12h_thr0.2",
+      "time_plus_atr_extra_trees_small_12h_thr0.3",
+      "time_plus_atr_extra_trees_small_24h_thr0.05",
+      "time_plus_atr_extra_trees_small_24h_thr0.1",
+      "time_plus_atr_extra_trees_small_24h_thr0.2",
+      "time_plus_atr_extra_trees_small_24h_thr0.3",
+      "time_plus_atr_extra_trees_small_6h_thr0.05",
+      "time_plus_atr_extra_trees_small_6h_thr0.1",
+      "time_plus_atr_extra_trees_small_6h_thr0.2",
+      "time_plus_atr_extra_trees_small_6h_thr0.3",
+      "time_plus_atr_hist_gradient_boosting_3h_thr0.05",
+      "time_plus_atr_hist_gradient_boosting_3h_thr0.1",
+      "time_plus_atr_hist_gradient_boosting_3h_thr0.2",
+      "time_plus_atr_hist_gradient_boosting_3h_thr0.3"
     ],
     "linkage_status": "REQUEST_CONTEXT_AVAILABLE",
     "timing_contract": {
       "status": "DIAGNOSTIC_ONLY",
       "contract": "feature_time <= signal_time < feature_available_time <= decision_time <= execution_time",
-      "checked_rows": 2189,
+      "checked_rows": 49030,
       "violation_rows": 0,
-      "tx_rows_excluded": 292,
+      "tx_rows_excluded": 5016,
       "timing_violation_event_count": 0,
       "invalid_timestamp_rows": 0,
       "violations_by_rule": {}
@@ -396,12 +846,42 @@
     "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/mt5_trade_events_20260731_tx_lifecycle.csv"
   ],
   "batch_event_paths": [
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.05/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.1/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.2/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.3/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.05/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.1/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.2/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.3/events.csv",
     "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.05/events.csv",
-    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.1/events.csv"
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.1/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.2/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.3/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.05/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.1/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.2/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.3/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.05/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.1/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.2/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.3/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.05/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.1/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.2/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.3/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.05/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.1/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.2/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.3/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.05/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.1/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.2/events.csv",
+    "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.3/events.csv"
   ],
   "batch_run_count": 32,
   "batch_candidate_count": 32,
-  "batch_event_path_count": 2,
+  "batch_event_path_count": 32,
   "excluded_service_dirs": [
     "_smoke"
   ],

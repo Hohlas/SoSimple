@@ -2,7 +2,7 @@
 
 ## Current Active State
 
-- active track: `MT5 diagnostic timing contract -> full-batch event-output investigation`
+- active track: `MT5 diagnostic timing contract -> LiveUpdate-safe full-batch rerun`
 - latest report: `docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md`
 - latest plan: `docs/superpowers/plans/2026-08-01-mt5-diagnostic-timing-contract.md`
 - latest spec: `docs/superpowers/specs/2026-08-01-mt5-diagnostic-timing-contract-design.md`
@@ -19,6 +19,7 @@ MT5 diagnostic timing contract is implemented as `DIAGNOSTIC_ONLY`.
 - Invalid signal rows are logged as `TIMING_VIOLATION` and skipped before order placement.
 - `TX_OPEN` and `TX_CLOSE` may keep timing fields empty; Python reconciliation links them later.
 - Default mode remains `latency_bars=0`; positive latency is diagnostic-only export mode and must not enter winner selection.
+- MT5 LiveUpdate startup interception is now handled in `run_mt5_batch.py`: the runner detects `LiveUpdate start ... /config:<ini>`, waits for update completion, settles briefly, then retries the same tester `.ini`.
 
 ## Current Diagnostic Facts
 
@@ -26,9 +27,10 @@ MT5 diagnostic timing contract is implemented as `DIAGNOSTIC_ONLY`.
 - Signal timing verification: `checked_signal_files=32`, `bad_files=0`.
 - MetaEditor compile log: `Result: 0 errors, 0 warnings`.
 - Smoke tester: passed with `UNEXPLAINED=0`.
-- Full batch runtime: `UNKNOWN`; only 2/32 full-batch runs emitted expected fresh event files.
-- `batch_summary.json`: `status=DIAGNOSTIC_ONLY`, `verdict=BATCH_NO_WINNER`, `n_candidates=32`, `n_valid=2`, `n_eligible=0`.
-- `batch_runs.timing_contract`: `checked_rows=2189`, `violation_rows=0`, `timing_violation_event_count=0`.
+- Initial full batch runtime was `UNKNOWN`: MT5 LiveUpdate intercepted 30/32 tester launches, producing process exit code 0 without Strategy Tester event files.
+- Replacement tester rerun completed `30 done, 2 skipped, 0 failed`; expected event files are present for 32/32 candidates.
+- `batch_summary.json`: `status=DIAGNOSTIC_ONLY`, `verdict=BATCH_NO_WINNER`, `n_candidates=32`, `n_valid=32`, `n_eligible=11`, `n_diagnostic_only=16`.
+- `batch_runs`: `total_rows=54078`; `timing_contract.checked_rows=49030`, `violation_rows=0`, `timing_violation_event_count=0`.
 - `reference_runs.timing_contract`: historical copied-timing violations remain (`violation_rows=22510`); treat them as legacy context, not fresh batch evidence.
 
 ## Do Not Do
@@ -40,9 +42,7 @@ MT5 diagnostic timing contract is implemented as `DIAGNOSTIC_ONLY`.
 
 ## Next Step
 
-Investigate MT5/Wine tester file output: smoke and the first two full-batch runs wrote event files, but 30/32 full-batch runs failed with missing expected `mt5_trade_events_<run_id>.csv`.
-
-After fixing the event-output issue, rerun `./.venv/bin/python -m ML.baseline.run_mt5_batch --phase all` and then regenerate event diagnostics. Keep verdict at `DIAGNOSTIC_ONLY`.
+Keep the LiveUpdate recovery path in future MT5 batch runs and preserve event-file freshness checks. Keep verdict at `DIAGNOSTIC_ONLY` unless separate methodology gates are passed.
 
 ## Verification
 
@@ -54,4 +54,8 @@ Completed relevant checks:
 - `./.venv/bin/python -m ML.baseline.run_mt5_batch --phase signals` regenerated 32 signal artifacts.
 - timing verification over 32 signal CSVs passed.
 - smoke tester passed.
-- full-batch runtime verification remains `UNKNOWN` because expected event files were missing for 30/32 runs.
+- `./.venv/bin/python -m pytest tests/test_mt5_batch_runtime_contract.py -q` -> `5 passed`.
+- `./.venv/bin/python -m py_compile ML/baseline/run_mt5_batch.py` passed.
+- `./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester` -> `30 done, 2 skipped, 0 failed`.
+- `./.venv/bin/python -m ML.baseline.run_mt5_batch --phase aggregate` -> `BATCH_NO_WINNER`.
+- event diagnostics regenerated after the replacement rerun.

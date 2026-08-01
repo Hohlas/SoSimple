@@ -90,6 +90,22 @@ rg -n "#property tester_file \"mt5_entry_signals.csv\"|int      bar=1|MT5_FindEn
   --output-csv ML/reports/mt5_execution_loop/diagnostics/event_anomalies.csv
 ```
 
+Post-review LiveUpdate recovery and failed-run recount:
+
+```bash
+./.venv/bin/python -m pytest tests/test_mt5_batch_runtime_contract.py -q
+./.venv/bin/python -m py_compile ML/baseline/run_mt5_batch.py
+./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester
+./.venv/bin/python -m ML.baseline.run_mt5_batch --phase aggregate
+./.venv/bin/python -m ML.baseline.mt5_execution_diagnostics \
+  --phase events \
+  --output-json ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json \
+  --output-csv ML/reports/mt5_execution_loop/diagnostics/event_anomalies.csv
+```
+
+Results: runtime contract tests passed (`5 passed`), compile check passed,
+tester rerun completed `30 done, 2 skipped, 0 failed`.
+
 Final Task 8 checks were run separately after report creation.
 
 Final Task 8 checks:
@@ -115,9 +131,10 @@ git status --short docs/superpowers/specs/2026-08-01-mt5-diagnostic-timing-contr
 ./.venv/bin/python -m pytest tests/ -q
 ```
 
-Results: targeted final subset passed (`53 passed`). Static checks and wiki
-status passed. Full `tests/` suite finished with `1568 passed, 1 failed,
-52 warnings`; the failing test was
+Results: targeted final subset passed (`55 passed`). Static checks passed.
+`wiki/wiki.py status` reported changed files after this report/update pass and
+therefore returned non-zero. Full `tests/` suite finished with `1570 passed,
+1 failed, 52 warnings`; the failing test was
 `tests/test_mql_telemetry_params_csv_contract.py::test_tester_ini_selects_telemetry_backtest_row`,
 which expects `BackTest=2` in `MT/tester/$o$imple.ini`, while the file currently
 contains `BackTest=0`. This file and test were not changed by this stage.
@@ -140,9 +157,12 @@ Facts from regenerated artifacts:
 - signal artifacts: 32/32 `entry_signals.json` include `timing_contract` and `latency_bars=0`.
 - signal timing check: `checked_signal_files=32`, `bad_files=0`.
 - smoke tester: passed with `UNEXPLAINED=0`.
-- full batch runtime: `UNKNOWN`; `run_mt5_batch --phase all` observed expected event files for 2/32 runs and failed to find event files for 30/32. After final review, the runner was hardened to delete stale tester event files before each future launch and to reject non-zero tester exit codes.
-- `batch_summary.json`: `status=DIAGNOSTIC_ONLY`, `verdict=BATCH_NO_WINNER`, `n_candidates=32`, `n_valid=2`, `n_eligible=0`.
-- `event_anomaly_summary.json` `batch_runs.timing_contract`: `checked_rows=2189`, `violation_rows=0`, `timing_violation_event_count=0`.
+- initial full batch runtime: `UNKNOWN`; `run_mt5_batch --phase all` observed expected event files for 2/32 runs and failed to find event files for 30/32.
+- root cause: MT5 LiveUpdate intercepted terminal startup. The terminal log showed `LiveUpdate start ... /config:<mt5_batch_*.ini>` followed by normal process exit code 0, so the Python runner could treat the process as successful even though the Strategy Tester did not run and did not create the expected event file.
+- mitigation: `run_mt5_batch.py` now copies `mt5_entry_signals.csv` to both terminal and tester-agent `MQL5/Files`, rejects LiveUpdate redirects from the terminal log, waits for LiveUpdate to finish, settles briefly, then retries the same `.ini`.
+- recounted full batch runtime: `run_mt5_batch --phase tester` completed `30 done, 2 skipped, 0 failed`; expected event files are now present for 32/32 candidates.
+- `batch_summary.json`: `status=DIAGNOSTIC_ONLY`, `verdict=BATCH_NO_WINNER`, `n_candidates=32`, `n_valid=32`, `n_eligible=11`, `n_diagnostic_only=16`.
+- `event_anomaly_summary.json` `batch_runs`: `total_rows=54078`; `timing_contract.checked_rows=49030`, `violation_rows=0`, `timing_violation_event_count=0`.
 - `event_anomaly_summary.json` `reference_runs.timing_contract`: `checked_rows=22510`, `violation_rows=22510`; this reflects historical copied-timing reference artifacts, not the regenerated batch signal contract.
 
 ## Conclusions
@@ -153,16 +173,16 @@ matched by `Time[1]`, so order placement remains on the first tick of bar
 `T+1`.
 
 The stage does not produce a new model-quality conclusion. It only improves the
-diagnostic execution contract and records that the full 32-run runtime rerun is
-not fully verified in this environment.
+diagnostic execution contract and confirms that the 32 candidate MT5 rerun is
+complete after LiveUpdate recovery.
 
 ## Limitations / Open Questions
 
-- Full 32-run runtime verification is `UNKNOWN`: MT5 tester did not write the
-  expected `mt5_trade_events_<run_id>.csv` for 30 of 32 runs.
-- The original Task 7 runtime evidence cannot be upgraded beyond `UNKNOWN`;
-  freshness safeguards were added after review and require a new full-batch run
-  to re-establish runtime evidence.
+- The original Task 7 runtime evidence remains historically `UNKNOWN` for that
+  exact run: MT5 LiveUpdate intercepted 30 of 32 tester launches before the
+  runner had LiveUpdate retry logic.
+- The replacement rerun completed 32/32 candidate event files, but remains
+  `DIAGNOSTIC_ONLY`; it must not be interpreted as a new model-quality winner.
 - Historical reference event artifacts still contain copied-timing violations.
   They are useful only as legacy reference context.
 - `latency_bars>0` is implemented as metadata/export support, but remains a
@@ -180,15 +200,14 @@ val-stop: not used by this timing-contract rerun; inherited/unchanged where appl
 val-select: used only to regenerate and rerun the 32 previously selected diagnostic candidates.
 val-eval: not used by this timing-contract rerun; inherited/unchanged where applicable.
 locked_test: not opened
-sample_size_gate: no winner selection in this stage; `batch_summary.json` reports n_candidates=32, n_valid=2, n_eligible=0.
+sample_size_gate: no winner selection in this stage; `batch_summary.json` reports n_candidates=32, n_valid=32, n_eligible=11, n_diagnostic_only=16.
 ```
 
 ## Next Step
 
-Investigate why MT5/Wine produced expected event files for smoke and the first
-two full-batch runs but not for the remaining 30. Re-run full batch only after
-that file-output issue is understood; keep any result at `DIAGNOSTIC_ONLY`
-unless separate methodology gates are passed.
+Keep LiveUpdate recovery in the MT5 batch runner and use the same event-file
+freshness checks for future tester runs. Any future winner claim still requires
+the separate methodology gates; this rerun remains `DIAGNOSTIC_ONLY`.
 
 ## Related Materials
 

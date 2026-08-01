@@ -32,10 +32,15 @@ TERMINAL_EXE = WINE_PREFIX / "drive_c/Program Files/MetaTrader 5/terminal64.exe"
 METAEDITOR_EXE = WINE_PREFIX / "drive_c/Program Files/MetaTrader 5/MetaEditor64.exe"
 TESTER_FILES = WINE_PREFIX / "drive_c/Program Files/MetaTrader 5/Tester/Agent-127.0.0.1-3000/MQL5/Files"
 TERMINAL_FILES = WINE_PREFIX / "drive_c/Program Files/MetaTrader 5/MQL5/Files"
+TERMINAL_LOG_DIR = WINE_PREFIX / "drive_c/Program Files/MetaTrader 5/logs"
 SET_DIR = WINE_PREFIX / "drive_c/Program Files/MetaTrader 5/MQL5/Profiles/Tester"
 MQ5_SOURCE = REPO_ROOT / "MT" / "MQL5" / "Experts" / "$o$imple.mq5"
 
 TESTER_TIMEOUT_S = 1200
+LIVEUPDATE_WAIT_TIMEOUT_S = 600
+LIVEUPDATE_POLL_S = 5
+LIVEUPDATE_SETTLE_S = 10
+TESTER_MAX_LIVEUPDATE_RETRIES = 2
 
 
 def make_run_id(row: dict) -> str:
@@ -189,10 +194,14 @@ def compile_expert() -> bool:
     return False
 
 
-def check_liveupdate() -> bool:
+def _liveupdate_files() -> list[Path]:
     import glob as glob_mod
     pattern = str(WINE_PREFIX / "drive_c/users/*/AppData/Roaming/MetaQuotes/Terminal/*/liveupdate/**")
-    files = [f for f in glob_mod.glob(pattern, recursive=True) if Path(f).is_file()]
+    return [Path(f) for f in glob_mod.glob(pattern, recursive=True) if Path(f).is_file()]
+
+
+def check_liveupdate() -> bool:
+    files = _liveupdate_files()
     if files:
         print(f"WARNING: {len(files)} liveupdate files found. Move them before batch.")
         for f in files[:5]:
@@ -200,6 +209,57 @@ def check_liveupdate() -> bool:
         return False
     print("LiveUpdate check: clean.")
     return True
+
+
+def wait_for_liveupdate_clear(
+    timeout_s: int = LIVEUPDATE_WAIT_TIMEOUT_S,
+    poll_s: int = LIVEUPDATE_POLL_S,
+    settle_s: int = LIVEUPDATE_SETTLE_S,
+) -> bool:
+    deadline = time.time() + timeout_s
+    reported = False
+    while True:
+        files = _liveupdate_files()
+        if not files:
+            if reported:
+                print("  LiveUpdate finished; continuing tester run.")
+                if settle_s > 0:
+                    time.sleep(settle_s)
+            return True
+
+        if not reported:
+            print(f"  LiveUpdate in progress ({len(files)} files); waiting up to {timeout_s}s.")
+            for f in files[:5]:
+                print(f"    {f}")
+            reported = True
+
+        if time.time() >= deadline:
+            print(f"  ERROR: LiveUpdate did not finish within {timeout_s}s.")
+            return False
+        time.sleep(poll_s)
+
+
+def _decode_mt5_log(raw: bytes) -> str:
+    try:
+        return raw.decode("utf-16-le")
+    except UnicodeDecodeError:
+        return raw.decode("utf-8", errors="replace")
+
+
+def _latest_terminal_log() -> Path | None:
+    logs = sorted(TERMINAL_LOG_DIR.glob("*.log"), key=lambda path: path.stat().st_mtime)
+    return logs[-1] if logs else None
+
+
+def _read_new_terminal_log_text(log_path: Path | None, offset: int) -> str:
+    current = _latest_terminal_log()
+    if current is None:
+        return ""
+    if log_path is not None and current == log_path:
+        raw = current.read_bytes()[offset:]
+    else:
+        raw = current.read_bytes()
+    return _decode_mt5_log(raw)
 
 
 def check_tester_file_property() -> bool:
@@ -273,7 +333,7 @@ UseCloud=0
     return ini_path
 
 
-def run_tester(ini_path: Path) -> bool:
+def _run_tester_once(ini_path: Path) -> tuple[bool, bool]:
     wine_ini_name = ini_path.name
     cmd = [
         "xvfb-run", "-a", "wine",
@@ -282,8 +342,18 @@ def run_tester(ini_path: Path) -> bool:
     ]
     import os
     env = {**dict(os.environ), "WINEPREFIX": str(WINE_PREFIX)}
+    log_path = _latest_terminal_log()
+    log_offset = log_path.stat().st_size if log_path is not None and log_path.exists() else 0
     try:
         proc = subprocess.run(cmd, env=env, timeout=TESTER_TIMEOUT_S, capture_output=True)
+        new_log = _read_new_terminal_log_text(log_path, log_offset)
+        liveupdate_redirect = any(
+            "LiveUpdate\tstart" in line and ini_path.name in line
+            for line in new_log.splitlines()
+        )
+        if liveupdate_redirect:
+            print(f"  LiveUpdate started instead of tester for {ini_path.name}")
+            return False, True
         if proc.returncode != 0:
             stdout = proc.stdout.decode("utf-8", errors="replace") if isinstance(proc.stdout, bytes) else str(proc.stdout)
             stderr = proc.stderr.decode("utf-8", errors="replace") if isinstance(proc.stderr, bytes) else str(proc.stderr)
@@ -292,11 +362,33 @@ def run_tester(ini_path: Path) -> bool:
                 print(f"  tester stdout: {stdout.strip()[:500]}")
             if stderr.strip():
                 print(f"  tester stderr: {stderr.strip()[:500]}")
-            return False
-        return True
+            return False, False
+        return True, False
     except subprocess.TimeoutExpired:
         print(f"  ERROR: tester timed out after {TESTER_TIMEOUT_S}s")
-        return False
+        return False, False
+
+
+def run_tester(ini_path: Path) -> bool:
+    for attempt in range(TESTER_MAX_LIVEUPDATE_RETRIES + 1):
+        ok, liveupdate_redirect = _run_tester_once(ini_path)
+        if ok:
+            return True
+        if not liveupdate_redirect:
+            return False
+        if attempt >= TESTER_MAX_LIVEUPDATE_RETRIES:
+            print(f"  ERROR: LiveUpdate kept intercepting tester after {attempt + 1} attempts.")
+            return False
+        if not wait_for_liveupdate_clear():
+            return False
+        print(f"  Retrying tester after LiveUpdate: {ini_path.name}")
+    return False
+
+
+def copy_entry_signal_file(entry_csv: Path) -> None:
+    shutil.copy2(entry_csv, TERMINAL_FILES / "mt5_entry_signals.csv")
+    TESTER_FILES.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(entry_csv, TESTER_FILES / "mt5_entry_signals.csv")
 
 
 def parse_events(run_id: str, events_csv: Path) -> dict | None:
@@ -331,7 +423,7 @@ def run_smoke_test(candidates: list[dict]) -> bool:
 
     print(f"SMOKE TEST: {run_id} (Model=2, 2021.01-2021.03)")
 
-    shutil.copy2(entry_csv, TERMINAL_FILES / "mt5_entry_signals.csv")
+    copy_entry_signal_file(entry_csv)
     set_path = create_set_file("_smoke")
     ini_path = create_ini_file("_smoke", set_path.name, model=2, from_date="2021.01.04", to_date="2021.03.31")
 
@@ -390,7 +482,12 @@ def run_batch(candidates: list[dict]) -> None:
         print(f"[{i}/{n_total}] Running tester: {run_id}...")
         t0 = time.time()
 
-        shutil.copy2(entry_csv, TERMINAL_FILES / "mt5_entry_signals.csv")
+        if not wait_for_liveupdate_clear():
+            print(f"  ERROR: liveupdate files remained before {run_id}")
+            n_failed += 1
+            break
+
+        copy_entry_signal_file(entry_csv)
         set_path = create_set_file(run_id)
         ini_path = create_ini_file(run_id, set_path.name)
 

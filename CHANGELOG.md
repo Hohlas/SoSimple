@@ -18,10 +18,10 @@
 ## [2026-08-01] — MT5 diagnostic timing contract (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md`
 - **topics**: `mt5`, `timing_contract`, `diagnostic_executor`, `event_diagnostics`
-- **summary**: Made MT5 diagnostic entry timing explicit across Python schema/export, MQL5 reader validation, regenerated signal metadata and batch event diagnostics.
+- **summary**: Made MT5 diagnostic entry timing explicit across Python schema/export, MQL5 reader validation, regenerated signal metadata and batch event diagnostics; recounted the 30 failed tester runs after identifying MT5 LiveUpdate startup interception.
 - **artifacts**: `ML/reports/mt5_execution_loop/batch/batch_summary.json`, `ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json`, `ML/baseline/mt5_signal_schema.py`, `MT/MQL5/Include/lib_ML_Signal.mqh`
 - **decision**: `DIAGNOSTIC_ONLY`; default `latency_bars=0` preserves MT5 `Time[1]` placement, no new winner and no new PnL/PF quality claim.
-- **notes**: Full 32-run runtime verification is `UNKNOWN`: only 2/32 full-batch runs had expected event files during this run, and the runner now deletes stale tester event files before each future launch; `locked_test` not opened.
+- **notes**: Replacement tester rerun completed `30 done, 2 skipped, 0 failed`; `batch_summary.json` now has `n_valid=32`, `n_eligible=11`, `verdict=BATCH_NO_WINNER`. Runner now detects `LiveUpdate start`, waits for update completion, and retries the same `.ini`; `locked_test` not opened.
 
 ## [2026-08-01] — MT5 execution hygiene and post-batch diagnostics (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md`
