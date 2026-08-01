@@ -7,7 +7,7 @@
 #   External:
 #     - pandas>=2.0
 # Usage:
-#   python -m ML.baseline.mt5_execution_diagnostics --phase inventory|errors
+#   python -m ML.baseline.mt5_execution_diagnostics --phase inventory|errors|events|batch
 # =============================================================================
 #
 from __future__ import annotations
@@ -446,6 +446,174 @@ def write_json(data: dict[str, Any], path: Path) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def load_json_if_exists(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def trade_count_bucket(trades_count: int) -> str:
+    if trades_count < 100:
+        return "<100"
+    if trades_count < 150:
+        return "100-149"
+    return "150+"
+
+
+def _to_int(value: object) -> int | None:
+    try:
+        if value is None or pd.isna(value):
+            return None
+    except TypeError:
+        if value is None:
+            return None
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def _to_float(value: object) -> float | None:
+    try:
+        if value is None or pd.isna(value):
+            return None
+    except TypeError:
+        if value is None:
+            return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _csv_safe_value(value: object) -> object:
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return "" if value is None else value
+
+
+def _csv_safe_row(row: dict[str, object]) -> dict[str, object]:
+    return {key: _csv_safe_value(value) for key, value in row.items()}
+
+
+def summarize_batch_failure(
+    batch_summary_path: Path,
+    batch_root: Path = BATCH_ROOT,
+    top_n: int = 11,
+) -> dict[str, object]:
+    data = json.loads(batch_summary_path.read_text(encoding="utf-8"))
+    winners_ranked = list(data.get("winners_ranked", []))[:top_n]
+    table_by_id = {
+        str(row.get("run_id")): row
+        for row in data.get("table", [])
+        if str(row.get("run_id"))
+    }
+
+    top_candidates: list[dict[str, object]] = []
+    missing_per_run_inputs: dict[str, list[str]] = {}
+    low_bootstrap_lower_bound = 0
+    profit_concentration_fail = 0
+    trade_count_buckets: Counter[str] = Counter()
+
+    for item in winners_ranked:
+        run_id = str(item.get("run_id", "")).strip()
+        if not run_id:
+            continue
+
+        row = table_by_id.get(run_id, {})
+        run_dir = batch_root / run_id
+        entry_signals_path = run_dir / "entry_signals.json"
+        metrics_path = run_dir / "metrics.json"
+        events_path = run_dir / "events.csv"
+
+        entry_signals = load_json_if_exists(entry_signals_path)
+        metrics = load_json_if_exists(metrics_path)
+        events_exists = events_path.exists()
+        events_summary = summarize_event_anomalies(load_event_rows([events_path])) if events_exists else None
+
+        missing_inputs = [
+            name
+            for name, value in {
+                "entry_signals.json": entry_signals,
+                "metrics.json": metrics,
+                "events.csv": events_exists,
+            }.items()
+            if not value
+        ]
+        if missing_inputs:
+            missing_per_run_inputs[run_id] = missing_inputs
+
+        trades_count = _to_int(item.get("trades_count"))
+        if trades_count is None:
+            trades_count = _to_int(row.get("trades_count"))
+        trades_count = trades_count or 0
+        bucket = trade_count_bucket(trades_count)
+        trade_count_buckets[bucket] += 1
+
+        bs_p05 = _to_float(item.get("bs_p05"))
+        if bs_p05 is not None and bs_p05 < 1.0:
+            low_bootstrap_lower_bound += 1
+        if not bool(item.get("profit_concentration_pass", True)):
+            profit_concentration_fail += 1
+
+        active_signal_rows = _to_int((entry_signals or {}).get("active_signal_rows"))
+        buy_signal_rows = _to_int((entry_signals or {}).get("buy_rows"))
+        sell_signal_rows = _to_int((entry_signals or {}).get("sell_rows"))
+
+        fill_rate = None
+        if active_signal_rows and active_signal_rows > 0:
+            fill_rate = float(trades_count / active_signal_rows)
+
+        candidate = {
+            "run_id": run_id,
+            "profile": row.get("profile"),
+            "model_key": row.get("model_key"),
+            "horizon": row.get("horizon"),
+            "threshold_value": row.get("threshold_value"),
+            "trades_count": trades_count,
+            "trade_count_bucket": bucket,
+            "trades_buy": row.get("trades_buy"),
+            "trades_sell": row.get("trades_sell"),
+            "pf_buy": row.get("pf_buy"),
+            "pf_sell": row.get("pf_sell"),
+            "profit_factor": row.get("profit_factor"),
+            "win_rate": row.get("win_rate"),
+            "bs_p05": bs_p05,
+            "profit_concentration_pass": bool(item.get("profit_concentration_pass", True)),
+            "gross_profit": (metrics or {}).get("gross_profit", row.get("gross_profit")),
+            "gross_loss": (metrics or {}).get("gross_loss", row.get("gross_loss")),
+            "pf_by_year": row.get("pf_by_year"),
+            "gross_profit_by_year": row.get("gross_profit_by_year"),
+            "pnl_by_trade": row.get("pnl_by_trade"),
+            "active_signal_rows": active_signal_rows,
+            "buy_signal_rows": buy_signal_rows,
+            "sell_signal_rows": sell_signal_rows,
+            "fill_rate": fill_rate,
+            "metrics": metrics,
+            "event_summary": events_summary,
+            "all_gates_pass": item.get("all_gates_pass"),
+        }
+        top_candidates.append(candidate)
+
+    return {
+        "status": "DIAGNOSTIC_ONLY",
+        "verdict": data.get("verdict", "BATCH_NO_WINNER"),
+        "winner": data.get("winner"),
+        "n_candidates": data.get("n_candidates"),
+        "n_valid": data.get("n_valid"),
+        "n_eligible": data.get("n_eligible"),
+        "n_diagnostic_only": data.get("n_diagnostic_only"),
+        "top_failure_modes": {
+            "low_bootstrap_lower_bound": low_bootstrap_lower_bound,
+            "trade_count_buckets": dict(trade_count_buckets),
+            "profit_concentration_fail": profit_concentration_fail,
+        },
+        "top_candidates": top_candidates,
+        "unknowns": {"missing_per_run_inputs": missing_per_run_inputs},
+        "forbidden_interpretation_guard": "no_new_winner_selected",
+    }
+
+
 def build_event_anomaly_outputs(
     reference_paths: list[Path] | None = None,
     batch_root: Path = BATCH_ROOT,
@@ -489,7 +657,7 @@ def build_event_anomaly_outputs(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="MT5 execution diagnostics")
-    parser.add_argument("--phase", choices=["inventory", "errors", "events"], required=True)
+    parser.add_argument("--phase", choices=["inventory", "errors", "events", "batch"], required=True)
     parser.add_argument("--root", type=Path, default=REPO_ROOT)
     parser.add_argument("--output-json", type=Path, default=DIAG_DIR / "error_inventory.json")
     parser.add_argument("--output-csv", type=Path, default=DIAG_DIR / "error_rows_classified.csv")
@@ -504,6 +672,15 @@ def main() -> None:
         write_json(summary, args.output_json)
         args.output_csv.parent.mkdir(parents=True, exist_ok=True)
         anomaly_rows.to_csv(args.output_csv, sep=";", index=False)
+    elif args.phase == "batch":
+        summary = summarize_batch_failure(REPO_ROOT / "ML/reports/mt5_execution_loop/batch/batch_summary.json")
+        write_json(summary, args.output_json)
+        args.output_csv.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame([_csv_safe_row(candidate) for candidate in summary["top_candidates"]]).to_csv(
+            args.output_csv,
+            sep=";",
+            index=False,
+        )
 
 
 if __name__ == "__main__":

@@ -13,10 +13,13 @@ from ML.baseline.mt5_execution_diagnostics import (
     discover_batch_event_paths,
     extract_error_code,
     load_event_rows,
+    load_json_if_exists,
     load_error_rows,
     read_error_csv_sample,
+    summarize_batch_failure,
     summarize_event_anomalies,
     summarize_error_rows,
+    trade_count_bucket,
     write_error_outputs,
     _source_bucket,
 )
@@ -213,3 +216,94 @@ def test_write_error_outputs_summarizes_without_concat(tmp_path: Path) -> None:
     assert output_csv.exists()
     assert summary["total_rows"] == 1
     assert summary["by_error_class"]["INVALID_STOPS"] == 1
+
+
+def test_trade_count_bucket_uses_fixed_ranges() -> None:
+    assert trade_count_bucket(0) == "<100"
+    assert trade_count_bucket(99) == "<100"
+    assert trade_count_bucket(100) == "100-149"
+    assert trade_count_bucket(149) == "100-149"
+    assert trade_count_bucket(150) == "150+"
+
+
+def test_load_json_if_exists_returns_none_for_missing_file(tmp_path: Path) -> None:
+    assert load_json_if_exists(tmp_path / "missing.json") is None
+
+
+def test_summarize_batch_failure_keeps_no_winner(tmp_path: Path) -> None:
+    batch = {
+        "status": "DIAGNOSTIC_ONLY",
+        "verdict": "BATCH_NO_WINNER",
+        "n_candidates": 2,
+        "n_valid": 2,
+        "n_eligible": 1,
+        "n_diagnostic_only": 1,
+        "winners_ranked": [
+            {
+                "run_id": "a",
+                "bs_p05": 0.88,
+                "trades_count": 102,
+                "profit_concentration_pass": True,
+                "all_gates_pass": False,
+            }
+        ],
+        "table": [
+            {
+                "run_id": "a",
+                "trades_count": 102,
+                "profit_factor": 1.23,
+                "trades_buy": 55,
+                "trades_sell": 47,
+                "win_rate": 0.41,
+                "pf_buy": 1.10,
+                "pf_sell": 1.05,
+                "pf_by_year": {"2024": 1.20},
+                "gross_profit_by_year": {"2024": 123.0},
+            },
+            {
+                "run_id": "b",
+                "trades_count": 40,
+                "profit_factor": 1.50,
+                "trades_buy": 20,
+                "trades_sell": 20,
+                "win_rate": 0.50,
+                "pf_buy": 1.25,
+                "pf_sell": 1.30,
+                "pf_by_year": {"2024": 1.40},
+                "gross_profit_by_year": {"2024": 80.0},
+            },
+        ],
+    }
+    path = tmp_path / "batch_summary.json"
+    path.write_text(json.dumps(batch), encoding="utf-8")
+
+    run_dir = tmp_path / "a"
+    run_dir.mkdir()
+    (run_dir / "entry_signals.json").write_text(
+        json.dumps({"active_signal_rows": 204, "buy_rows": 110, "sell_rows": 94}),
+        encoding="utf-8",
+    )
+    (run_dir / "metrics.json").write_text(
+        json.dumps({"gross_profit": 123.0, "gross_loss": -100.0}),
+        encoding="utf-8",
+    )
+    from tests.test_parse_mt5_execution_report import _event_row
+
+    pd.DataFrame([_event_row("OPEN", "2024.01.01 00:00")], columns=MT5_EVENT_COLUMNS).to_csv(
+        run_dir / "events.csv",
+        sep=";",
+        index=False,
+    )
+
+    summary = summarize_batch_failure(path, batch_root=tmp_path)
+
+    assert summary["status"] == "DIAGNOSTIC_ONLY"
+    assert summary["verdict"] == "BATCH_NO_WINNER"
+    assert summary["top_failure_modes"]["low_bootstrap_lower_bound"] == 1
+    assert summary["top_failure_modes"]["trade_count_buckets"] == {"100-149": 1}
+    assert summary["top_candidates"][0]["run_id"] == "a"
+    assert summary["top_candidates"][0]["trade_count_bucket"] == "100-149"
+    assert summary["top_candidates"][0]["fill_rate"] == 0.5
+    assert summary["top_candidates"][0]["active_signal_rows"] == 204
+    assert summary["top_candidates"][0]["gross_profit"] == 123.0
+    assert summary["forbidden_interpretation_guard"] == "no_new_winner_selected"
