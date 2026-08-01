@@ -2,48 +2,56 @@
 
 ## Current Active State
 
-- active track: `MT5 execution hygiene -> next frozen probe from saved batch artifacts`
-- latest report: `docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md`
-- latest plan: `docs/superpowers/plans/2026-08-01-mt5-execution-hygiene-postbatch.md`
-- diagnostics CLI: `ML/baseline/mt5_execution_diagnostics.py`
-- diagnostics dir: `ML/reports/mt5_execution_loop/diagnostics/`
+- active track: `MT5 diagnostic timing contract -> full-batch event-output investigation`
+- latest report: `docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md`
+- latest plan: `docs/superpowers/plans/2026-08-01-mt5-diagnostic-timing-contract.md`
+- latest spec: `docs/superpowers/specs/2026-08-01-mt5-diagnostic-timing-contract-design.md`
 - batch summary: `ML/reports/mt5_execution_loop/batch/batch_summary.json`
+- event diagnostics: `ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json`
 
 ## Decision
 
-MT5 execution hygiene and post-batch diagnostics completed as `DIAGNOSTIC_ONLY`.
-Execution hygiene follow-up is unblocked for the next frozen probe.
+MT5 diagnostic timing contract is implemented as `DIAGNOSTIC_ONLY`.
 
-- Available `ERROR_SoSimple_*.csv` files classified.
-- Reference and 32 batch event artifacts summarized; `_smoke` excluded.
-- Batch failure attribution preserves `BATCH_NO_WINNER`; no new winner selected.
-- Historical `ERROR_SoSimple_163856259.csv` and cumulative tester agent log are missing, abandoned as non-reproducible inputs, and must not block current batch follow-up.
-- Future MT5 diagnostic `events.csv` rows now include execution context columns: `error_code`, `error_class`, `retcode`, `retcode_text`, `request_seq`, `magic`, `symbol`, `entry_type`.
+- Signal CSV timing is now `feature_time <= time < feature_available_time <= decision_time`.
+- Event timing for signal-linked rows is now `feature_time <= signal_time < feature_available_time <= decision_time <= execution_time`.
+- MQL5 signal matching uses only `time` / `MT5_EntryTimes[i] == Time[bar]`; `decision_time` is descriptive and no longer a match key.
+- Invalid signal rows are logged as `TIMING_VIOLATION` and skipped before order placement.
+- `TX_OPEN` and `TX_CLOSE` may keep timing fields empty; Python reconciliation links them later.
+- Default mode remains `latency_bars=0`; positive latency is diagnostic-only export mode and must not enter winner selection.
 
 ## Current Diagnostic Facts
 
-- Error rows: 1879 total; `INVALID_STOPS=670`, `OTHER=621`, `REQUOTE=550`, `MODIFICATION_TOO_CLOSE=35`, `MARKET_CLOSED=2`, `INVALID_PRICE=1`.
-- Source buckets: `mt4_files=1174`, `mt_tester_files=705`.
-- Batch events: `batch_run_count=32`, `OPEN_FAILED=22767`, `ORDER_EXPIRED=67`.
-- Post-batch top 11: all failed `BS_p05 > 1.0`; buckets `100-149=9`, `150+=2`.
-- Top candidate remains diagnostic only: PF `1.2323`, `BS_p05=0.8867479736061653`, 102 trades, fill rate `0.09444444444444444`, `gross_profit=5468.199999999997`, `gross_loss=4437.3`.
+- 32/32 regenerated `entry_signals.json` files contain `timing_contract` and `latency_bars=0`.
+- Signal timing verification: `checked_signal_files=32`, `bad_files=0`.
+- MetaEditor compile log: `Result: 0 errors, 0 warnings`.
+- Smoke tester: passed with `UNEXPLAINED=0`.
+- Full batch runtime: `UNKNOWN`; only 2/32 full-batch runs emitted expected fresh event files.
+- `batch_summary.json`: `status=DIAGNOSTIC_ONLY`, `verdict=BATCH_NO_WINNER`, `n_candidates=32`, `n_valid=2`, `n_eligible=0`.
+- `batch_runs.timing_contract`: `checked_rows=2189`, `violation_rows=0`, `timing_violation_event_count=0`.
+- `reference_runs.timing_contract`: historical copied-timing violations remain (`violation_rows=22510`); treat them as legacy context, not fresh batch evidence.
 
 ## Do Not Do
 
 - Do not interpret tester PF/PnL as profitable, live-ready, tradable, or model-quality proof.
-- Do not select a new winner from this diagnostic.
-- Do not use `locked_test` for any choice.
+- Do not select a new winner from this diagnostic rerun.
+- Do not use or open `locked_test` for any choice.
+- Do not let `latency_bars>0` artifacts participate in default batch selection.
 
 ## Next Step
 
-Plan the next frozen probe using only current saved batch artifacts. Do not wait for historical `ERROR_SoSimple_163856259.csv` or cumulative tester agent log with external `ERROR-4756` lines. New MT5 runs should use the expanded `events.csv` contract.
+Investigate MT5/Wine tester file output: smoke and the first two full-batch runs wrote event files, but 30/32 full-batch runs failed with missing expected `mt5_trade_events_<run_id>.csv`.
+
+After fixing the event-output issue, rerun `./.venv/bin/python -m ML.baseline.run_mt5_batch --phase all` and then regenerate event diagnostics. Keep verdict at `DIAGNOSTIC_ONLY`.
 
 ## Verification
 
-Completed:
+Completed relevant checks:
 
-- `./.venv/bin/python -m pytest tests/test_mt5_execution_diagnostics.py tests/test_parse_mt5_execution_report.py tests/test_mt5_signal_executor_schema.py -q`
-- generated `error_inventory.json`, `error_summary.json`, `error_rows_classified.csv`
-- generated `event_anomaly_summary.json`, `event_anomalies.csv`
-- generated `post_batch_diagnostics.json`, `post_batch_top_candidates.csv`
-- expanded future MT5 `events.csv` contract with execution context columns and legacy parser backfill
+- targeted schema/parser/diagnostics pytest subsets passed during Tasks 1-5.
+- `./.venv/bin/python -m pytest tests/test_mt5_execution_diagnostics.py -q` -> `21 passed` after final diagnostics fix.
+- MetaEditor compile log contained `Result: 0 errors, 0 warnings`.
+- `./.venv/bin/python -m ML.baseline.run_mt5_batch --phase signals` regenerated 32 signal artifacts.
+- timing verification over 32 signal CSVs passed.
+- smoke tester passed.
+- full-batch runtime verification remains `UNKNOWN` because expected event files were missing for 30/32 runs.

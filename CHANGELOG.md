@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-08-01] — MT5 diagnostic timing contract (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md`
+- **topics**: `mt5`, `timing_contract`, `diagnostic_executor`, `event_diagnostics`
+- **summary**: Made MT5 diagnostic entry timing explicit across Python schema/export, MQL5 reader validation, regenerated signal metadata and batch event diagnostics.
+- **artifacts**: `ML/reports/mt5_execution_loop/batch/batch_summary.json`, `ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json`, `ML/baseline/mt5_signal_schema.py`, `MT/MQL5/Include/lib_ML_Signal.mqh`
+- **decision**: `DIAGNOSTIC_ONLY`; default `latency_bars=0` preserves MT5 `Time[1]` placement, no new winner and no new PnL/PF quality claim.
+- **notes**: Full 32-run runtime verification is `UNKNOWN`: only 2/32 full-batch runs emitted expected fresh event files; `locked_test` not opened.
+
 ## [2026-08-01] — MT5 execution hygiene and post-batch diagnostics (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md`
 - **topics**: `mt5`, `execution_hygiene`, `error_4756`, `post_batch_diagnostics`

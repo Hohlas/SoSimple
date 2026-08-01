@@ -2,6 +2,11 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-08-01] ingest | MT5 diagnostic timing contract
+- Добавлен охват `docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md`.
+- Обновлён `wiki/research/mt5-execution-loop.md`: timing contract теперь явный в Python/MQL5, fresh batch timing violations `0`, полный 32-run runtime остаётся `UNKNOWN`.
+- Обновлён `wiki/index.md`: охват MT5 execution loop расширен до 9 reports.
+
 ## [2026-07-29] ingest | Fixed11 fill chronology and current-history rerun
 - Добавлен охват `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md` и `docs/reports/2026-07-29-fixed11-current-history-rerun.md`.
 - Обновлён `wiki/research/fractal-stop-research.md`: Python M5 execution OHLC защищает только порядок SL/TP внутри H1, а current-OHLC rerun не устранил material same-H1/`hold_bars=0` риск.

@@ -1,12 +1,12 @@
 ---
 last_updated: 2026-08-01
-sources: 8
+sources: 9
 status: active
 ---
 
 # MT5 Execution Loop
 
-> MT5 стал текущим диагностическим execution-контуром после invalidation fixed11 chronology; доступные repo-артефакты классифицированы, старые saved artifacts сохраняют row-level error/event linkage `UNKNOWN`, а будущие `events.csv` получили поля execution context для проверки связи.
+> MT5 стал текущим диагностическим execution-контуром после invalidation fixed11 chronology; timing contract теперь явно проверяется в Python и MQL5, но полный 32-run runtime rerun 2026-08-01 остаётся `UNKNOWN` из-за отсутствующих event-файлов у 30 кандидатов.
 
 ## Хронология
 
@@ -77,6 +77,26 @@ expanded with `error_code`, `error_class`, `retcode`, `retcode_text`,
 fields for legacy CSVs, so old saved artifacts stay readable but remain
 `UNKNOWN` until a new MT5 run writes real request context.
 
+### 2026-08-01: Diagnostic timing contract
+
+Timing contract is now explicit across Python schema/export, MQL5 reader and
+event diagnostics:
+
+- signal CSV: `feature_time <= time < feature_available_time <= decision_time`;
+- signal-linked event rows:
+  `feature_time <= signal_time < feature_available_time <= decision_time <= execution_time`;
+- default `latency_bars=0` keeps `time=signal_time` and preserves MT5 `Time[1]`
+  placement on the next bar open;
+- MQL5 matching uses only `time`, not `decision_time`;
+- invalid signal rows are logged as `TIMING_VIOLATION` and skipped.
+
+Regenerated signal artifacts passed the timing check for 32/32 candidates. Smoke
+tester passed with `UNEXPLAINED=0`. Full batch runtime remains `UNKNOWN`: only
+2/32 runs emitted expected fresh event files. Fresh `batch_runs` diagnostics
+reported `checked_rows=2189`, `violation_rows=0`,
+`timing_violation_event_count=0`; historical `reference_runs` still contain
+copied-timing violations and should be treated as legacy context.
+
 ## Ключевые результаты
 
 | Area | Current fact | Source |
@@ -86,6 +106,7 @@ fields for legacy CSVs, so old saved artifacts stay readable but remain
 | Batch verdict | `BATCH_NO_WINNER`, 32 candidates, 11 eligible | `2026-07-31-mt5-batch-selection.md` |
 | Error classification | 1879 rows classified, source buckets separated by artifact path | `2026-08-01-mt5-execution-hygiene-postbatch.md` |
 | Event linkage | saved artifacts `UNKNOWN`; future expanded `events.csv` can report `REQUEST_CONTEXT_AVAILABLE` | `ML/baseline/mt5_signal_schema.py` |
+| Timing contract | Explicit Python/MQL5 guard, 32/32 signal metadata regenerated, full runtime `UNKNOWN` | `2026-08-01-mt5-diagnostic-timing-contract.md` |
 
 ## Выводы
 
@@ -100,9 +121,10 @@ conclusions.
 
 - Do not use historical `ERROR_SoSimple_163856259.csv` or cumulative
   tester-agent `ERROR-4756` log in future conclusions.
-- Plan the next frozen probe from current saved batch artifacts.
-- Run the next MT5 diagnostic probe with expanded `events.csv` and check
-  `linkage_status` before using row-level execution conclusions.
+- Investigate why MT5/Wine produced event files for smoke and 2 full runs but
+  missed expected files for the other 30 batch candidates.
+- Re-run full batch only after the event-output issue is understood; keep
+  verdict `DIAGNOSTIC_ONLY`.
 - Complete cost model: swap, commission, slippage, latency and stress costs.
 
 ## Источники
@@ -115,3 +137,4 @@ conclusions.
 - [2026-07-31 MT5 Nero parity](../../docs/reports/2026-07-31-mt5-nero-parity.md)
 - [2026-07-31 MT5 batch selection](../../docs/reports/2026-07-31-mt5-batch-selection.md)
 - [2026-08-01 MT5 execution hygiene post-batch](../../docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md)
+- [2026-08-01 MT5 diagnostic timing contract](../../docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md)
