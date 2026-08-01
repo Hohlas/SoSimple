@@ -54,8 +54,8 @@ ended `BATCH_NO_WINNER`. All 32 were valid; 11 eligible candidates all failed
 The diagnostics module `ML/baseline/mt5_execution_diagnostics.py` now produces:
 error inventory, classified error rows, event anomaly summaries and post-batch
 failure attribution. Available repo `ERROR_SoSimple_*.csv` files: 6. Classified
-error rows: 1879 (`OTHER=1174`, `INVALID_STOPS=670`,
-`MODIFICATION_TOO_CLOSE=35`). Source buckets are separated:
+error rows: 1879 (`INVALID_STOPS=670`, `OTHER=621`, `REQUOTE=550`,
+`MODIFICATION_TOO_CLOSE=35`, `MARKET_CLOSED=2`, `INVALID_PRICE=1`). Source buckets are separated:
 `mt4_files=1174`, `mt_tester_files=705`.
 
 Batch event summary covers 32 candidate runs and excludes `_smoke`.
@@ -76,7 +76,7 @@ external `ERROR-4756` lines, and row-level linkage status `UNKNOWN`.
 | Lifecycle reconciliation | `UNEXPLAINED=0` on OnTradeTransaction run | `2026-07-31-mt5-ontradetransaction-lifecycle.md` |
 | Nero parity | `PARITY_PASS` with diagnostic limitations | `2026-07-31-mt5-nero-parity.md` |
 | Batch verdict | `BATCH_NO_WINNER`, 32 candidates, 11 eligible | `2026-07-31-mt5-batch-selection.md` |
-| Error classification | 1879 rows classified, MT4/MT5 buckets separated | `2026-08-01-mt5-execution-hygiene-postbatch.md` |
+| Error classification | 1879 rows classified, source buckets separated by artifact path | `2026-08-01-mt5-execution-hygiene-postbatch.md` |
 | Event linkage | `UNKNOWN` | `2026-08-01-mt5-execution-hygiene-postbatch.md` |
 
 ## Выводы

@@ -78,6 +78,9 @@ def test_extract_and_classify_error_message() -> None:
         "MLP_Close Ticket=235: modification denied because order is too close to market! ERROR-145"
     ) == "MODIFICATION_TOO_CLOSE"
     assert classify_error_message("Trade request send failed ERROR-4756") == "TRADE_REQUEST_SEND_FAILED"
+    assert classify_error_message("MLP_OpenMarketOrder: requote! ERROR-138") == "REQUOTE"
+    assert classify_error_message("MLP_OpenMarketOrder: market is closed! ERROR-132") == "MARKET_CLOSED"
+    assert classify_error_message("MLP_OpenMarketOrder: invalid price! ERROR-129") == "INVALID_PRICE"
     assert classify_error_message("MAIL_SEND-702: function is not confirmed! ERROR-4060") == "OTHER"
 
 
@@ -259,6 +262,7 @@ def test_summarize_batch_failure_keeps_no_winner(tmp_path: Path) -> None:
                 "pf_sell": 1.05,
                 "pf_by_year": {"2024": 1.20},
                 "gross_profit_by_year": {"2024": 123.0},
+                "pnl_by_trade": [50.0, -20.0, 73.0, -80.0],
             },
             {
                 "run_id": "b",
@@ -284,7 +288,7 @@ def test_summarize_batch_failure_keeps_no_winner(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     (run_dir / "metrics.json").write_text(
-        json.dumps({"gross_profit": 123.0, "gross_loss": -100.0}),
+        json.dumps({"profit_sum": 23.0}),
         encoding="utf-8",
     )
     from tests.test_parse_mt5_execution_report import _event_row
@@ -306,6 +310,15 @@ def test_summarize_batch_failure_keeps_no_winner(tmp_path: Path) -> None:
     assert summary["top_candidates"][0]["fill_rate"] == 0.5
     assert summary["top_candidates"][0]["active_signal_rows"] == 204
     assert summary["top_candidates"][0]["gross_profit"] == 123.0
+    assert summary["top_candidates"][0]["gross_loss"] == 100.0
+    assert summary["top_candidates"][0]["average_win"] == 61.5
+    assert summary["top_candidates"][0]["average_loss_abs"] == 50.0
+    assert summary["sample_sizes"]["candidate_runs"] == 2
+    assert summary["sample_sizes"]["eligible_top_candidates"] == 1
+    assert summary["sample_sizes"]["eligible_top_candidate_trades"] == 102
+    assert summary["sample_sizes"]["eligible_top_candidate_active_signal_rows"] == 204
+    assert summary["sample_sizes"]["eligible_top_candidate_buy_signal_rows"] == 110
+    assert summary["sample_sizes"]["eligible_top_candidate_sell_signal_rows"] == 94
     assert summary["forbidden_interpretation_guard"] == "no_new_winner_selected"
 
 

@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-08-01 08:04 UTC · git `c15b99f`
+> Auto-generated 2026-08-01 08:20 UTC · git `9b17b6a`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3593 files  ·  **Commit**: `c15b99f`  ·  **Generated**: 2026-08-01 08:04 UTC
+**Tracked**: 3594 files  ·  **Commit**: `9b17b6a`  ·  **Generated**: 2026-08-01 08:20 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-07-29 | 10KB | `8b0976f5` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-08-01 | 167KB | `fb183f49` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-08-01 | 167KB | `17bf248a` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-08-01 | 2KB | `7a201482` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-08-01 | 2KB | `f9e08b7d` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-08-01 | 59KB | `c7384b83` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
@@ -161,7 +161,7 @@
 | [docs/statistics/signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF | 2026-06-17 | 7KB | `052eb4f7` |
 | [docs/statistics/statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике | 2026-06-17 | 6KB | `9835a477` |
 | [docs/superpowers/README.md](docs/superpowers/README.md) |  | 2026-06-24 | 1KB | `46894f42` |
-| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-08-01 | 13KB | `4c3bec85` |
+| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-08-01 | 15KB | `f847ed80` |
 | [docs/superpowers/plans/2026-03-22-triple-barrier.md](docs/superpowers/plans/2026-03-22-triple-barrier.md) |  | 2026-06-17 | 28KB | `fe31fa4e` |
 | [docs/superpowers/plans/2026-03-25-updn-denormalization.md](docs/superpowers/plans/2026-03-25-updn-denormalization.md) |  | 2026-06-17 | 19KB | `01d8efee` |
 | [docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md](docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md) |  | 2026-06-17 | 22KB | `ba50388e` |
@@ -332,6 +332,7 @@
 | [docs/superpowers/specs/2026-07-10-research-first-methodology-redesign.md](docs/superpowers/specs/2026-07-10-research-first-methodology-redesign.md) |  | 2026-07-20 | 16KB | `8fa556cd` |
 | [docs/superpowers/specs/2026-07-20-fractal0-entry-exit-grid-design.md](docs/superpowers/specs/2026-07-20-fractal0-entry-exit-grid-design.md) |  | 2026-07-29 | 31KB | `b684a5b7` |
 | [docs/superpowers/specs/2026-07-21-fractal0-rich-entry-quality-design.md](docs/superpowers/specs/2026-07-21-fractal0-rich-entry-quality-design.md) |  | 2026-07-29 | 26KB | `f4a00cfe` |
+| [docs/superpowers/specs/2026-08-01-mt5-diagnostic-timing-contract-design.md](docs/superpowers/specs/2026-08-01-mt5-diagnostic-timing-contract-design.md) |  | 2026-08-01 | 13KB | `12b1243f` |
 | [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-07-20 | 15KB | `f69190cc` |
 
 ## Reports
@@ -474,7 +475,7 @@
 | [docs/reports/2026-07-31-mt5-batch-selection.md](docs/reports/2026-07-31-mt5-batch-selection.md) |  | 2026-08-01 | 14KB | `084ca3c5` |
 | [docs/reports/2026-07-31-mt5-nero-parity.md](docs/reports/2026-07-31-mt5-nero-parity.md) |  | 2026-07-31 | 5KB | `4d409cce` |
 | [docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md](docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md) |  | 2026-07-31 | 11KB | `4717b1dc` |
-| [docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md](docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md) |  | 2026-08-01 | 11KB | `37b0d99d` |
+| [docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md](docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md) |  | 2026-08-01 | 13KB | `f8e2ef4d` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
 ## ML
@@ -535,7 +536,7 @@
 | [ML/baseline/fractal0_fixed11_internal_closure_rerun.py](ML/baseline/fractal0_fixed11_internal_closure_rerun.py) | Producer-level fixed11 internal closure rerun: stress-cost, timezone/calendar и multi-seed без `locked_test` | ✅ | 2026-07-29 | 69KB | `694fec17` |
 | [ML/baseline/fractal_ablation.py](ML/baseline/fractal_ablation.py) |  |  | 2026-06-17 | 9KB | `1e6b236f` |
 | [ML/baseline/improve_stage4.py](ML/baseline/improve_stage4.py) |  |  | 2026-06-17 | 33KB | `e5c6ddc8` |
-| [ML/baseline/mt5_execution_diagnostics.py](ML/baseline/mt5_execution_diagnostics.py) |  |  | 2026-08-01 | 25KB | `42661ce8` |
+| [ML/baseline/mt5_execution_diagnostics.py](ML/baseline/mt5_execution_diagnostics.py) |  |  | 2026-08-01 | 27KB | `4901554c` |
 | [ML/baseline/mt5_signal_schema.py](ML/baseline/mt5_signal_schema.py) |  |  | 2026-07-31 | 3KB | `a7bffca3` |
 | [ML/baseline/oracle_fractal_stop_fav.py](ML/baseline/oracle_fractal_stop_fav.py) | Oracle Fractal Stop Fav | ✅ | 2026-06-17 | 8KB | `02e614cf` |
 | [ML/baseline/parse_mt5_execution_report.py](ML/baseline/parse_mt5_execution_report.py) |  |  | 2026-07-31 | 5KB | `ac5ac478` |
@@ -986,9 +987,9 @@
 | [ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.3/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.3/metrics.json) |  |  | 2026-07-31 | 894B | `0bd0109e` |
 | [ML/reports/mt5_execution_loop/batch_selection_contract.json](ML/reports/mt5_execution_loop/batch_selection_contract.json) |  |  | 2026-07-31 | 1KB | `69734050` |
 | [ML/reports/mt5_execution_loop/diagnostics/error_inventory.json](ML/reports/mt5_execution_loop/diagnostics/error_inventory.json) |  |  | 2026-08-01 | 13KB | `66a1b685` |
-| [ML/reports/mt5_execution_loop/diagnostics/error_summary.json](ML/reports/mt5_execution_loop/diagnostics/error_summary.json) |  |  | 2026-08-01 | 8KB | `bc49c7bd` |
+| [ML/reports/mt5_execution_loop/diagnostics/error_summary.json](ML/reports/mt5_execution_loop/diagnostics/error_summary.json) |  |  | 2026-08-01 | 8KB | `db49f233` |
 | [ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json](ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json) |  |  | 2026-08-01 | 25KB | `15bf13e2` |
-| [ML/reports/mt5_execution_loop/diagnostics/post_batch_diagnostics.json](ML/reports/mt5_execution_loop/diagnostics/post_batch_diagnostics.json) |  |  | 2026-08-01 | 58KB | `b275d3c9` |
+| [ML/reports/mt5_execution_loop/diagnostics/post_batch_diagnostics.json](ML/reports/mt5_execution_loop/diagnostics/post_batch_diagnostics.json) |  |  | 2026-08-01 | 59KB | `a78b95cb` |
 | [ML/reports/mt5_execution_loop/manual_run_manifest_template.json](ML/reports/mt5_execution_loop/manual_run_manifest_template.json) |  |  | 2026-07-30 | 714B | `5a2309af` |
 | [ML/reports/mt5_execution_loop/mt5_entry_signals_20260730_entry_quality_filter.json](ML/reports/mt5_execution_loop/mt5_entry_signals_20260730_entry_quality_filter.json) |  |  | 2026-07-30 | 1KB | `3d88d62b` |
 | [ML/reports/mt5_execution_loop/mt5_entry_source_20260730_entry_quality_filter.json](ML/reports/mt5_execution_loop/mt5_entry_source_20260730_entry_quality_filter.json) |  |  | 2026-07-30 | 732B | `9285f6a5` |
@@ -1415,7 +1416,7 @@
 | [tests/test_live_safe_audit.py](tests/test_live_safe_audit.py) | `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`, `ML/run_live_safe_ml_audit.py` | ✅ | 2026-06-17 | 5KB | `3d37ad7d` |
 | [tests/test_ml_fractal_parser_contract.py](tests/test_ml_fractal_parser_contract.py) | `ML/` — запрет использовать parser разметки как ML feature extractor | ✅ | 2026-06-17 | 3KB | `281dac57` |
 | [tests/test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | ✅ | 2026-07-29 | 19KB | `b95df2f2` |
-| [tests/test_mt5_execution_diagnostics.py](tests/test_mt5_execution_diagnostics.py) |  |  | 2026-08-01 | 13KB | `0a33677e` |
+| [tests/test_mt5_execution_diagnostics.py](tests/test_mt5_execution_diagnostics.py) |  |  | 2026-08-01 | 13KB | `338e2787` |
 | [tests/test_mt5_nero_parity.py](tests/test_mt5_nero_parity.py) |  |  | 2026-07-31 | 6KB | `563137e4` |
 | [tests/test_mt5_signal_executor_schema.py](tests/test_mt5_signal_executor_schema.py) |  |  | 2026-07-31 | 11KB | `90cf3bf7` |
 | [tests/test_multi_scale_fractal_features.py](tests/test_multi_scale_fractal_features.py) |  |  | 2026-06-17 | 1KB | `de0eeac6` |
@@ -1909,7 +1910,7 @@
 | [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-30 | 143KB | `84f493d1` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
-| [wiki/research/mt5-execution-loop.md](wiki/research/mt5-execution-loop.md) |  | 2026-08-01 | 5KB | `b1377876` |
+| [wiki/research/mt5-execution-loop.md](wiki/research/mt5-execution-loop.md) |  | 2026-08-01 | 5KB | `db380ba2` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-06-17 | 18KB | `0d2c8d8e` |
 

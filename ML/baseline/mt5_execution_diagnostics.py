@@ -138,8 +138,12 @@ def classify_error_message(message: str) -> str:
         return "INVALID_STOPS"
     if code == 145 or "too close to market" in lowered or "modification denied" in lowered:
         return "MODIFICATION_TOO_CLOSE"
-    if "market closed" in lowered:
+    if code == 138 or "requote" in lowered:
+        return "REQUOTE"
+    if code == 132 or "market is closed" in lowered or "market closed" in lowered:
         return "MARKET_CLOSED"
+    if code == 129 or "invalid price" in lowered:
+        return "INVALID_PRICE"
     if "position_or_pending_order_exists" in lowered:
         return "POSITION_OR_PENDING_EXISTS"
     return "OTHER"
@@ -486,6 +490,28 @@ def _to_float(value: object) -> float | None:
         return None
 
 
+def _sum_positive(values: list[object] | None) -> float | None:
+    if not values:
+        return None
+    return float(sum(value for value in (_to_float(item) for item in values) if value is not None and value > 0))
+
+
+def _sum_negative_abs(values: list[object] | None) -> float | None:
+    if not values:
+        return None
+    return float(abs(sum(value for value in (_to_float(item) for item in values) if value is not None and value < 0)))
+
+
+def _average_positive(values: list[object] | None) -> float | None:
+    positives = [value for value in (_to_float(item) for item in values or []) if value is not None and value > 0]
+    return float(sum(positives) / len(positives)) if positives else None
+
+
+def _average_negative_abs(values: list[object] | None) -> float | None:
+    negatives = [abs(value) for value in (_to_float(item) for item in values or []) if value is not None and value < 0]
+    return float(sum(negatives) / len(negatives)) if negatives else None
+
+
 def _csv_safe_value(value: object) -> object:
     if isinstance(value, (dict, list)):
         return json.dumps(value, ensure_ascii=False, sort_keys=True)
@@ -564,6 +590,8 @@ def summarize_batch_failure(
         if active_signal_rows and active_signal_rows > 0:
             fill_rate = float(trades_count / active_signal_rows)
 
+        pnl_by_trade = row.get("pnl_by_trade") if metrics is not None else None
+
         candidate = {
             "run_id": run_id,
             "profile": row.get("profile"),
@@ -580,11 +608,13 @@ def summarize_batch_failure(
             "win_rate": row.get("win_rate"),
             "bs_p05": bs_p05,
             "profit_concentration_pass": bool(item.get("profit_concentration_pass", True)),
-            "gross_profit": metrics.get("gross_profit") if metrics is not None else None,
-            "gross_loss": metrics.get("gross_loss") if metrics is not None else None,
+            "gross_profit": (metrics or {}).get("gross_profit") or _sum_positive(pnl_by_trade),
+            "gross_loss": (metrics or {}).get("gross_loss") or _sum_negative_abs(pnl_by_trade),
+            "average_win": _average_positive(pnl_by_trade),
+            "average_loss_abs": _average_negative_abs(pnl_by_trade),
             "pf_by_year": row.get("pf_by_year") if metrics is not None else None,
             "gross_profit_by_year": row.get("gross_profit_by_year") if metrics is not None else None,
-            "pnl_by_trade": row.get("pnl_by_trade") if metrics is not None else None,
+            "pnl_by_trade": pnl_by_trade,
             "active_signal_rows": active_signal_rows,
             "buy_signal_rows": buy_signal_rows,
             "sell_signal_rows": sell_signal_rows,
@@ -607,6 +637,20 @@ def summarize_batch_failure(
             "low_bootstrap_lower_bound": low_bootstrap_lower_bound,
             "trade_count_buckets": dict(trade_count_buckets),
             "profit_concentration_fail": profit_concentration_fail,
+        },
+        "sample_sizes": {
+            "candidate_runs": _to_int(data.get("n_valid")),
+            "eligible_top_candidates": len(top_candidates),
+            "eligible_top_candidate_trades": int(sum(candidate["trades_count"] for candidate in top_candidates)),
+            "eligible_top_candidate_active_signal_rows": int(
+                sum(candidate["active_signal_rows"] or 0 for candidate in top_candidates)
+            ),
+            "eligible_top_candidate_buy_signal_rows": int(
+                sum(candidate["buy_signal_rows"] or 0 for candidate in top_candidates)
+            ),
+            "eligible_top_candidate_sell_signal_rows": int(
+                sum(candidate["sell_signal_rows"] or 0 for candidate in top_candidates)
+            ),
         },
         "top_candidates": top_candidates,
         "unknowns": {"missing_per_run_inputs": missing_per_run_inputs},

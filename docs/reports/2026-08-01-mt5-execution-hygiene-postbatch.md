@@ -1,7 +1,7 @@
 # MT5 Execution Hygiene And Post-Batch Diagnostics
 
 > **Дата**: 2026-08-01
-> **Статус**: DIAGNOSTIC_ONLY
+> **Статус**: Completed
 > **Вердикт**: DIAGNOSTIC_ONLY
 > **Цель**: классифицировать доступные MT5 execution error artifacts и разобрать post-batch failure modes без выбора нового winner.
 > **Related plan/spec**: `docs/superpowers/plans/2026-08-01-mt5-execution-hygiene-postbatch.md`
@@ -17,6 +17,7 @@ Search/post-mortem diagnostic stage. This report does not create a candidate and
 - **origin_bias**: post-mortem after `BATCH_NO_WINNER`; no new selection
 - **research_priority**: infrastructure first, then post-batch diagnostics
 - **current_search_budget**: 0 new model/search configurations
+- **diagnostic_checks_budget**: 6 diagnostic groups: error classes, source buckets, event anomaly categories, trade-count buckets, top-11 candidate slices, profit concentration slice
 - **cumulative_search_budget**: inherits 64 benchmark -> 32 shortlist -> 32 MT5 tester -> 11 eligible from 2026-07-31 batch
 - **next_probe_freeze**: not selected in this report
 - **allowed_max_verdict**: DIAGNOSTIC_ONLY
@@ -38,7 +39,7 @@ No exact methodology section exists for `ERROR_SoSimple_*.csv`; `13b` controls b
 
 ## Multiple Testing Context
 
-No new model/search configuration was selected. The inherited batch budget remains: 32 MT5 tester candidates, 11 eligible hypotheses, Holm-Bonferroni rejected 0. All post-mortem slices remain `DIAGNOSTIC_ONLY`.
+No new model/search configuration was selected. The inherited batch budget remains: 32 MT5 tester candidates, 11 eligible hypotheses, Holm-Bonferroni rejected 0. Diagnostic checks were limited to 6 groups: error classes, source buckets, event anomaly categories, trade-count buckets, top-11 candidate slices, and profit concentration slice. All post-mortem slices remain `DIAGNOSTIC_ONLY`.
 
 ## What Was Done
 
@@ -89,12 +90,12 @@ Final documentation/wiki commit modified:
 ## Artifact Hashes
 
 - `error_inventory.json`: `fc7d10705bedec6b092501f6d1d46727cceca96794f127af09e5a29cb22d9efe`
-- `error_summary.json`: `629eee4af71d1d48ea3cf5025d172df506447d0490413534063febcbd7ff33e3`
-- `error_rows_classified.csv`: `23450f45b13aaa763d6d8adc45f1f72e43d0559a13ad347126dec417a9561ad8`
+- `error_summary.json`: `57be2f56f862d76f07fc603b91855a26463c9d1419db0201094d219ab60a49f0`
+- `error_rows_classified.csv`: `79d5978b45c31aa690d88247712af7554ff69c3a3d73927b7212ae622da32017`
 - `event_anomaly_summary.json`: `ebc27151d8b7fb817ead8fbf237b26c204e0ad2af01607d2668ca18b25df69b0`
 - `event_anomalies.csv`: `439d436610523a60d1c843701751ebf04af6e28fef8f837085889aa67f9493c4`
-- `post_batch_diagnostics.json`: `4b1dc417738cb063e71471dcef9da6f5ad40051029a1594d0f2a68c85d1af25a`
-- `post_batch_top_candidates.csv`: `abf1b0c9ab009698ef1ba2d8c75aa1210b33104bec4aadba556ade63a960f725`
+- `post_batch_diagnostics.json`: `41932413b42a9983bfb4428021fa6206544ed24bbd6649bc443e83a69951d491`
+- `post_batch_top_candidates.csv`: `ed73d7d960309c482645d1b287b2ed60eb0ee85b322f2beda21482be01c00b48`
 - `batch_summary.json`: `215fa1322a2df30ea79bdf49ae4d5c933fbfe4b11dfc6919373ab63a657beafe`
 - `mt5_execution_metrics_20260731_tx_lifecycle.json`: `e550d8bce1e364bba5424f725b93a002ddc822d0a6a0ce1b20b517facd182d28`
 - `mt5_execution_metrics_20260730_entry_quality_filter.json`: `9a5af9bc89170d26f10cd06da14fa98b3e8ad767e238ee75c13ecc4c18c10494`
@@ -104,8 +105,8 @@ Final documentation/wiki commit modified:
 - 6 discovered `ERROR_SoSimple_*.csv`: `error_inventory.json.files`.
 - Missing `ERROR_SoSimple_163856259.csv`: `error_inventory.json.unknowns.not_found_expected_files`.
 - 1879 classified error rows: `error_summary.json.total_rows`.
-- Error classes `OTHER=1174`, `INVALID_STOPS=670`, `MODIFICATION_TOO_CLOSE=35`: `error_summary.json.by_error_class`.
-- MT4/MT5 split `mt4_files=1174`, `mt_tester_files=705`: `error_summary.json.by_source_bucket`.
+- Error classes `INVALID_STOPS=670`, `OTHER=621`, `REQUOTE=550`, `MODIFICATION_TOO_CLOSE=35`, `MARKET_CLOSED=2`, `INVALID_PRICE=1`: `error_summary.json.by_error_class`.
+- Source buckets `mt4_files=1174`, `mt_tester_files=705`: `error_summary.json.by_source_bucket`.
 - Historical lifecycle numbers `position_count=269`, `CLOSED_TX=269`, `UNEXPLAINED=0`, `same_h1_count=17`: `ML/reports/mt5_execution_loop/mt5_execution_metrics_20260731_tx_lifecycle.json.reconciliation`.
 - Historical external `ERROR-4756` count: not used as a structured key number in this report because no repo JSON/CSV for the cumulative tester-agent log exists; linkage remains `UNKNOWN`.
 - Historical single-rule `ORDER_EXPIRED=9`: `ML/reports/mt5_execution_loop/mt5_execution_metrics_20260730_entry_quality_filter.json.order_counts.ORDER_EXPIRED`.
@@ -117,7 +118,17 @@ Final documentation/wiki commit modified:
 - 11 top candidates all with `BS_p05 < 1.0`: `post_batch_diagnostics.json.top_failure_modes.low_bootstrap_lower_bound`.
 - Trade-count buckets: `post_batch_diagnostics.json.top_failure_modes.trade_count_buckets`.
 - One profit-concentration failure: `post_batch_diagnostics.json.top_failure_modes.profit_concentration_fail`.
-- Top candidate PF/BS/trades/fill rate: `post_batch_diagnostics.json.top_candidates[0]`.
+- Top candidate PF/BS/trades/fill rate/gross PnL slices: `post_batch_diagnostics.json.top_candidates[0]`.
+
+## Sample Size Disclosure
+
+| Scope | Period / split role | Rows / events / signals / trades | Source |
+|-------|---------------------|----------------------------------|--------|
+| Reference event artifacts | historical diagnostic validation | 23050 events | `event_anomaly_summary.json.reference_runs.total_rows` |
+| Batch event artifacts | XAUUSD H1 validation 2021.01.04-2022.12.02 / validation diagnostic | 54094 events across 32 candidate runs | `event_anomaly_summary.json.batch_runs.total_rows`, `batch_run_count` |
+| Batch candidate table | XAUUSD H1 validation 2021.01.04-2022.12.02 / validation diagnostic | 32 valid candidate runs, 11 eligible top candidates | `post_batch_diagnostics.json.n_valid`, `n_eligible` |
+| Eligible top candidates | XAUUSD H1 validation 2021.01.04-2022.12.02 / validation diagnostic | 1424 trades | `post_batch_diagnostics.json.sample_sizes.eligible_top_candidate_trades` |
+| Eligible top candidate signals | XAUUSD H1 validation 2021.01.04-2022.12.02 / validation diagnostic | 14954 active signal rows; buy 7092, sell 7862 | `post_batch_diagnostics.json.sample_sizes` |
 
 ## Verification
 
@@ -125,17 +136,17 @@ Final documentation/wiki commit modified:
 ./.venv/bin/python -m pytest tests/test_mt5_execution_diagnostics.py tests/test_parse_mt5_execution_report.py tests/test_mt5_signal_executor_schema.py -q
 ```
 
-Result: passed before report writing; final verification repeated after document sync.
+Result after audit fixes, based on `HEAD=aad3bc9` plus working-tree audit changes: `29 passed in 0.34s`.
 
 ## Results
 
 Error inventory found 6 available `ERROR_SoSimple_*.csv` files. `ERROR_SoSimple_163856259.csv` remains missing and is recorded as `UNKNOWN`.
 
-Error row classification produced 1879 rows: `OTHER=1174`, `INVALID_STOPS=670`, `MODIFICATION_TOO_CLOSE=35`. Source buckets remain separated: `mt4_files=1174`, `mt_tester_files=705`.
+Error row classification produced 1879 rows: `INVALID_STOPS=670`, `OTHER=621`, `REQUOTE=550`, `MODIFICATION_TOO_CLOSE=35`, `MARKET_CLOSED=2`, `INVALID_PRICE=1`. Source buckets remain separated by artifact path: `mt4_files=1174`, `mt_tester_files=705`.
 
 Event anomaly summary covers reference runs and 32 batch runs. Batch counts include `OPEN_FAILED=22767` and `ORDER_EXPIRED=67`; `_smoke` is excluded. Linkage between event rows and `ERROR_SoSimple` rows is `UNKNOWN`, because current artifacts do not provide a proven stable row-level key.
 
-Post-batch diagnostics preserve `BATCH_NO_WINNER`. Among 11 eligible ranked candidates, all 11 failed low bootstrap lower bound; trade-count buckets are `100-149=9` and `150+=2`; one candidate failed profit concentration. Top candidate `time_plus_atr_extra_trees_small_12h_thr0.2` has PF `1.2323`, `BS_p05=0.8867479736061653`, `trades_count=102`, fill rate `0.09444444444444444`.
+Post-batch diagnostics preserve `BATCH_NO_WINNER`. Among 11 eligible ranked candidates, all 11 failed low bootstrap lower bound; trade-count buckets are `100-149=9` and `150+=2`; one candidate failed profit concentration. Top candidate `time_plus_atr_extra_trees_small_12h_thr0.2` has PF `1.2323`, `BS_p05=0.8867479736061653`, `trades_count=102`, fill rate `0.09444444444444444`, `gross_profit=5468.199999999997`, `gross_loss=4437.3`, `average_win=130.19523809523804`, and `average_loss_abs=73.955`.
 
 ## Conclusions
 
@@ -146,6 +157,8 @@ Execution hygiene status: `EXECUTION_HYGIENE_PARTIAL`.
 Facts: available repo error CSVs, reference events, batch events, and batch failure modes are now parsed into structured artifacts. No new winner was selected.
 
 Hypothesis: batch failure is mainly consistent with low bootstrap lower bound under small-to-moderate trade counts and low fill rate, not with unexplained event/deal reconciliation, because batch reconciliation remains `UNEXPLAINED=0` in per-run metrics. This is a hypothesis, not a model-quality conclusion.
+
+A5 post-mortem scope: partial. This report covers available failure-mode slices, gross PnL from saved `pnl_by_trade`, yearly PF/gross profit fields, and close-reason counts available in per-run `metrics.json`. It does not complete oracle component decomposition, TP/SL/TIMEOUT exit slices, yearly gross loss contribution, feature-period contrasts, or negative controls; those require additional saved inputs or a new diagnostic cycle.
 
 The verdict cannot be `EXECUTION_HYGIENE_CLASSIFIED` because the expected `ERROR_SoSimple_163856259.csv` and cumulative tester agent log with external `ERROR-4756` lines are not available in the repo, and row-level error-to-event linkage is `UNKNOWN`.
 

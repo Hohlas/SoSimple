@@ -14,6 +14,14 @@
     },
     "profit_concentration_fail": 1
   },
+  "sample_sizes": {
+    "candidate_runs": 32,
+    "eligible_top_candidates": 11,
+    "eligible_top_candidate_trades": 1424,
+    "eligible_top_candidate_active_signal_rows": 14954,
+    "eligible_top_candidate_buy_signal_rows": 7092,
+    "eligible_top_candidate_sell_signal_rows": 7862
+  },
   "top_candidates": [
     {
       "run_id": "time_plus_atr_extra_trees_small_12h_thr0.2",
@@ -31,8 +39,10 @@
       "win_rate": 0.4118,
       "bs_p05": 0.8867479736061653,
       "profit_concentration_pass": true,
-      "gross_profit": null,
-      "gross_loss": null,
+      "gross_profit": 5468.199999999997,
+      "gross_loss": 4437.3,
+      "average_win": 130.19523809523804,
+      "average_loss_abs": 73.955,
       "pf_by_year": {
         "2021": 0.92694165737644,
         "2022": 1.365224141276926
@@ -253,8 +263,10 @@
       "win_rate": 0.4158,
       "bs_p05": 0.7275666252564919,
       "profit_concentration_pass": false,
-      "gross_profit": null,
-      "gross_loss": null,
+      "gross_profit": 4740.399999999999,
+      "gross_loss": 4067.1,
+      "average_win": 112.86666666666663,
+      "average_loss_abs": 68.93389830508474,
       "pf_by_year": {
         "2021": 0.23868703852620807,
         "2022": 1.6352622999407236
@@ -474,8 +486,10 @@
       "win_rate": 0.3636,
       "bs_p05": 0.6960356042882784,
       "profit_concentration_pass": true,
-      "gross_profit": null,
-      "gross_loss": null,
+      "gross_profit": 5481.1,
+      "gross_loss": 6414.4,
+      "average_win": 105.40576923076924,
+      "average_loss_abs": 70.48791208791208,
       "pf_by_year": {
         "2021": 1.0721168519729674,
         "2022": 0.7333834841903468
@@ -737,8 +751,10 @@
       "win_rate": 0.3841,
       "bs_p05": 0.6945650233154462,
       "profit_concentration_pass": true,
-      "gross_profit": null,
-      "gross_loss": null,
+      "gross_profit": 6167.3,
+      "gross_loss": 6403.799999999999,
+      "average_win": 106.33275862068966,
+      "average_loss_abs": 68.85806451612902,
       "pf_by_year": {
         "2021": 0.7734416816699917,
         "2022": 1.0526824108354222
@@ -1008,8 +1024,10 @@
       "win_rate": 0.3902,
       "bs_p05": 0.6925991721412796,
       "profit_concentration_pass": true,
-      "gross_profit": null,
-      "gross_loss": null,
+      "gross_profit": 5224.5,
+      "gross_loss": 5278.4,
+      "average_win": 108.84375,
+      "average_loss_abs": 70.37866666666666,
       "pf_by_year": {
         "2021": 0.8120905587668594,
         "2022": 1.1049837621783662
@@ -1251,8 +1269,10 @@
       "win_rate": 0.4198,
       "bs_p05": 0.6243344377588729,
       "profit_concentration_pass": true,
-      "gross_profit": null,
-      "gross_loss": null,
+      "gross_profit": 4115.299999999998,
+      "gross_loss": 4993.599999999999,
+      "average_win": 74.82363636363634,
+      "average_loss_abs": 65.70526315789473,
       "pf_by_year": {
         "2021": 0.8422961191266107,
         "2022": 0.8044890480553011
@@ -1502,8 +1522,10 @@
       "win_rate": 0.36,
       "bs_p05": 0.5726569363610013,
       "profit_concentration_pass": true,
-      "gross_profit": null,
-      "gross_loss": null,
+      "gross_profit": 5673.7,
+      "gross_loss": 6619.900000000001,
+      "average_win": 105.06851851851852,
+      "average_loss_abs": 68.95729166666668,
       "pf_by_year": {
         "2021": 0.5746389370306182,
         "2022": 1.166693055511574
@@ -1772,8 +1794,10 @@
       "win_rate": 0.3607,
       "bs_p05": 0.5059966607743706,
       "profit_concentration_pass": true,
-      "gross_profit": null,
-      "gross_loss": null,
+      "gross_profit": 3966.9000000000005,
+      "gross_loss": 5539.400000000001,
+      "average_win": 90.1568181818182,
+      "average_loss_abs": 71.01794871794873,
       "pf_by_year": {
         "2021": 0.34589800443458973,
         "2022": 1.146129233650695
@@ -2014,8 +2038,10 @@
       "win_rate": 0.3624,
       "bs_p05": 0.4816516711171967,
       "profit_concentration_pass": true,
-      "gross_profit": null,
-      "gross_loss": null,
+      "gross_profit": 5549.699999999999,
+      "gross_loss": 7391.800000000001,
+      "average_win": 102.7722222222222,
+      "average_loss_abs": 77.80842105263159,
       "pf_by_year": {
         "2021": 0.5701638012725058,
         "2022": 0.931184598328962
@@ -2283,8 +2309,10 @@
       "win_rate": 0.3425,
       "bs_p05": 0.41035187238679094,
       "profit_concentration_pass": true,
-      "gross_profit": null,
-      "gross_loss": null,
+      "gross_profit": 3497.899999999999,
+      "gross_loss": 6463.399999999998,
+      "average_win": 69.95799999999998,
+      "average_loss_abs": 67.3270833333333,
       "pf_by_year": {
         "2021": 0.6607473309608543,
         "2022": 0.4492253790989214
@@ -2549,8 +2577,10 @@
       "win_rate": 0.2925,
       "bs_p05": 0.3855645420175837,
       "profit_concentration_pass": true,
-      "gross_profit": null,
-      "gross_loss": null,
+      "gross_profit": 2924.2,
+      "gross_loss": 5387.0,
+      "average_win": 94.32903225806452,
+      "average_loss_abs": 71.82666666666667,
       "pf_by_year": {
         "2021": 0.8023539456031223,
         "2022": 0.42925384286934243

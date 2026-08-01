@@ -22,11 +22,11 @@ Execution hygiene status: `EXECUTION_HYGIENE_PARTIAL`.
 
 ## Current Diagnostic Facts
 
-- Error rows: 1879 total; `OTHER=1174`, `INVALID_STOPS=670`, `MODIFICATION_TOO_CLOSE=35`.
+- Error rows: 1879 total; `INVALID_STOPS=670`, `OTHER=621`, `REQUOTE=550`, `MODIFICATION_TOO_CLOSE=35`, `MARKET_CLOSED=2`, `INVALID_PRICE=1`.
 - Source buckets: `mt4_files=1174`, `mt_tester_files=705`.
 - Batch events: `batch_run_count=32`, `OPEN_FAILED=22767`, `ORDER_EXPIRED=67`.
 - Post-batch top 11: all failed `BS_p05 > 1.0`; buckets `100-149=9`, `150+=2`.
-- Top candidate remains diagnostic only: PF `1.2323`, `BS_p05=0.8867479736061653`, 102 trades, fill rate `0.09444444444444444`.
+- Top candidate remains diagnostic only: PF `1.2323`, `BS_p05=0.8867479736061653`, 102 trades, fill rate `0.09444444444444444`, `gross_profit=5468.199999999997`, `gross_loss=4437.3`.
 
 ## Do Not Do
 
