@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-08-01 07:52 UTC · git `16107e3`
+> Auto-generated 2026-08-01 07:55 UTC · git `8e3adce`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3593 files  ·  **Commit**: `16107e3`  ·  **Generated**: 2026-08-01 07:52 UTC
+**Tracked**: 3593 files  ·  **Commit**: `8e3adce`  ·  **Generated**: 2026-08-01 07:55 UTC
 
 ## Root Docs
 
@@ -474,7 +474,7 @@
 | [docs/reports/2026-07-31-mt5-batch-selection.md](docs/reports/2026-07-31-mt5-batch-selection.md) |  | 2026-08-01 | 14KB | `084ca3c5` |
 | [docs/reports/2026-07-31-mt5-nero-parity.md](docs/reports/2026-07-31-mt5-nero-parity.md) |  | 2026-07-31 | 5KB | `4d409cce` |
 | [docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md](docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md) |  | 2026-07-31 | 11KB | `4717b1dc` |
-| [docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md](docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md) |  | 2026-08-01 | 10KB | `bbb0d43d` |
+| [docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md](docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md) |  | 2026-08-01 | 11KB | `a7975f1b` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
 ## ML

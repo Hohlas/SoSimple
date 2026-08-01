@@ -23,7 +23,7 @@ Search/post-mortem diagnostic stage. This report does not create a candidate and
 
 ## Context
 
-The 2026-07-30 single-rule diagnostic reported external tester-agent `ERROR-4756` lines, 9 `ORDER_EXPIRED`, 32 pending-order-not-found messages, and an unanalysed `ERROR_SoSimple_163856259.csv` observation.
+The 2026-07-30 single-rule diagnostic reported external tester-agent `ERROR-4756` lines, 9 `ORDER_EXPIRED`, pending-order-not-found messages, and an unanalysed `ERROR_SoSimple_163856259.csv` observation.
 
 The 2026-07-31 OnTradeTransaction lifecycle report closed event/deal reconciliation for the diagnostic executor: 269 positions, `CLOSED_TX=269`, `UNEXPLAINED=0`, `same_h1_count=17`.
 
@@ -115,6 +115,7 @@ Final documentation/wiki commit modified:
 - Batch verdict `BATCH_NO_WINNER`: `post_batch_diagnostics.json.verdict`.
 - 11 top candidates all with `BS_p05 < 1.0`: `post_batch_diagnostics.json.top_failure_modes.low_bootstrap_lower_bound`.
 - Trade-count buckets: `post_batch_diagnostics.json.top_failure_modes.trade_count_buckets`.
+- One profit-concentration failure: `post_batch_diagnostics.json.top_failure_modes.profit_concentration_fail`.
 - Top candidate PF/BS/trades/fill rate: `post_batch_diagnostics.json.top_candidates[0]`.
 
 ## Verification
