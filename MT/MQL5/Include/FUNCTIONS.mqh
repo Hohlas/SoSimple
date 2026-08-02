@@ -107,6 +107,44 @@ class ORD_TYPE{
    public:
    PRICE BUY, SEL;
    };
+
+//+-------------------------------------------------------------+
+//| Multi-position array                                        |
+//| NB: valid only when ExpTotal==1 (see SERVICE.mqh:47). Multi-|
+//| position probe runs with a single EXP[] instance, so a      |
+//| global array is equivalent to a per-expert array.            |
+//+-------------------------------------------------------------+
+#define MAX_MULTIPOS 64
+struct POSITION_TRACKER { int ticket; PRICE data; bool active; };
+POSITION_TRACKER Pos[MAX_MULTIPOS];
+int PosCount = 0;
+
+void AddPosition(POSITION_TRACKER &p) {
+   if (PosCount >= MAX_MULTIPOS) return;
+   Pos[PosCount] = p;
+   PosCount++;
+}
+void RemovePositionByTicket(int ticket) {
+   for (int i=0; i<PosCount; i++) {
+      if (Pos[i].ticket == ticket && Pos[i].active) {
+         Pos[i].active = false;
+         Pos[i].data.Val = 0;
+         break;
+      }
+   }
+}
+int FindPosIndexByTicket(int ticket) {
+   for (int i=0; i<PosCount; i++)
+      if (Pos[i].ticket == ticket && Pos[i].active) return i;
+   return -1;
+}
+int CountActiveByType(char typ) {
+   int n = 0;
+   for (int i=0; i<PosCount; i++)
+      if (Pos[i].active && Pos[i].data.Typ == typ) n++;
+   return n;
+}
+
 //+-------------------------------------------------------------+
 //| родительский класс с общими функциями                       |
 //| для разных экспертов                                        |
@@ -133,8 +171,11 @@ class EXPERT_PARENT_CLASS { // общие функции во всех посл�
       float    ATR, atr, Rsk;
       double   Ver;
       int      Mgc; 
-      PRICE SEL, BUY;
-      ORD_TYPE set,mem;
+      PRICE SEL, BUY;   // DEPRECATED (multi-position): legacy single-position holders.
+                        // Retained for compile-compatibility during Task 1-5 transition;
+                        // set to {Val=0, Typ=NONE} by ORDER_CHECK() once Pos[] is canonical
+                        // (Task 2). Removed from runtime decision path by Tasks 3-5.
+      ORD_TYPE set,mem;  // set = pending next-bar order queue (UNCHANGED, single per bar)
       
       void EXPERT_PARENT_CLASS(){
          Per=short(Period());
