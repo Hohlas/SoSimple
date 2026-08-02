@@ -148,11 +148,37 @@ void EXPERT::ML_TRADE_TB() {
    float sl_dist = TB_SL[idx] * ATR;
    float tp_dist = TB_TP[idx] * ATR;
 
-   if (sig == 1 && BUY.Typ == NONE) {
-      if (SEL.Typ != NONE) {
-         CLOSE_SEL(1, "TB_Reversal");
-      }
-      TB_cnt_executed++; TB_cnt_buy++;
+    int tb_buy_cnt = 0, tb_sel_cnt = 0;
+    for (int tb_i = 0; tb_i < PosCount; tb_i++) {
+       if (!Pos[tb_i].active || Pos[tb_i].data.Typ == NONE) continue;
+       if (!PositionSelectByTicket(Pos[tb_i].ticket)) continue;
+       ENUM_POSITION_TYPE tb_pt = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+       if (tb_pt == POSITION_TYPE_BUY)  tb_buy_cnt++;
+       if (tb_pt == POSITION_TYPE_SELL) tb_sel_cnt++;
+    }
+    bool tb_buy_open = (MT5_MaxPositions==1 ? (BUY.Typ == NONE) : (tb_buy_cnt < MT5_MaxPositions));
+    if (sig == 1 && tb_buy_open) {
+       if (MT5_MaxPositions == 1) {
+          if (SEL.Typ != NONE) {
+             CLOSE_SEL(1, "TB_Reversal");
+          }
+       } else if (tb_sel_cnt > 0) {
+          int tb_earliest = -1; datetime tb_min_T = 0;
+          for (int tb_i = 0; tb_i < PosCount; tb_i++) {
+             if (!Pos[tb_i].active || Pos[tb_i].data.Typ != MARKET) continue;
+             if (!PositionSelectByTicket(Pos[tb_i].ticket)) continue;
+             if ((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_SELL &&
+                 (tb_earliest < 0 || Pos[tb_i].data.T < tb_min_T)) {
+                tb_earliest = tb_i; tb_min_T = Pos[tb_i].data.T;
+             }
+          }
+          if (tb_earliest >= 0) {
+             X("TB_Reversal_pos" + S0(tb_earliest) + " close earliest SELL",
+               Pos[tb_earliest].data.Val, bar - 1, clrRed);
+             Pos[tb_earliest].data.Val = 0;
+          }
+       }
+       TB_cnt_executed++; TB_cnt_buy++;
 
       set.BUY.Sig=GOGO;
       set.BUY.Val=(float)Ask+DELTA(D);
@@ -169,11 +195,29 @@ void EXPERT::ML_TRADE_TB() {
             " ATR=",   DoubleToString(ATR,Digits),
             " bar=",   TimeToString(Time[bar]));
    }
-   else if (sig == -1 && SEL.Typ == NONE) {
-      if (BUY.Typ != NONE) {
-         CLOSE_BUY(1, "TB_Reversal");
-      }
-      TB_cnt_executed++; TB_cnt_sell++;
+    bool tb_sell_open = (MT5_MaxPositions==1 ? (SEL.Typ == NONE) : (tb_sel_cnt < MT5_MaxPositions));
+    if (sig == -1 && tb_sell_open) {
+       if (MT5_MaxPositions == 1) {
+          if (BUY.Typ != NONE) {
+             CLOSE_BUY(1, "TB_Reversal");
+          }
+       } else if (tb_buy_cnt > 0) {
+          int tb_earliest = -1; datetime tb_min_T = 0;
+          for (int tb_i = 0; tb_i < PosCount; tb_i++) {
+             if (!Pos[tb_i].active || Pos[tb_i].data.Typ != MARKET) continue;
+             if (!PositionSelectByTicket(Pos[tb_i].ticket)) continue;
+             if ((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY &&
+                 (tb_earliest < 0 || Pos[tb_i].data.T < tb_min_T)) {
+                tb_earliest = tb_i; tb_min_T = Pos[tb_i].data.T;
+             }
+          }
+          if (tb_earliest >= 0) {
+             X("TB_Reversal_pos" + S0(tb_earliest) + " close earliest BUY",
+               Pos[tb_earliest].data.Val, bar - 1, clrRed);
+             Pos[tb_earliest].data.Val = 0;
+          }
+       }
+       TB_cnt_executed++; TB_cnt_sell++;
 
       set.SEL.Sig=GOGO;
       set.SEL.Val=(float)Bid-DELTA(D);

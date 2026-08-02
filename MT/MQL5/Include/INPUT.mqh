@@ -2,12 +2,34 @@
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
 void EXPERT::INPUT(){
    //if (LO==0 || HI==0)  return; // если первые уровни не определены все сигналы блокируются
-   if (SEL.Val)   set.SEL.Sig=NONE; // открыт ордер (STOP, LIMIT или MARKET)
-   if (BUY.Val)   set.BUY.Sig=NONE; // сбрасываем паттерн   
+   // multi-pos: при MT5_MaxPositions==1 сохраняем legacy single-position gate
+   // (сброс set.BUY/SEL.Sig=NONE если уже открыта BUY/SEL сторона).
+   // При MT5_MaxPositions>1 этот gate убирается — новые ордера планируются
+   // даже при уже открытых позициях в ту же сторону.
+   if (MT5_MaxPositions == 1) {
+      if (SEL.Val)   set.SEL.Sig=NONE; // открыт ордер (STOP, LIMIT или MARKET)
+      if (BUY.Val)   set.BUY.Sig=NONE; // сбрасываем паттерн   
+   }
    set.BUY.Val=0; set.BUY.Stp=0; set.BUY.Prf=0; // сбрасываем     
    set.SEL.Val=0; set.SEL.Stp=0; set.SEL.Prf=0; // значения приказов
-   UP=(BUY.Typ!=MARKET && Trnd.Global>=0 && Trnd.Local>=0); 
-   DN=(SEL.Typ!=MARKET && Trnd.Global<=0 && Trnd.Local<=0);
+   // UP/DN: при =1 — legacy single-pos gate (BUY.Typ!=MARKET). При >1 —
+   // разрешаем вход, если BUY-позиций меньше MaxPositions. Соответственно
+   // считаем активные позиции на каждую сторону.
+   int BuyPosCnt = CountActiveByType(MARKET);  // здесь грубая оценка: includes both sides for MARKET,
+                                               // уточняется ниже через PositionSelectByTicket.
+   // Уточним сторону для каждой активной позиции:
+   int BuyActiveCnt = 0, SelActiveCnt = 0;
+   for (int i = 0; i < PosCount; i++) {
+       if (!Pos[i].active || Pos[i].data.Typ != MARKET) continue;
+       if (!PositionSelectByTicket(Pos[i].ticket)) continue;
+       ENUM_POSITION_TYPE pt = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+       if (pt == POSITION_TYPE_BUY)  BuyActiveCnt++;
+       if (pt == POSITION_TYPE_SELL) SelActiveCnt++;
+   }
+   UP=(MT5_MaxPositions==1 ? (BUY.Typ!=MARKET && Trnd.Global>=0 && Trnd.Local>=0)
+                            : (BuyActiveCnt < MT5_MaxPositions && Trnd.Global>=0 && Trnd.Local>=0));
+   DN=(MT5_MaxPositions==1 ? (SEL.Typ!=MARKET && Trnd.Global<=0 && Trnd.Local<=0)
+                            : (SelActiveCnt < MT5_MaxPositions && Trnd.Global<=0 && Trnd.Local<=0));
    if (!UP && !DN && !MT5_DiagnosticExecutor) return;
    //SIG_LINES(UP==1," UP="+S0(UP)+" Buy="+S4(BUY.Val)+" BuyLim="+S4(BUYLIM), 
    //          DN==1," DN="+S0(DN)+" Sel="+S4(SEL.Val)+" SelLim="+S4(SELLIM),clrSIG1);

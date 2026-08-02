@@ -776,9 +776,31 @@ void EXPERT::ML_TRADE() {
 
       int mt5_idx = MT5_FindEntrySignal(Time[bar]);
       if (mt5_idx < 0) return;
-      if (BUY.Typ != NONE || SEL.Typ != NONE) {
-         MT5_LogSignalEvent("OPEN_FAILED", mt5_idx, 0, "position_or_pending_order_exists");
-         return;
+      // Single-pos gate (legacy). Multi-pos: проверяем лимит активных позиций
+      // в сторону срабатывающего сигнала; логируем OPEN_FAILED при превышении
+      // MaxPositions — отдельный код ошибки, не «position or pending order exists».
+      if (MT5_MaxPositions == 1) {
+         if (BUY.Typ != NONE || SEL.Typ != NONE) {
+            MT5_LogSignalEvent("OPEN_FAILED", mt5_idx, 0, "position_or_pending_order_exists");
+            return;
+         }
+      } else {
+         // Multi-pos gating: считаем активные позиции по стороне.
+         string pred_side = MT5_Sides[mt5_idx];
+         bool pred_is_buy = (pred_side == "BUY" || pred_side == "LONG" || pred_side == "1");
+         int same_dir_cnt = 0;
+         for (int i = 0; i < PosCount; i++) {
+            if (!Pos[i].active || Pos[i].data.Typ == NONE) continue;
+            if (!PositionSelectByTicket(Pos[i].ticket)) continue;
+            ENUM_POSITION_TYPE pt = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+            if ((pred_is_buy && pt == POSITION_TYPE_BUY) ||
+                (!pred_is_buy && pt == POSITION_TYPE_SELL))
+               same_dir_cnt++;
+         }
+         if (same_dir_cnt >= MT5_MaxPositions) {
+            MT5_LogSignalEvent("OPEN_FAILED", mt5_idx, 0, "max_positions_reached");
+            return;
+         }
       }
 
       string side = MT5_Sides[mt5_idx];
@@ -854,19 +876,46 @@ void EXPERT::ML_TRADE() {
    float ratio_up = ML_Up12[idx] / (ML_Dn12[idx] + 1e-6f);
    float ratio_dn = ML_Dn12[idx] / (ML_Up12[idx] + 1e-6f);
 
-   // ─── ML-exit: закрытие позиции при reverse-сигнале ───────────────
-   if (ML_ExitEnabled) {
-      if (sig == -1 && BUY.Typ != NONE && ratio_dn >= ML_ExitThreshold) {
-         CLOSE_BUY(1, "ML_Exit");
-         Print(Mgc,":: ML EXIT BUY reason=ReverseSignal ratio_dn=",
-               DoubleToString(ratio_dn,2), " bar=", TimeToString(Time[bar]));
-      }
-      if (sig == 1 && SEL.Typ != NONE && ratio_up >= ML_ExitThreshold) {
-         CLOSE_SEL(1, "ML_Exit");
-         Print(Mgc,":: ML EXIT SELL reason=ReverseSignal ratio_up=",
-               DoubleToString(ratio_up,2), " bar=", TimeToString(Time[bar]));
-      }
-   }
+    // ─── ML-exit: закрытие позиции при reverse-сигнале ───────────────
+    if (ML_ExitEnabled) {
+       if (sig == -1 && BUY.Typ != NONE && ratio_dn >= ML_ExitThreshold) {
+          if (MT5_MaxPositions == 1) {
+             CLOSE_BUY(1, "ML_Exit");
+          } else {
+             // Multi-pos: find earliest BUY and mark for closure.
+             int mt5_exit_i = -1; datetime mt5_exit_T = 0;
+             for (int i = 0; i < PosCount; i++) {
+                if (!Pos[i].active || Pos[i].data.Typ != MARKET) continue;
+                if (!PositionSelectByTicket(Pos[i].ticket)) continue;
+                if ((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY &&
+                    (mt5_exit_i < 0 || Pos[i].data.T < mt5_exit_T)) {
+                   mt5_exit_i = i; mt5_exit_T = Pos[i].data.T;
+                }
+             }
+             if (mt5_exit_i >= 0) Pos[mt5_exit_i].data.Val = 0;
+          }
+          Print(Mgc,":: ML EXIT BUY reason=ReverseSignal ratio_dn=",
+                DoubleToString(ratio_dn,2), " bar=", TimeToString(Time[bar]));
+       }
+       if (sig == 1 && SEL.Typ != NONE && ratio_up >= ML_ExitThreshold) {
+          if (MT5_MaxPositions == 1) {
+             CLOSE_SEL(1, "ML_Exit");
+          } else {
+             int mt5_exit_i = -1; datetime mt5_exit_T = 0;
+             for (int i = 0; i < PosCount; i++) {
+                if (!Pos[i].active || Pos[i].data.Typ != MARKET) continue;
+                if (!PositionSelectByTicket(Pos[i].ticket)) continue;
+                if ((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_SELL &&
+                    (mt5_exit_i < 0 || Pos[i].data.T < mt5_exit_T)) {
+                   mt5_exit_i = i; mt5_exit_T = Pos[i].data.T;
+                }
+             }
+             if (mt5_exit_i >= 0) Pos[mt5_exit_i].data.Val = 0;
+          }
+          Print(Mgc,":: ML EXIT SELL reason=ReverseSignal ratio_up=",
+                DoubleToString(ratio_up,2), " bar=", TimeToString(Time[bar]));
+       }
+    }
 
    ML_cnt_total++;
 
@@ -920,13 +969,43 @@ void EXPERT::ML_TRADE() {
       }
    }
 
-   // ─── Торговля с адаптивным SL/TP ─────────────────────────────────
-   if (sig == 1 && BUY.Typ == NONE && ratio_up >= ML_MinRatio
-       && (ML_MaxRatio <= 0 || ratio_up <= ML_MaxRatio)) {
-      if (SEL.Typ != NONE) {
-         CLOSE_SEL(1, "ML_Reversal");
-      }
-      ML_cnt_executed++; ML_cnt_buy++;
+    // ─── Торговля с адаптивным SL/TP ─────────────────────────────────
+    // Single-pos: BUY.Typ==NONE gate. Multi-pos: active BUY count < MaxPositions.
+    int mt5_buy_cnt = 0, mt5_sel_cnt = 0;
+    for (int mt5_i = 0; mt5_i < PosCount; mt5_i++) {
+        if (!Pos[mt5_i].active || Pos[mt5_i].data.Typ == NONE) continue;
+        if (!PositionSelectByTicket(Pos[mt5_i].ticket)) continue;
+        ENUM_POSITION_TYPE mt5_pt = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+        if (mt5_pt == POSITION_TYPE_BUY)  mt5_buy_cnt++;
+        if (mt5_pt == POSITION_TYPE_SELL) mt5_sel_cnt++;
+    }
+    bool buy_open_allowed = (MT5_MaxPositions==1 ? (BUY.Typ == NONE) : (mt5_buy_cnt < MT5_MaxPositions));
+    if (sig == 1 && buy_open_allowed && ratio_up >= ML_MinRatio
+        && (ML_MaxRatio <= 0 || ratio_up <= ML_MaxRatio)) {
+       if (MT5_MaxPositions == 1) {
+          if (SEL.Typ != NONE) {
+             CLOSE_SEL(1, "ML_Reversal");
+          }
+       } else if (mt5_sel_cnt > 0) {
+          // Multi-pos: close earliest opposite position (last added SELL).
+          int mt5_earliest = -1;
+          datetime mt5_min_T = 0;
+          for (int mt5_i = 0; mt5_i < PosCount; mt5_i++) {
+             if (!Pos[mt5_i].active || Pos[mt5_i].data.Typ != MARKET) continue;
+             if (!PositionSelectByTicket(Pos[mt5_i].ticket)) continue;
+             if ((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_SELL &&
+                 (mt5_earliest < 0 || Pos[mt5_i].data.T < mt5_min_T)) {
+                mt5_earliest = mt5_i;
+                mt5_min_T = Pos[mt5_i].data.T;
+             }
+          }
+          if (mt5_earliest >= 0) {
+             X("ML_Reversal_pos" + S0(mt5_earliest) + " close earliest SELL",
+               Pos[mt5_earliest].data.Val, bar - 1, clrRed);
+             Pos[mt5_earliest].data.Val = 0;
+          }
+       }
+       ML_cnt_executed++; ML_cnt_buy++;
       float sl_dist = (float)MathMax(ML_Dn12[idx] * ML_ScaleK * ATR, ATR * ML_Min_SL_ATR);
       float tp_dist = sl_dist * ML_CalcRR(ratio_up);
 
@@ -942,12 +1021,33 @@ void EXPERT::ML_TRADE() {
             " ATR=",    DoubleToString(ATR,Digits),
             " bar=",    TimeToString(Time[bar]));
    }
-   else if (sig == -1 && SEL.Typ == NONE && ratio_dn >= ML_MinRatio
-            && (ML_MaxRatio <= 0 || ratio_dn <= ML_MaxRatio)) {
-      if (BUY.Typ != NONE) {
-         CLOSE_BUY(1, "ML_Reversal");
-      }
-      ML_cnt_executed++; ML_cnt_sell++;
+    bool sell_open_allowed = (MT5_MaxPositions==1 ? (SEL.Typ == NONE) : (mt5_sel_cnt < MT5_MaxPositions));
+    if (sig == -1 && sell_open_allowed && ratio_dn >= ML_MinRatio
+             && (ML_MaxRatio <= 0 || ratio_dn <= ML_MaxRatio)) {
+       if (MT5_MaxPositions == 1) {
+          if (BUY.Typ != NONE) {
+             CLOSE_BUY(1, "ML_Reversal");
+          }
+       } else if (mt5_buy_cnt > 0) {
+          // Multi-pos: close earliest opposite position (last added BUY).
+          int mt5_earliest = -1;
+          datetime mt5_min_T = 0;
+          for (int mt5_i = 0; mt5_i < PosCount; mt5_i++) {
+             if (!Pos[mt5_i].active || Pos[mt5_i].data.Typ != MARKET) continue;
+             if (!PositionSelectByTicket(Pos[mt5_i].ticket)) continue;
+             if ((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY &&
+                 (mt5_earliest < 0 || Pos[mt5_i].data.T < mt5_min_T)) {
+                mt5_earliest = mt5_i;
+                mt5_min_T = Pos[mt5_i].data.T;
+             }
+          }
+          if (mt5_earliest >= 0) {
+             X("ML_Reversal_pos" + S0(mt5_earliest) + " close earliest BUY",
+               Pos[mt5_earliest].data.Val, bar - 1, clrRed);
+             Pos[mt5_earliest].data.Val = 0;
+          }
+       }
+       ML_cnt_executed++; ML_cnt_sell++;
       float sl_dist = (float)MathMax(ML_Up12[idx] * ML_ScaleK * ATR, ATR * ML_Min_SL_ATR);
       float tp_dist = sl_dist * ML_CalcRR(ratio_dn);
 
