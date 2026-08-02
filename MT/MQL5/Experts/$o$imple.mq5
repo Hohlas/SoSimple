@@ -110,6 +110,7 @@ bool    MT5_DiagnosticExecutor=false;
 string  MT5_EntrySignalFile="mt5_entry_signals.csv";
 string  MT5_EventFile="mt5_trade_events.csv";
 bool    MT5_BlockBarsSinceFill0Exit=true;
+int     MT5_MaxPositions=1;   // multi-position cap; 1 = single-position (canonical)
 
 void SyncInputs(){
    BackTest=InpBackTest; Opt_Trades=InpOpt_Trades; RF_=InpRF_; PF_=InpPF_; MO_=InpMO_; Risk=InpRisk; MM_Mode=InpMM_Mode; Real=InpReal; CustMax=InpCustMax; SkipPer=InpSkipPer;

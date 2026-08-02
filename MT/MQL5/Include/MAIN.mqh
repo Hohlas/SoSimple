@@ -57,6 +57,8 @@ class EXPERT : public EXPERT_PARENT_CLASS { // дочерний класс пе�
       void ORDERS_CLOSE(uchar Position);
       void CLOSE_BUY(char price, string comment);
       void CLOSE_SEL(char price, string comment);
+      void CloseBuySide(char price, string comment);
+      void CloseSellSide(char price, string comment);
       void CLOSE_BUY(float ClosePrice, float MinProfit, string Reason);
       void CLOSE_SEL(float ClosePrice, float MinProfit, string Reason);
       void TRAILING_STOP();

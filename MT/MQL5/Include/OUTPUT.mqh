@@ -4,6 +4,44 @@
 #define LAST_PIC_STOP -1   // стоп за последний пик
 #define BREAK_EVEN_STOP -2 // стоп в безубыток
 void EXPERT::OUTPUT() {
+    // Multi-pos path: iterate every active BUY-side / SELL-side position.
+    if (MT5_MaxPositions > 1) {
+        for (int i = 0; i < PosCount; i++) {
+            if (!Pos[i].active || Pos[i].data.Typ == NONE) continue;
+            if (!PositionSelectByTicket(Pos[i].ticket)) continue;
+            ENUM_POSITION_TYPE pt = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+            if (pt == POSITION_TYPE_BUY) {              // -------- BUY side --------
+                if (iSignal == 3) {
+                    if (SHIFT(Pos[i].data.T) >= 12) {
+                        CloseBuySide(1, "ML_Timeout(12H)");
+                    } else if (BID > Pos[i].data.Val + ATR * ML_Trl_Start_ATR) {
+                        float new_sl = (float)(BID - ATR * ML_Trl_Step_ATR);
+                        if (new_sl > Pos[i].data.Stp && BID - new_sl > StopLevel) {
+                            Pos[i].data.Stp = new_sl;
+                            V("ML_TrailBuy_pos" + S0(i), new_sl, bar, clrBlue);
+                        }
+                    }
+                }
+                continue;
+            }
+            if (pt == POSITION_TYPE_SELL) {             // -------- SELL side -------
+                if (iSignal == 3) {
+                    if (SHIFT(Pos[i].data.T) >= 12) {
+                        CloseSellSide(1, "ML_Timeout(12H)");
+                    } else if (ASK < Pos[i].data.Val - ATR * ML_Trl_Start_ATR) {
+                        float new_sl = (float)(ASK + ATR * ML_Trl_Step_ATR);
+                        if (new_sl < Pos[i].data.Stp && new_sl - ASK > StopLevel) {
+                            Pos[i].data.Stp = new_sl;
+                            AV("ML_TrailSel_pos" + S0(i), new_sl, bar, clrRed);
+                        }
+                    }
+                }
+                continue;
+            }
+        }
+        ERROR_CHECK(__FUNCTION__);
+        return;
+    }
     // CLOSE BUY
     if (BUY.Val || set.BUY.Val) { // если есть (рыночные / отложные / готовящиеся к открытию) ордера
         if (iSignal != 3) {
@@ -128,7 +166,84 @@ bool EXPERT::POC_CLOSE_TO_SEL() { // цена "отдохнула" (пик ил�
 }
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
+// Multi-position close-side helpers (active when MT5_MaxPositions > 1).
+// Iterate all matching side positions and apply the same close/move logic.
+// 'price' code semantics match CLOSE_BUY/SEL (1=current, 2=break-even, 3=max,
+// default=offset from current; negative = trailing stop offsets).
+void EXPERT::CloseBuySide(char price, string comment) {
+   for (int i = 0; i < PosCount; i++) {
+      if (!Pos[i].active || Pos[i].data.Typ == NONE) continue;
+      if (price == 0) { Pos[i].data.Val = 0; continue; }
+      // Get live side via PositionSelectByTicket (MT5) — works for multi-pos
+      if (!PositionSelectByTicket(Pos[i].ticket)) continue;
+      ENUM_POSITION_TYPE pt = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+      if (pt != POSITION_TYPE_BUY) continue;
+      if (Pos[i].data.Typ != MARKET) {           // pending -> mark for delete
+         X("DelPosBUY" + ORDTYP(Pos[i].data.Typ) + ": " + comment, Pos[i].data.Val, bar - 1, clrRed);
+         Pos[i].data.Val = 0;
+         continue;
+      }
+      if (price > 0) {                  // adjust take-profit
+         float NewProfit = BID;
+         switch (price) {
+            case 1:  Pos[i].data.Val = 0; break;
+            case 2:  NewProfit = float(MAX(BID, Pos[i].data.Val)); break;
+            case 3:  NewProfit = Pos[i].data.Max; break;
+            default: NewProfit = float(MAX(BID + Atr.Lim * (price - 3), Pos[i].data.Val + Atr.Lim));
+         }
+         if (NewProfit < Pos[i].data.Prf || Pos[i].data.Prf == 0) Pos[i].data.Prf = NewProfit;
+         if (NewProfit - BID < StopLevel) Pos[i].data.Val = 0;
+         X("CloseBuySide moveProfit: " + comment, NewProfit, bar - 1, clrRed);
+      } else {                          // trailing stop
+         float NewStop = 0;
+         switch (price) {
+            case -1: NewStop = F[lo].P - Atr.Lim; break;
+            case -2: NewStop = Pos[i].data.Val; break;
+            default: NewStop = float(BID + Atr.Lim * price);
+         }
+         if (NewStop > Pos[i].data.Stp && BID - NewStop > StopLevel) Pos[i].data.Stp = NewStop;
+         X("CloseBuySide moveStop: " + comment, NewStop, bar - 1, clrRed);
+      }
+   }
+}
+void EXPERT::CloseSellSide(char price, string comment) {
+   for (int i = 0; i < PosCount; i++) {
+      if (!Pos[i].active || Pos[i].data.Typ == NONE) continue;
+      if (price == 0) { Pos[i].data.Val = 0; continue; }
+      if (!PositionSelectByTicket(Pos[i].ticket)) continue;
+      ENUM_POSITION_TYPE pt = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+      if (pt != POSITION_TYPE_SELL) continue;
+      if (Pos[i].data.Typ != MARKET) {
+         X("DelPosSELL" + ORDTYP(Pos[i].data.Typ) + ": " + comment, Pos[i].data.Val, bar - 1, clrRed);
+         Pos[i].data.Val = 0;
+         continue;
+      }
+      if (price > 0) {
+         float NewProfit = ASK;
+         switch (price) {
+            case 1:  Pos[i].data.Val = 0; break;
+            case 2:  NewProfit = float(MIN(ASK, Pos[i].data.Val)); break;
+            case 3:  NewProfit = Pos[i].data.Min; break;
+            default: NewProfit = float(MIN(ASK - Atr.Lim * (price - 3), Pos[i].data.Val - Atr.Lim));
+         }
+         if (NewProfit > Pos[i].data.Prf || Pos[i].data.Prf == 0) Pos[i].data.Prf = NewProfit;
+         if (ASK - NewProfit < StopLevel) Pos[i].data.Val = 0;
+         X("CloseSellSide moveProfit: " + comment, NewProfit, bar - 1, clrRed);
+      } else {
+         float NewStop = 0;
+         switch (price) {
+            case -1: NewStop = F[hi].P + Atr.Lim; break;
+            case -2: NewStop = Pos[i].data.Val; break;
+            default: NewStop = float(ASK - Atr.Lim * price);
+         }
+         if (Pos[i].data.Stp < NewStop && NewStop - ASK > StopLevel) Pos[i].data.Stp = NewStop;
+         X("CloseSellSide moveStop: " + comment, NewStop, bar - 1, clrRed);
+      }
+   }
+}
+
 void EXPERT::CLOSE_BUY(char price, string comment) { //
+    if (MT5_MaxPositions > 1) { CloseBuySide(price, comment); return; }
     if (set.BUY.Val) {                               // отмена ордера до установки
         X("Del set.Buy: " + comment, set.BUY.Val, bar - 1, clrRed);
         set.BUY.Val = 0;
@@ -178,6 +293,7 @@ void EXPERT::CLOSE_BUY(char price, string comment) { //
     }
 }
 void EXPERT::CLOSE_SEL(char price, string comment) {
+    if (MT5_MaxPositions > 1) { CloseSellSide(price, comment); return; }
     if (set.SEL.Val) { // отмена ордера до установки
         X("Del set.Sel: " + comment, set.SEL.Val, bar - 1, clrRed);
         set.SEL.Val = 0;
@@ -230,8 +346,30 @@ void EXPERT::CLOSE_SEL(char price, string comment) {
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
 void EXPERT::TRAILING_STOP() { //    - T R A I L I N G   S T O P -
-    if (Trl == 0)
+    if (Trl == 0) return;
+    // Multi-pos path: iterate all positions, apply per-position trailing.
+    if (MT5_MaxPositions > 1) {
+        float TrlBuy = 0, TrlSel = 0;
+        if (stpL > 0) TrlBuy = F[stpL].P - Atr.Lim;
+        if (stpH > 0) TrlSel = F[stpH].P + Atr.Lim;
+        for (int i = 0; i < PosCount; i++) {
+            if (!Pos[i].active || Pos[i].data.Typ != MARKET) continue;
+            if (!PositionSelectByTicket(Pos[i].ticket)) continue;
+            ENUM_POSITION_TYPE pt = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+            if (pt == POSITION_TYPE_BUY && TrlBuy > 0 &&
+                TrlBuy > Pos[i].data.Stp && (TrlBuy > Pos[i].data.Val || Trl < 0)) {
+                AV("TRAILING_BUY_pos" + S0(i) + ", Back=" + S4(F[stpL].BackVal), TrlBuy, bar, clrBlue);
+                Pos[i].data.Stp = TrlBuy;
+            } else if (pt == POSITION_TYPE_SELL && TrlSel > 0 &&
+                       TrlSel < Pos[i].data.Stp && (TrlSel < Pos[i].data.Val || Trl < 0)) {
+                V("TRAILING_SELL_pos" + S0(i) + " " + DTIME(F[stpH].T), TrlSel, bar, clrRed);
+                Pos[i].data.Stp = TrlSel;
+            }
+        }
+        ERROR_CHECK(__FUNCTION__);
         return;
+    }
+    // Backcompat path (MT5_MaxPositions == 1): legacy singleton BUY/SEL.
     if (BUY.Typ != MARKET && SEL.Typ != MARKET)
         return;
     float TrlBuy = 0, TrlSel = 0; //
