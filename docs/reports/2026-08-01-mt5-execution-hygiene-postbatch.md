@@ -136,7 +136,7 @@ Final documentation/wiki commit modified:
 ./.venv/bin/python -m pytest tests/test_mt5_execution_diagnostics.py tests/test_parse_mt5_execution_report.py tests/test_mt5_signal_executor_schema.py -q
 ```
 
-Result after audit fixes, based on `HEAD=aad3bc9` plus working-tree audit changes: `29 passed in 0.34s`.
+Result after audit fixes: `53 passed in 0.47s` (test functions: `test_mt5_execution_diagnostics.py` 24, `test_parse_mt5_execution_report.py` 6, `test_mt5_signal_executor_schema.py` 23).
 
 ## Results
 
@@ -144,7 +144,7 @@ Error inventory found 6 available `ERROR_SoSimple_*.csv` files. `ERROR_SoSimple_
 
 Error row classification produced 1879 rows: `INVALID_STOPS=670`, `OTHER=621`, `REQUOTE=550`, `MODIFICATION_TOO_CLOSE=35`, `MARKET_CLOSED=2`, `INVALID_PRICE=1`. Source buckets remain separated by artifact path: `mt4_files=1174`, `mt_tester_files=705`.
 
-Event anomaly summary covers reference runs and 32 batch runs. Batch counts include `OPEN_FAILED=22767` and `ORDER_EXPIRED=67`; `_smoke` is excluded. Linkage between event rows and `ERROR_SoSimple` rows is `UNKNOWN`, because current artifacts do not provide a proven stable row-level key.
+Event anomaly summary covers reference runs and 32 batch runs. Batch counts include `OPEN_FAILED=22767` and `ORDER_EXPIRED=67`; for execution-scale context, also `ORDER_PLACED=2601`, `OPEN=2367`, `TX_OPEN=2508`, `TX_CLOSE=2508`. `_smoke` is excluded. The 22767 `OPEN_FAILED` events count retry attempts per same-bar signal under the single-position policy, not distinct broker refusals. Linkage between event rows and `ERROR_SoSimple` rows is `UNKNOWN`, because current artifacts do not provide a proven stable row-level key.
 
 Post-batch diagnostics preserve `BATCH_NO_WINNER`. Among 11 eligible ranked candidates, all 11 failed low bootstrap lower bound; trade-count buckets are `100-149=9` and `150+=2`; one candidate failed profit concentration. Top candidate `time_plus_atr_extra_trees_small_12h_thr0.2` has PF `1.2323`, `BS_p05=0.8867479736061653`, `trades_count=102`, fill rate `0.09444444444444444`, `gross_profit=5468.199999999997`, `gross_loss=4437.3`, `average_win=130.19523809523804`, and `average_loss_abs=73.955`.
 
