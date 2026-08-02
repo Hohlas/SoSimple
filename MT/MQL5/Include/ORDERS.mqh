@@ -63,71 +63,85 @@ void EXPERT_PARENT_CLASS::SET_SEL(){
      
 //ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
 //ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
-void EXPERT_PARENT_CLASS::MODIFY(){   // Похерим необходимые стоп/лимит ордера: удаление если set.BUY/Sell=0       
-   bool ReSelect=true;      // если похерили какой-то ордер, надо повторить перебор сначала, т.к. OrdersTotal изменилось, т.е. они все перенумеровались 
+void EXPERT_PARENT_CLASS::MODIFY(){   // Закрытие/модификация ордеров по Pos[] (массив) и legacy BUY/SEL singleton
+   bool ReSelect=true;
    WAITING(Mgc,"Terminal",20);
-   while (ReSelect){        // и переменная ReSelect вызовет их повторный перебор        
+   while (ReSelect){
       ReSelect=false; int Orders=OrdersTotal();
-      for(int Ord=0; Ord<Orders; Ord++){ 
+      for(int Ord=0; Ord<Orders; Ord++){
          if (OrderSelect(Ord, SELECT_BY_POS, MODE_TRADES)!=true || OrderMagicNumber()!=Mgc) continue;
          int Order=OrderType();
-         bool make=true;  
-         uchar repeat=3;  
-         while (repeat){// повторяем операции над ордером, пока не более 3 раз
+         bool make=true;
+         uchar repeat=3;
+         // Найти entry в Pos[] по тикету (если нет — multi-pos не имеет инструкции для этого ордера)
+         int posIdx = FindPosIndexByTicket(OrderTicket());
+         // Флаг «закрыть этот ордер»: в multi-pos — Pos[i].data.Val==0; в legacy — BUY.Val==0/SEL.Val==0
+         bool shouldClose = false;
+         if (posIdx >= 0) {
+            shouldClose = (Pos[posIdx].data.Val == 0);
+         } else {
+            // backcompat path (MT5_MaxPositions==1, или Pos[] ещё не синхронизирован)
+            if (Order==OP_BUY  || Order==OP_BUYSTOP  || Order==OP_BUYLIMIT)  shouldClose = (BUY.Val==0);
+            if (Order==OP_SELL || Order==OP_SELLSTOP || Order==OP_SELLLIMIT) shouldClose = (SEL.Val==0);
+         }
+         // Источник SL/TP для модификации: из Pos[] (если есть); иначе legacy singleton
+         float srcStp = (posIdx>=0 ? Pos[posIdx].data.Stp : (Order==OP_BUY||Order==OP_BUYSTOP||Order==OP_BUYLIMIT ? BUY.Stp : SEL.Stp));
+         float srcPrf = (posIdx>=0 ? Pos[posIdx].data.Prf : (Order==OP_BUY||Order==OP_BUYSTOP||Order==OP_BUYLIMIT ? BUY.Prf : SEL.Prf));
+         while (repeat){
             MARKET_UPDATE(OrderSymbol());
             switch(Order){
-               case OP_SELL:           //  C L O S E     S E L L  
-                  if (SEL.Val==0){
-                     make=OrderClose(OrderTicket(),OrderLots(),ASK,3,clrRed); 
-                     REPORT(ExpNum,"Close SELL/"+S4(OrderOpenPrice(),OrderSymbol())); 
+               case OP_SELL:           //  C L O S E     S E L L
+                  if (shouldClose){
+                     make=OrderClose(OrderTicket(),OrderLots(),ASK,3,clrRed);
+                     REPORT(ExpNum,"Close SELL/"+S4(OrderOpenPrice(),OrderSymbol()));
                      break;
-                     }                 //  M O D I F Y     S E L L  
-                  if (MathAbs(SEL.Stp-OrderStopLoss())>MarketInfo(OrderSymbol(),MODE_POINT) && SEL.Stp-ASK>StopLevel){    //Print("SEL.Stp=",SEL.Stp," OrderStop=",OrderStopLoss());
-                     make=OrderModify(OrderTicket(), OrderOpenPrice(), SEL.Stp, OrderTakeProfit(),OrderExpiration(),clrBlue);  REPORT(ExpNum,"ModifySellStop/"+S4(SEL.Stp,OrderSymbol()));}
-                  if (MathAbs(SEL.Prf-OrderTakeProfit())>MarketInfo(OrderSymbol(),MODE_POINT) && ASK-SEL.Prf>StopLevel){  //Print("SEL.Prf=",SEL.Prf," OrderTakeProfit=",OrderTakeProfit());
-                     make=OrderModify(OrderTicket(), OrderOpenPrice(), OrderStopLoss(), SEL.Prf,OrderExpiration(),clrBlue);    REPORT(ExpNum,"ModifySellProfit/"+S4(SEL.Prf,OrderSymbol()));}
-                  break; 
-               case OP_SELLSTOP:       //  D E L   S E L L S T O P  
-                  if (SEL.Val==0){ 
+                     }                 //  M O D I F Y     S E L L
+                  if (MathAbs(srcStp-OrderStopLoss())>MarketInfo(OrderSymbol(),MODE_POINT) && srcStp-ASK>StopLevel){
+                     make=OrderModify(OrderTicket(), OrderOpenPrice(), srcStp, OrderTakeProfit(),OrderExpiration(),clrBlue);  REPORT(ExpNum,"ModifySellStop/"+S4(srcStp,OrderSymbol()));}
+                  if (MathAbs(srcPrf-OrderTakeProfit())>MarketInfo(OrderSymbol(),MODE_POINT) && ASK-srcPrf>StopLevel){
+                     make=OrderModify(OrderTicket(), OrderOpenPrice(), OrderStopLoss(), srcPrf,OrderExpiration(),clrBlue);    REPORT(ExpNum,"ModifySellProfit/"+S4(srcPrf,OrderSymbol()));}
+                  break;
+               case OP_SELLSTOP:       //  D E L   S E L L S T O P
+                  if (shouldClose){
                      if (BID-OrderOpenPrice()>StopLevel){   make=OrderDelete(OrderTicket(),clrRed);   REPORT(ExpNum,"Del SellStop/"+S4(OrderOpenPrice(),OrderSymbol()));}
                      else                                                                             REPORT(ExpNum,"Can't Del SELLSTOP near market! BID="+S5(BID,OrderSymbol())+" OpenPrice="+S5(OrderOpenPrice(),OrderSymbol())+" StopLevel="+S5(StopLevel,OrderSymbol()));}
                   break;
-               case OP_SELLLIMIT:      //  D E L   S E L L L I M I T  
-                  if (SEL.Val==0){
+               case OP_SELLLIMIT:      //  D E L   S E L L L I M I T
+                  if (shouldClose){
                      if (OrderOpenPrice()-BID>StopLevel){   make=OrderDelete(OrderTicket(),clrRed);   REPORT(ExpNum,"Del SellLimit/"+S4(OrderOpenPrice(),OrderSymbol()));}
-                     else                                                                             REPORT(ExpNum,"Can't Del SELLLIMIT! near market, BID="+S5(BID,OrderSymbol())+" OpenPrice="+S5(OrderOpenPrice(),OrderSymbol())+" StopLevel="+S5(StopLevel,OrderSymbol()));}   
+                     else                                                                             REPORT(ExpNum,"Can't Del SELLLIMIT! near market, BID="+S5(BID,OrderSymbol())+" OpenPrice="+S5(OrderOpenPrice(),OrderSymbol())+" StopLevel="+S5(StopLevel,OrderSymbol()));}
                   break;
-               case OP_BUY:            //  C L O S E    B U Y  
-                  if (BUY.Val==0){
-                     make=OrderClose(OrderTicket(),OrderLots(),BID,3,clrRed); 
-                     REPORT(ExpNum,"Close BUY/"+S4(OrderOpenPrice(),OrderSymbol()));  
+               case OP_BUY:            //  C L O S E    B U Y
+                  if (shouldClose){
+                     make=OrderClose(OrderTicket(),OrderLots(),BID,3,clrRed);
+                     REPORT(ExpNum,"Close BUY/"+S4(OrderOpenPrice(),OrderSymbol()));
                      break;
                      }                 // M O D I F Y      B U Y
-                  if (MathAbs(BUY.Stp-OrderStopLoss())>MarketInfo(OrderSymbol(),MODE_POINT) && BID-BUY.Stp>StopLevel){    //Print("BUY.Stp=",BUY.Stp," OrderStop=",OrderStopLoss());
-                     make=OrderModify(OrderTicket(), OrderOpenPrice(), BUY.Stp, OrderTakeProfit(),OrderExpiration(),clrBlue); REPORT(ExpNum,"ModifyBuyStop/"+S4(BUY.Stp,OrderSymbol()));} 
-                  if (MathAbs(BUY.Prf-OrderTakeProfit())>MarketInfo(OrderSymbol(),MODE_POINT) && BUY.Prf-BID>StopLevel){  //Print("BUY.Prf=",BUY.Prf," OrderTakeProfit=",OrderTakeProfit());
-                     make=OrderModify(OrderTicket(), OrderOpenPrice(), OrderStopLoss(), BUY.Prf,OrderExpiration(),clrBlue);   REPORT(ExpNum,"ModifyBuyProfit/"+S4(BUY.Prf,OrderSymbol()));}
-                  break; 
-               case OP_BUYSTOP:        //  D E L   B U Y S T O P  
-                  if (BUY.Val==0){
+                  if (MathAbs(srcStp-OrderStopLoss())>MarketInfo(OrderSymbol(),MODE_POINT) && BID-srcStp>StopLevel){
+                     make=OrderModify(OrderTicket(), OrderOpenPrice(), srcStp, OrderTakeProfit(),OrderExpiration(),clrBlue); REPORT(ExpNum,"ModifyBuyStop/"+S4(srcStp,OrderSymbol()));}
+                  if (MathAbs(srcPrf-OrderTakeProfit())>MarketInfo(OrderSymbol(),MODE_POINT) && srcPrf-BID>StopLevel){
+                     make=OrderModify(OrderTicket(), OrderOpenPrice(), OrderStopLoss(), srcPrf,OrderExpiration(),clrBlue);   REPORT(ExpNum,"ModifyBuyProfit/"+S4(srcPrf,OrderSymbol()));}
+                  break;
+               case OP_BUYSTOP:        //  D E L   B U Y S T O P
+                  if (shouldClose){
                      if (OrderOpenPrice()-ASK>StopLevel){   make=OrderDelete(OrderTicket(),clrRed);   REPORT(ExpNum,"Del BuyStop/"+S4(OrderOpenPrice(),OrderSymbol()));}
                      else                                                                             REPORT(ExpNum,"Can't Del BUYSTOP near market! ASK="+S5(ASK,OrderSymbol())+" OpenPrice="+S5(OrderOpenPrice(),OrderSymbol())+" StopLevel="+S5(StopLevel,OrderSymbol()));}
-                  break; 
-               case OP_BUYLIMIT:       //  D E L   B U Y L I M I T  
-                  if (BUY.Val==0){
+                  break;
+               case OP_BUYLIMIT:       //  D E L   B U Y L I M I T
+                  if (shouldClose){
                      if (ASK-OrderOpenPrice()>StopLevel){   make=OrderDelete(OrderTicket(),clrRed);   REPORT(ExpNum,"Del BuyLimit/"+S4(OrderOpenPrice(),OrderSymbol()));}
                      else                                                                             REPORT(ExpNum,"Can't Del BUYLIMIT near market! ASK="+S5(ASK,OrderSymbol())+" OpenPrice="+S5(OrderOpenPrice(),OrderSymbol())+" StopLevel="+S5(StopLevel,OrderSymbol()));}
                   break;
-               }// switch(Order)  
-            if (make) break; //  true при успешном завершении, или false в случае ошибки  
-            if (ERROR_CHECK("MODIFY "+ORD2STR(Order)+" Ticket="+S0(OrderTicket())+" repeat="+S0(repeat),ExpNum)) repeat--; else repeat=0; // ERROR_CHECK() возвращает необходимость повтора торговой операции            
-            }  //while(repeat)  
-         if (Orders!=OrdersTotal()) {ReSelect=true; break;} // при ошибках или изменении кол-ва ордеров надо заново перебирать ордера (выходим из цикла "for"), т.к. номера ордеров поменялись
-         }// for(Ord=0; Ord<Orders; Ord++){    
-      }// while(ReSelect)     
+               }// switch(Order)
+            if (make) break;
+            if (ERROR_CHECK("MODIFY "+ORD2STR(Order)+" Ticket="+S0(OrderTicket())+" repeat="+S0(repeat),ExpNum)) repeat--; else repeat=0;
+            }  //while(repeat)
+         if (Orders!=OrdersTotal()) {ReSelect=true; break;}
+         }// for(Ord=0; Ord<Orders; Ord++){
+      }// while(ReSelect)
    ORDER_CHECK();
    FREE(Mgc,"Terminal");
-   }   
+   }
 //ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
 //ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ   
 void MARKET_UPDATE(string SYM){ // ASK, BID, DIGITS, Spred, StopLevel
@@ -141,19 +155,39 @@ void MARKET_UPDATE(string SYM){ // ASK, BID, DIGITS, Spred, StopLevel
 //ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
 //ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
 void EXPERT_PARENT_CLASS::ORDER_CHECK(){   // ПАРАМЕТРЫ ОТКРЫТЫХ И ОТЛОЖЕННЫХ ПОЗ
+   // --- multi-position array: canonical source of truth ---
+   PosCount = 0;
+   for (int i=0; i<MAX_MULTIPOS; i++) Pos[i].active=false;
+   // --- legacy BUY/SEL singleton: kept blank, repopulated for backcompat below ---
    BUY.Val=0; BUY.Typ=NONE; BUY.Stp=0; BUY.Prf=0; BUY.T=0;
-   SEL.Val=0; SEL.Typ=NONE; SEL.Stp=0; SEL.Prf=0; SEL.T=0; 
-   for (int i=0; i<OrdersTotal(); i++){ 
+   SEL.Val=0; SEL.Typ=NONE; SEL.Stp=0; SEL.Prf=0; SEL.T=0;
+   for (int i=0; i<OrdersTotal(); i++){
       if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES)!=true || OrderMagicNumber()!=Mgc) continue;
       if (OrderType()==6) continue; // ролловеры не записываем
+      POSITION_TRACKER p; p.active=true; p.ticket=OrderTicket();
+      p.data.T   =OrderOpenTime();
+      p.data.Val =float(OrderOpenPrice());
+      p.data.Stp =float(OrderStopLoss());
+      p.data.Prf =float(OrderTakeProfit());
       switch(OrderType()){
-         case OP_BUYSTOP:  BUY.Typ=STOP;     BUY.Val=float(OrderOpenPrice());    BUY.Stp=float(OrderStopLoss());   BUY.Prf=float(OrderTakeProfit());    BUY.T=OrderOpenTime();   break;
-         case OP_BUYLIMIT: BUY.Typ=LIMIT;    BUY.Val=float(OrderOpenPrice());    BUY.Stp=float(OrderStopLoss());   BUY.Prf=float(OrderTakeProfit());    BUY.T=OrderOpenTime();   break;
-         case OP_BUY:      BUY.Typ=MARKET;   BUY.Val=float(OrderOpenPrice());    BUY.Stp=float(OrderStopLoss());   BUY.Prf=float(OrderTakeProfit());    BUY.T=OrderOpenTime();   break;
-         case OP_SELLSTOP: SEL.Typ=STOP;     SEL.Val=float(OrderOpenPrice());    SEL.Stp=float(OrderStopLoss());   SEL.Prf=float(OrderTakeProfit());    SEL.T=OrderOpenTime();   break;
-         case OP_SELLLIMIT:SEL.Typ=LIMIT;    SEL.Val=float(OrderOpenPrice());    SEL.Stp=float(OrderStopLoss());   SEL.Prf=float(OrderTakeProfit());    SEL.T=OrderOpenTime();   break;
-         case OP_SELL:     SEL.Typ=MARKET;   SEL.Val=float(OrderOpenPrice());    SEL.Stp=float(OrderStopLoss());   SEL.Prf=float(OrderTakeProfit());    SEL.T=OrderOpenTime();   break;
-   }  }  }  // в этой функции нельзя вызывать ERROR_CHECK(), т.к. она сама вызывается в ERROR_CHECK и при возникновении повторной ошибки происходит переполнение стека
+         case OP_BUYSTOP:  p.data.Typ=STOP;  AddPosition(p); break;
+         case OP_BUYLIMIT: p.data.Typ=LIMIT; AddPosition(p); break;
+         case OP_BUY:      p.data.Typ=MARKET;AddPosition(p); break;
+         case OP_SELLSTOP: p.data.Typ=STOP;  AddPosition(p); break;
+         case OP_SELLLIMIT:p.data.Typ=LIMIT; AddPosition(p); break;
+         case OP_SELL:     p.data.Typ=MARKET;AddPosition(p); break;
+      }
+      // Backcompat shim: when PosCount<=1 mirror into legacy singleton BUY/SEL.
+      // At MT5_MaxPositions=1 this keeps the rest of the advisor (OUTPUT/COUNT/INPUT/
+      // lib_ML_Signal) reading `BUY.Typ`/`SEL.Typ` working unchanged until Tasks 3-5
+      // route them through Pos[].
+      if (OrderType()==OP_BUYSTOP  || OrderType()==OP_BUYLIMIT || OrderType()==OP_BUY) {
+         BUY=p.data;
+      } else if (OrderType()==OP_SELLSTOP || OrderType()==OP_SELLLIMIT || OrderType()==OP_SELL) {
+         SEL=p.data;
+      }
+   }
+   }  // в этой функции нельзя вызывать ERROR_CHECK(), т.к. она сама вызывается в ERROR_CHECK и при возникновении повторной ошибки происходит переполнение стека
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ 
 void EXPERT_PARENT_CLASS::ORDERS_COLLECT(){// Запишем ордера для выставления в массив. 
