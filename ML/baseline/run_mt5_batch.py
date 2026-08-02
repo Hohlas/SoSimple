@@ -271,9 +271,11 @@ def check_tester_file_property() -> bool:
     return False
 
 
-def create_set_file(run_id: str) -> Path:
+def create_set_file(run_id: str, *, max_positions: int = 1) -> Path:
     set_name = f"mt5_batch_{run_id}.set"
     set_path = SET_DIR / set_name
+
+    maxpos_line = f"InpMT5_MaxPositions={int(max_positions)}||false||0||true||N"
 
     template_path = SET_DIR / "mt5_tx_lifecycle_20260731.set"
     if template_path.exists():
@@ -285,13 +287,22 @@ def create_set_file(run_id: str) -> Path:
 
         lines = text.splitlines()
         new_lines = []
+        maxpos_inserted = False
         for line in lines:
             if line.startswith("InpMT5_EventFile="):
                 new_lines.append(f"InpMT5_EventFile=mt5_trade_events_{run_id}.csv")
             elif line.startswith("InpMT5_ExportNero="):
                 new_lines.append("InpMT5_ExportNero=false||false||0||true||N")
+                new_lines.append(maxpos_line)
+                maxpos_inserted = True
+            elif line.startswith("InpMT5_MaxPositions="):
+                # Override any pre-existing MaxPositions line from the template.
+                new_lines.append(maxpos_line)
+                maxpos_inserted = True
             else:
                 new_lines.append(line)
+        if not maxpos_inserted:
+            new_lines.append(maxpos_line)
         content = "\r\n".join(new_lines) + "\r\n"
     else:
         content = (
@@ -300,6 +311,7 @@ def create_set_file(run_id: str) -> Path:
             f"InpMT5_EventFile=mt5_trade_events_{run_id}.csv\r\n"
             f"InpMT5_BlockBarsSinceFill0Exit=true||false||0||true||N\r\n"
             f"InpMT5_ExportNero=false||false||0||true||N\r\n"
+            f"{maxpos_line}\r\n"
         )
 
     set_path.write_bytes(content.encode("utf-16-le"))
@@ -410,7 +422,7 @@ def parse_events(run_id: str, events_csv: Path) -> dict | None:
     return None
 
 
-def run_smoke_test(candidates: list[dict]) -> bool:
+def run_smoke_test(candidates: list[dict], *, max_positions: int = 1) -> bool:
     smoke_dir = BATCH_DIR / "_smoke"
     smoke_dir.mkdir(parents=True, exist_ok=True)
 
@@ -424,7 +436,7 @@ def run_smoke_test(candidates: list[dict]) -> bool:
     print(f"SMOKE TEST: {run_id} (Model=2, 2021.01-2021.03)")
 
     copy_entry_signal_file(entry_csv)
-    set_path = create_set_file("_smoke")
+    set_path = create_set_file("_smoke", max_positions=max_positions)
     ini_path = create_ini_file("_smoke", set_path.name, model=2, from_date="2021.01.04", to_date="2021.03.31")
 
     event_file_name = "mt5_trade_events__smoke.csv"
@@ -452,7 +464,7 @@ def run_smoke_test(candidates: list[dict]) -> bool:
     return unexplained == 0
 
 
-def run_batch(candidates: list[dict]) -> None:
+def run_batch(candidates: list[dict], *, max_positions: int = 1) -> None:
     n_total = len(candidates)
     n_done = 0
     n_skipped = 0
@@ -488,7 +500,7 @@ def run_batch(candidates: list[dict]) -> None:
             break
 
         copy_entry_signal_file(entry_csv)
-        set_path = create_set_file(run_id)
+        set_path = create_set_file(run_id, max_positions=max_positions)
         ini_path = create_ini_file(run_id, set_path.name)
 
         event_file_name = f"mt5_trade_events_{run_id}.csv"
@@ -757,6 +769,13 @@ def aggregate_batch(candidates: list[dict]) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description="MT5 batch selection pipeline")
     parser.add_argument("--phase", choices=["signals", "tester", "aggregate", "all"], default="all")
+    parser.add_argument(
+        "--max-positions",
+        type=int,
+        default=1,
+        help="MT5 multi-position cap passed to the expert's InpMT5_MaxPositions input "
+        "(1 = single-position canonical, >1 = multi-pos diagnostic probe).",
+    )
     args = parser.parse_args()
 
     candidates = load_candidates()
@@ -779,13 +798,13 @@ def main() -> None:
             sys.exit(1)
 
         print("\n--- SMOKE TEST ---")
-        if not run_smoke_test(candidates):
+        if not run_smoke_test(candidates, max_positions=args.max_positions):
             print("ABORT: smoke test failed")
             sys.exit(1)
         print("Smoke test PASSED.\n")
 
         print("--- FULL BATCH ---")
-        run_batch(candidates)
+        run_batch(candidates, max_positions=args.max_positions)
 
     if args.phase in ("aggregate", "all"):
         aggregate_batch(candidates)

@@ -76,6 +76,7 @@ input bool   InpMT5_DiagnosticExecutor = false;
 input string InpMT5_EntrySignalFile    = "mt5_entry_signals.csv";
 input string InpMT5_EventFile          = "mt5_trade_events.csv";
 input bool   InpMT5_BlockBarsSinceFill0Exit = true;
+input int    InpMT5_MaxPositions            = 1;  // multi-position cap; 1 = single-position canonical
 
 datetime BarTime;
 uchar    ExpTotal;
@@ -123,7 +124,8 @@ void SyncInputs(){
    ML_Min_SL_ATR=InpML_Min_SL_ATR; ML_BypassTrend=InpML_BypassTrend; ML_ExitEnabled=InpML_ExitEnabled; ML_ExitThreshold=InpML_ExitThreshold;
    ML_Filter3=InpML_Filter3; ML_Filter6=InpML_Filter6; ML_Trl_Start_ATR=InpML_Trl_Start_ATR; ML_Trl_Step_ATR=InpML_Trl_Step_ATR;
    MT5_ExportNero=InpMT5_ExportNero; MT5_NeroFile=InpMT5_NeroFile;
-   MT5_DiagnosticExecutor=InpMT5_DiagnosticExecutor; MT5_EntrySignalFile=InpMT5_EntrySignalFile; MT5_EventFile=InpMT5_EventFile; MT5_BlockBarsSinceFill0Exit=InpMT5_BlockBarsSinceFill0Exit;
+    MT5_DiagnosticExecutor=InpMT5_DiagnosticExecutor; MT5_EntrySignalFile=InpMT5_EntrySignalFile; MT5_EventFile=InpMT5_EventFile; MT5_BlockBarsSinceFill0Exit=InpMT5_BlockBarsSinceFill0Exit;
+    MT5_MaxPositions=InpMT5_MaxPositions;
 }
 
 #define  SO_SIMLE_EXPERT  1 // для добавления в компиляцию библиотек A,V,LINE в функции iGRAPH
