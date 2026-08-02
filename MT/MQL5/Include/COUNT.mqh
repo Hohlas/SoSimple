@@ -6,15 +6,24 @@ bool EXPERT::COUNT(){// Общие расчеты для всего экспер
    if (MT5_DiagnosticExecutor) return (true); // diagnostic: PIC/Nero не нужны
    if (!PIC()) return (false);   // ОСНОВНОЙ ЦИКЛ ПОИСКА УРОВНЕЙ 
    POC_SIMPLE();  // ОПРЕДЕЛЕНИЕ ПЛОТНОГО СКОПЛЕНИЯ БАР БЕЗ ПРОПУСКОВ 
-   // МАКСИМАЛЬНЫЕ/МИНИМАЛЬНЫЕ ЦЕНЫ С МОМЕНТА ОТКРЫТИЯ ПОЗ ////////////////////////////////////////////////////////////////////////
-   if (BUY.Typ==MARKET){
-      BUY.Min=LOWEST (BUY.T,0); //A("BUY.Min ",BUY.Min,bar,clrGreen); //  
-      BUY.Max=HIGHEST(BUY.T,0); //V("BUY.Max ",BUY.Max,bar,clrGreen); //      
-      }
-   if (SEL.Typ==MARKET){
-      SEL.Min=LOWEST (SEL.T,0); //A("SEL.Min",SEL.Min,bar,clrGreen);
-      SEL.Max=HIGHEST(SEL.T,0); //V("SEL.Max",SEL.Max,bar,clrGreen);
-      }
+    // МАКСИМАЛЬНЫЕ/МИНИМАЛЬНЫЕ ЦЕНЫ С МОМЕНТА ОТКРЫТИЯ ПОЗ ////////////////////////////////////////////////////////////////////////
+    if (MT5_MaxPositions > 1) {
+        // Multi-pos: per-position tracking. MARKET-only entries update their Min/Max.
+        for (int i = 0; i < PosCount; i++) {
+            if (!Pos[i].active || Pos[i].data.Typ != MARKET) continue;
+            Pos[i].data.Min = LOWEST(Pos[i].data.T, 0);
+            Pos[i].data.Max = HIGHEST(Pos[i].data.T, 0);
+        }
+    } else {
+        if (BUY.Typ==MARKET){
+           BUY.Min=LOWEST (BUY.T,0); //A("BUY.Min ",BUY.Min,bar,clrGreen); //  
+           BUY.Max=HIGHEST(BUY.T,0); //V("BUY.Max ",BUY.Max,bar,clrGreen); //      
+           }
+        if (SEL.Typ==MARKET){
+           SEL.Min=LOWEST (SEL.T,0); //A("SEL.Min",SEL.Min,bar,clrGreen);
+           SEL.Max=HIGHEST(SEL.T,0); //V("SEL.Max",SEL.Max,bar,clrGreen);
+           }
+    }
    set.BUY.Exp=0;
    if (ExpirBars>0)  set.BUY.Exp=Time[0]+datetime(ExpirBars*Period()*60 - Time[0]%(Period()*60));
    set.SEL.Exp=set.BUY.Exp;
@@ -88,9 +97,21 @@ bool EXPERT::FINE_TIME(){ // время, в которое разрешено т
    }
 void EXPERT::TIMER(){   // ВРЕМЯ УДЕРЖАНИЯ ОТКРЫТЫХ ПОЗ (В Барах)  
    if (!Tper) return;
+   if (MT5_MaxPositions > 1) {
+       // Multi-pos: mark each MARKET position exceeding Tper for closure by
+       // writing Val=0 (MODIFY reads Val==0 as close request).
+       for (int i = 0; i < PosCount; i++) {
+           if (!Pos[i].active || Pos[i].data.Typ != MARKET) continue;
+           if (SHIFT(Pos[i].data.T) >= Tper) {
+               X("HoldOverTime_pos" + S0(i), Pos[i].data.Val, bar - 1, clrRed);
+               Pos[i].data.Val = 0;
+           }
+       }
+       return;
+   }
    if (BUY.Typ==MARKET && SHIFT(BUY.T)>=Tper) CLOSE_BUY(1, "HoldOverTime"); // тейк в 
    if (SEL.Typ==MARKET && SHIFT(SEL.T)>=Tper) CLOSE_SEL(1, "HoldOverTime"); // безубыток
-   }       
+   }    
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ    
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
 void EXPERT_PARENT_CLASS::GLOBAL_VARIABLES_LIST(){ 
