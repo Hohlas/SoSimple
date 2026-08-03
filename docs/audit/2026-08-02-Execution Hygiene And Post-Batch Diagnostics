@@ -1,0 +1,85 @@
+# Аудит: docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md
+
+> Дата аудита: 2026-08-02
+> Объект: отчёт MT5 Execution Hygiene And Post-Batch Diagnostics (DIAGNOSTIC_ONLY)
+> Метод: фактическая сверка каждого утверждения отчёта с артефактами, кодом и историческими отчётами в репозитории.
+
+## Сводка
+
+Отчёт фактически достоверен. Все 10 sha256-хешей совпадают, все ключевые числа воспроизводятся из JSON-артефактов, тесты проходят, связанные файлы и коммиты существуют. Критичных ошибок нет. Найдены 2 важные неточности (одна в формулировке, одна в отсутствии источника) и несколько мелких улучшений.
+
+## Проверено и подтверждено
+
+| Утверждение отчёта | Источник сверки | Результат |
+|---|---|---|
+| 10 хешей артефактов (строки 92–101) | `sha256sum` по всем 10 файлам | все совпадают |
+| 6 файлов `ERROR_SoSimple_*.csv`, пропущенный `163856259` записан как UNKNOWN | `error_inventory.json.files`, `.unknowns` | совпадает |
+| 1879 строк; `INVALID_STOPS=670, OTHER=621, REQUOTE=550, MODIFICATION_TOO_CLOSE=35, MARKET_CLOSED=2, INVALID_PRICE=1` | `error_summary.json.total_rows`, `.by_error_class` | совпадает |
+| `mt4_files=1174, mt_tester_files=705` | `error_summary.json.by_source_bucket` | совпадает |
+| 269 позиций, `CLOSED_TX=269`, `UNEXPLAINED=0`, `same_h1_count=17` | `mt5_execution_metrics_20260731_tx_lifecycle.json.reconciliation` | совпадает |
+| `ORDER_EXPIRED=9` в single-rule прогоне | `mt5_execution_metrics_20260730_entry_quality_filter.json.order_counts` | совпадает |
+| 32 batch-прогона, `_smoke` исключён, 54078 событий; reference 23050 | `event_anomaly_summary.json` | совпадает |
+| `OPEN_FAILED=22767`, `ORDER_EXPIRED=67`, `ORDER_PLACED=2601`, `OPEN=2367`, `TX_OPEN=2508`, `TX_CLOSE=2508` | `event_anomaly_summary.json.batch_runs.event_counts` | совпадает |
+| Linkage `UNKNOWN` | `event_anomaly_summary.json.linkage_status` | совпадает |
+| `BATCH_NO_WINNER`, 32 valid, 11 eligible, `low_bootstrap_lower_bound=11`, бакеты `100-149=9`/`150+=2`, `profit_concentration_fail=1` | `post_batch_diagnostics.json` | совпадает |
+| Топ-кандидат `time_plus_atr_extra_trees_small_12h_thr0.2`: PF 1.2323, BS_p05 0.8867…, trades 102, fill rate 0.0944…, gross_profit 5468.2, gross_loss 4437.3 | `post_batch_diagnostics.json.top_candidates[0]` | совпадает |
+| Выборка eligible: 1424 сделки, 14954 активных сигналов (buy 7092 / sell 7862) | `post_batch_diagnostics.json.sample_sizes` | совпадает |
+| Holm-Bonferroni отклонил 0 гипотез | `batch_summary.json.holm_bonferroni` (все `holm_rejected=false`) | совпадает |
+| Бюджет 64 → 32 → 32 → 11 | `docs/reports/2026-07-31-mt5-batch-selection.md` строка 14 | совпадает |
+| Период валидации 2021-01-04 — 2022-12-02 | `batch_summary.json.validation_period` | совпадает |
+| Гипотеза «batch reconciliation остаётся UNEXPLAINED=0» | все 32 per-run `batch/*/metrics.json` проверены: ненулевых UNEXPLAINED нет | подтверждено |
+| 53 теста: 24 + 6 + 23 | повторный запуск pytest + подсчёт `def test_` | `53 passed in 0.47s`, счётчики верны |
+| Контекст по отчётам 2026-07-30 (690 строк ERROR-4756, 9 ORDER_EXPIRED, 32 pending-not-found) и 2026-07-31 (PARITY_PASS) | `docs/reports/2026-07-30-mt5-single-rule-diagnostic-run.md` строки 122–142; `2026-07-31-mt5-nero-parity.md` | совпадает |
+| Изменённые файлы (roadmap, handoff, CHANGELOG, wiki) | коммиты `aad3bc9`, `95eb545`, `1f1fec4`, `e08ee7f`, `cf3c175`; запись CHANGELOG от 2026-08-01 существует | существует |
+
+## Замечания
+
+### 1. Формулировка про 22767 OPEN_FAILED — важно
+
+- **Место**: отчёт, строка 147 (раздел Results).
+- **Суть**: утверждение «The 22767 OPEN_FAILED events count retry attempts per same-bar signal under the single-position policy» использует слово «retry attempts» (повторные попытки), которое не соответствует механике. События `OPEN_FAILED` логируются на каждом баре, где активный сигнал не может открыться из-за занятой позиции, — это повторная фиксация заблокированного сигнала, а не повтор торговой попытки (повторные попытки брокеру живут в цикле `ERROR_CHECK` в `ERRORs.mqh` и в события не пишутся).
+- **Доказательство**: `MT/MQL5/Include/lib_ML_Signal.mqh:782-786` (single-position гейт пишет `OPEN_FAILED` при `BUY.Typ != NONE || SEL.Typ != NONE` на текущем баре); состав причин в `event_anomaly_summary.json.batch_runs.open_failed_reasons`: `position_or_pending_order_exists=22619` (99.3%) + `pending_order_not_found_after_order_placed=148`.
+- **Почему важно**: слово «retry» может направить будущую диагностику к несуществующему механизму повторов и исказить оценку числа «отказов».
+- **Исправление**: перефразировать как «per-bar re-logging of active signals blocked by the single-position gate (22619/22767 = 99.3% `position_or_pending_order_exists`)», и добавить разбивку по причинам — сейчас она есть в артефакте, но отсутствует в отчёте, при том что это ключевой результат классификации OPEN_FAILED.
+
+### 2. Строка 118: «all with BS_p05 < 1.0» — важно (точность семантики гейта)
+
+- **Место**: отчёт, строка 118 (Structured Artifact Cross-Check).
+- **Суть**: гейт — `BS_p05 > 1.0`, счётчик `low_bootstrap_lower_bound` считает `bs_p05 <= 1.0` (см. план, Task 4, реализация `float(item.get("bs_p05", 0.0)) <= 1.0`). Формулировка «< 1.0» подменяет условие провала.
+- **Доказательство**: `docs/superpowers/plans/2026-08-01-mt5-execution-hygiene-postbatch.md` (Task 4, код `summarize_batch_failure`); `docs/reports/2026-07-31-mt5-batch-selection.md` строка 121 («провалили гейт BS_p05 > 1.0»).
+- **Почему важно**: в будущих прогонах кандидат с BS_p05 ровно 1.0 должен считаться провалившим гейт; формулировка «< 1.0» это скрывает. Фактически сейчас все 11 значений ниже 1.0, так что число не ошибочно — ошибочна только формулировка условия.
+- **Исправление**: заменить на «all 11 failed the `BS_p05 > 1.0` gate (all observed BS_p05 ≤ 1.0)».
+
+### 3. Класс OTHER=621 не расшифрован — улучшение
+
+- **Место**: отчёт, строки 108 и 145.
+- **Суть**: треть всех строк ошибок (621 из 1879) помечена `OTHER`, и отчёт не раскрывает состав. Фактически это нерабочие/служебные ошибки: `MAIL_SEND ERROR-4060/4066` (618 строк), `ERROR-4058` (3), `ERROR-5008` (1) — торговых отказов в OTHER нет.
+- **Доказательство**: `error_summary.json.by_error_code`; подсчёт сообщений в `error_rows_classified.csv` (OTHER = 465×ERROR-4060 + 152×ERROR-4066 + 4 прочих).
+- **Почему важно**: читатель не может понять, что торговые отказы исчерпывающе классифицированы (`INVALID_STOPS` + `REQUOTE` + `MODIFICATION_TOO_CLOSE` + `MARKET_CLOSED` + `INVALID_PRICE` = 1258), а OTHER — почтовый/файловый шум. Это прямо относится к обязательному пункту методики 13b «все рассогласования исполнения классифицированы».
+- **Исправление**: добавить одно предложение в Results: состав OTHER по кодам и вывод, что торговых отказов в нём нет.
+
+### 4. Числа из контекста 2026-07-30 опущены — улучшение
+
+- **Место**: отчёт, строка 28 (Context).
+- **Суть**: вместо конкретных величин написано обобщённо: «ERROR-4756 lines», «pending-order-not-found messages». Источник содержит точные числа: 690 строк ERROR-4756, 32 «pending order was not found».
+- **Доказательство**: `docs/reports/2026-07-30-mt5-single-rule-diagnostic-run.md` строки 126 и 136.
+- **Почему важно**: cold-start-агенту приходится открывать исходный отчёт ради двух чисел.
+- **Исправление**: вернуть числа в скобках (они исторические и не используются в текущих решениях — запрет зафиксирован отдельно).
+
+### 5. Вопрос: покрытие обязательного списка ошибок
+
+- **Место**: отчёт в целом.
+- **Суть**: обязательный список методики 13b для этого этапа — «все рассогласования исполнения классифицированы». При `linkage_status=UNKNOWN` нельзя доказать, что 148 строк `pending_order_not_found_after_order_placed` и 67 `ORDER_EXPIRED` в batch исчерпывают расхождения между событиями и реальными отказами брокера. Отчёт честно помечает это как ограничение (строки 163, 170) и держит статус `EXECUTION_HYGIENE_PARTIAL` — то есть противоречия методологии нет, статус выбран корректно. Отмечаю как вопрос, а не ошибку: достаточно ли одного предложения про стабильный row-level ключ, чтобы будущий прогон мог поднять статус до CLASSIFIED.
+- **Доказательство**: `event_anomaly_summary.json.linkage_status=UNKNOWN`; план (Task 3, обязательные проверки).
+- **Исправление**: не требуется; при планировании следующего прогона заложить добавление стабильного ключа (тикет/время) в события.
+
+## Что не требует исправлений
+
+- Вердикт `DIAGNOSTIC_ONLY` + `EXECUTION_HYGIENE_PARTIAL` выбран корректно по правилам плана (Task 5): пропущенные `ERROR_SoSimple_163856259.csv` и журнал агента ограничивают статус уровнем PARTIAL.
+- Раздел A5-объёма (строка 161) честно перечисляет невыполненные части (oracle-декомпозиция, срезы TP/SL/TIMEOUT и т.д.) — противоречия с методикой A5 нет.
+- Split Disclosure, Forbidden Interpretations, отказ от `locked_test`, множественное тестирование — всё соответствует шаблонам методик 09/16.
+- Команды генерации (строки 58–63) соответствуют CLI модуля `ML/baseline/mt5_execution_diagnostics.py` (фазы inventory/errors/events/batch существуют).
+
+## Итог
+
+Отчёт можно считать достоверным; к публикации/передаче пригоден. Рекомендуемые правки: замечания 1 и 2 (точность формулировок), 3 и 4 (полнота). Ошибок в числах, хешах, ссылках и вердиктах не найдено.
