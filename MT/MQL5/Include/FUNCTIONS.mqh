@@ -110,40 +110,12 @@ class ORD_TYPE{
 
 //+-------------------------------------------------------------+
 //| Multi-position array                                        |
-//| NB: valid only when ExpTotal==1 (see SERVICE.mqh:47). Multi-|
-//| position probe runs with a single EXP[] instance, so a      |
-//| global array is equivalent to a per-expert array.            |
+//| POSITION_TRACKER и helpers объявлены как поля/methods       |
+//| класса EXPERT_PARENT_CLASS — каждый эксперт имеет свой      |
+//| массив позиций, фильтруемый по Mgc в ORDER_CHECK().         |
 //+-------------------------------------------------------------+
 #define MAX_MULTIPOS 64
 struct POSITION_TRACKER { int ticket; PRICE data; bool active; };
-POSITION_TRACKER Pos[MAX_MULTIPOS];
-int PosCount = 0;
-
-void AddPosition(POSITION_TRACKER &p) {
-   if (PosCount >= MAX_MULTIPOS) return;
-   Pos[PosCount] = p;
-   PosCount++;
-}
-void RemovePositionByTicket(int ticket) {
-   for (int i=0; i<PosCount; i++) {
-      if (Pos[i].ticket == ticket && Pos[i].active) {
-         Pos[i].active = false;
-         Pos[i].data.Val = 0;
-         break;
-      }
-   }
-}
-int FindPosIndexByTicket(int ticket) {
-   for (int i=0; i<PosCount; i++)
-      if (Pos[i].ticket == ticket && Pos[i].active) return i;
-   return -1;
-}
-int CountActiveByType(char typ) {
-   int n = 0;
-   for (int i=0; i<PosCount; i++)
-      if (Pos[i].active && Pos[i].data.Typ == typ) n++;
-   return n;
-}
 
 //+-------------------------------------------------------------+
 //| родительский класс с общими функциями                       |
@@ -176,6 +148,37 @@ class EXPERT_PARENT_CLASS { // общие функции во всех посл�
                         // set to {Val=0, Typ=NONE} by ORDER_CHECK() once Pos[] is canonical
                         // (Task 2). Removed from runtime decision path by Tasks 3-5.
       ORD_TYPE set,mem;  // set = pending next-bar order queue (UNCHANGED, single per bar)
+
+      // Multi-position array: per-expert. ORDER_CHECK() populates only orders
+      // matching this.Mgc, so Pos[] holds exclusively this expert's positions.
+      POSITION_TRACKER Pos[MAX_MULTIPOS];
+      int PosCount;
+
+      void AddPosition(POSITION_TRACKER &p) {
+         if (PosCount >= MAX_MULTIPOS) return;
+         Pos[PosCount] = p;
+         PosCount++;
+      }
+      void RemovePositionByTicket(int ticket) {
+         for (int i=0; i<PosCount; i++) {
+            if (Pos[i].ticket == ticket && Pos[i].active) {
+               Pos[i].active = false;
+               Pos[i].data.Val = 0;
+               break;
+            }
+         }
+      }
+      int FindPosIndexByTicket(int ticket) {
+         for (int i=0; i<PosCount; i++)
+            if (Pos[i].ticket == ticket && Pos[i].active) return i;
+         return -1;
+      }
+      int CountActiveByType(char typ) {
+         int n = 0;
+         for (int i=0; i<PosCount; i++)
+            if (Pos[i].active && Pos[i].data.Typ == typ) n++;
+         return n;
+      }
       
       void EXPERT_PARENT_CLASS(){
          Per=short(Period());
@@ -187,6 +190,8 @@ class EXPERT_PARENT_CLASS { // общие функции во всех посл�
          //VERSION();
          Name=NAME; 
          Ver=StringToDouble(VER);
+         PosCount=0;
+         for (int i=0; i<MAX_MULTIPOS; i++) Pos[i].active=false;
          Print("EXPERT_PARENT_CLASS constructor: CurExp=",CurExp," Name=",Name," Ver=",Ver); 
          }
         

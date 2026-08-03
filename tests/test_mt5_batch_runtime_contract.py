@@ -97,7 +97,7 @@ def test_run_batch_removes_stale_tester_event_file_before_run(monkeypatch, tmp_p
     monkeypatch.setattr(run_mt5_batch, "TERMINAL_FILES", terminal_files)
     monkeypatch.setattr(run_mt5_batch, "TESTER_FILES", tester_files)
     monkeypatch.setattr(run_mt5_batch, "make_run_id", lambda candidate: run_id)
-    monkeypatch.setattr(run_mt5_batch, "create_set_file", lambda run_id: tmp_path / "settings.set")
+    monkeypatch.setattr(run_mt5_batch, "create_set_file", lambda run_id, *, max_positions=1: tmp_path / "settings.set")
     monkeypatch.setattr(run_mt5_batch, "create_ini_file", lambda run_id, set_name: tmp_path / "tester.ini")
     monkeypatch.setattr(run_mt5_batch, "wait_for_liveupdate_clear", lambda: True)
     monkeypatch.setattr(run_mt5_batch, "run_tester", lambda ini_path: False)

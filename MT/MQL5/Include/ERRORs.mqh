@@ -94,15 +94,15 @@ void ERROR_LOG(string ErrTxt,uchar ExpNum){
     Str6="Expir BUY/SEL";         Prm6=DTIME(EXP[ExpNum].set.BUY.Exp)+"/"+DTIME(EXP[ExpNum].set.SEL.Exp);
     Str7="H/L";                   Prm7=S5(EXP[ExpNum].H,SYM)+"/"+S5(EXP[ExpNum].L,SYM)+"/"+S4(EXP[ExpNum].ATR); //
     // multi-pos diagnostic: summarize active positions if >1, otherwise singleton.
-    if (MT5_MaxPositions > 1 && PosCount > 0) {
+    if (MT5_MaxPositions > 1 && EXP[ExpNum].PosCount > 0) {
        string buy_sum="", sel_sum="";
-       for (int i = 0; i < PosCount; i++) {
-          if (!Pos[i].active || Pos[i].data.Typ == NONE) continue;
-          string label = S0(i)+":"+S5(Pos[i].data.Val,SYM)+"/"+S5(Pos[i].data.Stp,SYM)+"/"+S5(Pos[i].data.Prf,SYM)+" "+DTIME(Pos[i].data.T);
-          if (Pos[i].data.Typ == MARKET || Pos[i].data.Typ == STOP || Pos[i].data.Typ == LIMIT) {
+       for (int i = 0; i < EXP[ExpNum].PosCount; i++) {
+          if (!EXP[ExpNum].Pos[i].active || EXP[ExpNum].Pos[i].data.Typ == NONE) continue;
+          string label = S0(i)+":"+S5(EXP[ExpNum].Pos[i].data.Val,SYM)+"/"+S5(EXP[ExpNum].Pos[i].data.Stp,SYM)+"/"+S5(EXP[ExpNum].Pos[i].data.Prf,SYM)+" "+DTIME(EXP[ExpNum].Pos[i].data.T);
+          if (EXP[ExpNum].Pos[i].data.Typ == MARKET || EXP[ExpNum].Pos[i].data.Typ == STOP || EXP[ExpNum].Pos[i].data.Typ == LIMIT) {
              // грубо разделяем сторону по типу цены (упрощённо): если Val>0 и BID/* — уточняется через PositionSelectByTicket
              // Здесь используем букву B/S префикса для детекции по prefix в summarу.
-             if (!PositionSelectByTicket(Pos[i].ticket)) { buy_sum += "?"+label+" "; continue; }
+             if (!PositionSelectByTicket(EXP[ExpNum].Pos[i].ticket)) { buy_sum += "?"+label+" "; continue; }
              if ((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) buy_sum += "B"+label+" ";
              else sel_sum += "S"+label+" ";
           }

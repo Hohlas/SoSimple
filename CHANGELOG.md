@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-08-02] — MT5 Multi-Position Probe (DIAGNOSTIC_ONLY — BLOCKED)
+- **report**: `docs/reports/2026-08-02-mt5-multi-position-probe.md`
+- **topics**: `multi-position`, `MQL5-refactoring`, `Pos[]-array`, `backcompat`, `diagnostic-executor-blocker`
+- **summary**: Реализован плановый рефакторинг `PRICE BUY, SEL` → `POSITION_TRACKER Pos[64]` + `input int InpMT5_MaxPositions` (default `=1`). Backcompat smoke с `--max-positions=1` PASS (positions=3, UNEXPLAINED=0), прежний fill-rate verdict сохраняется. Batch max=2/max=16 не завершён: MT5_DiagnosticExecutor single-ticket tracker ломает timing contract в multi-pos режиме.
+- **artifacts**: `MT/MQL5/Include/FUNCTIONS.mqh`, `MT/MQL5/Include/ORDERS.mqh`, `MT/MQL5/Include/OUTPUT.mqh`, `MT/MQL5/Include/COUNT.mqh`, `MT/MQL5/Include/INPUT.mqh`, `MT/MQL5/Include/lib_ML_Signal.mqh`, `MT/MQL5/Include/lib_ML_Signal_TB.mqh`, `MT/MQL5/Include/ERRORs.mqh`, `MT/MQL5/Experts/$o$imple.mq5`, `ML/baseline/run_mt5_batch.py`
+- **decision**: (а) MQL5 refactoring PASS — компилируется 0 errors, backcompat при `=1` канонически подтверждена. (б) Multi-pos probe BLOCKED на диагностическом слое: `MT5_LogLifecycleForCurrentState`追踪_single-ticket — нужно расширение под multi-pos. (в) Предыдущий вердикт fill-rate probe сохраняется: «single-position policy блокирует 99.2%» — пока multi-pos batch не завершён. (г) Forbidden interpretations: new winner / live-ready / tradable / profitable — все applies.
+- **notes**: (1) Risk: высокий — следующий план должен расширять `MT5_LogLifecycleForCurrentState` (строки 582-628 в lib_ML_Signal.mqh) либо на массив tracked-tickets, либо на per-bar full snapshot. (2) Глобальный массив `Pos[]` корректен только при `ExpTotal==1` (SERVICE.mqh:47), для `ExpTotal>1` потребуется per-expert field. (3) `set.BUY/SEL` pending queue остаётся single (по плану: одна bar = один новый pending ордер). (4) Pytest suite (58 tests) — PASS.
+
 ## [2026-08-01] — MT5 Saved-Batch Fill-Rate Probe (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-08-01-mt5-saved-batch-fill-rate-probe.md`
 - **topics**: `mt5`, `fill_rate`, `signal_to_trade_conversion`, `position_policy`

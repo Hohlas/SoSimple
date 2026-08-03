@@ -1,14 +1,14 @@
 {
   "status": "DIAGNOSTIC_ONLY",
   "order_counts": {
+    "ML_EVAL": 115,
+    "ML_CLOSE": 82,
     "OPEN_FAILED": 76,
-    "ML_EVAL": 22,
     "ORDER_PLACED": 4,
     "TX_CLOSE": 3,
     "TX_OPEN": 3,
     "OPEN": 2,
     "INIT": 1,
-    "ML_CLOSE": 1,
     "ORDER_EXPIRED": 1,
     "CLOSE": 1
   },
@@ -22,8 +22,8 @@
   "close_reason_counts": {
     "broker_history_limited": 1
   },
-  "ml_close_decision_count": 1,
-  "profit_sum": 14.0,
+  "ml_close_decision_count": 82,
+  "profit_sum": -104.0,
   "missing_open_estimate": 2,
   "open_without_close_estimate": 1,
   "reconciliation": {
