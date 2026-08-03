@@ -1,196 +1,165 @@
-# Audit: 2026-08-01-mt5-execution-hygiene-postbatch.md
+# Аудит этапа MT5 multi-position refactor
 
-**Date:** 2026-08-02
-**Auditor:** automated cross-check
-**Object:** `docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md` (193 lines)
+Дата аудита: 2026-08-03.
 
----
+Проверяемые коммиты: `6ceb85345237d9021866727ee1980efad3175fc9`, `94ba840acb09ae5dd44e2b8c5a46b8d198da6e57`, `9a96d10f65b6872fc9b5d513c993215d63550e92`, `9d9e64a41b35c986c372d7385eba6ee31a9e8386`, `414236747c693fdc427dd6233927b4d717a81288`, `37470087fe9d0a134134f1a9fd55a04647c45867`, `274d6282aba5e57f289beb71d2735dd5dfe4ea3e`.
 
-## 1. Important — All SHA256 hashes match (positive result)
+Проверенные первоисточники: `docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md`, `docs/reports/2026-08-02-mt5-multi-position-probe.md`, `docs/methodology/README.md`, `docs/methodology/00-research-management.md`, `docs/methodology/13b-mt5-execution-parity.md`, `docs/methodology/16-reporting-audit.md`, `docs/superpowers/README.md`, `tests/README.md`, изменённые MQL5/Python/test-файлы, `CHANGELOG.md`, `CONTEXT_HANDOFF.md`, `docs/superpowers/roadmap.md`.
 
-- **Importance:** important
-- **Location:** report lines 92–101 (Artifact Hashes)
-- **Issue:** all 10 hashes match the files on disk:
-  - `error_inventory.json` `fc7d1070...` ✓
-  - `error_summary.json` `57be2f56...` ✓
-  - `error_rows_classified.csv` `79d5978b...` ✓
-  - `event_anomaly_summary.json` `8a32bb2d...` ✓
-  - `event_anomalies.csv` `fe759538...` ✓
-  - `post_batch_diagnostics.json` `41932413...` ✓
-  - `post_batch_top_candidates.csv` `ed73d7d9...` ✓
-  - `batch_summary.json` `bbe2bf19...` ✓
-  - `mt5_execution_metrics_20260731_tx_lifecycle.json` `e550d8bc...` ✓
-  - `mt5_execution_metrics_20260730_entry_quality_filter.json` `9a5af9bc...` ✓
-- **Evidence:** `sha256sum` of each listed path matches the report value.
-- **Why:** previous audit of this report (before this pass) flagged three hash mismatches; they are now fixed.
-- **Recommendation:** none.
+Навигация: `graphify query "MT5 multi-position refactor plan reports commits position lifecycle close policy ticket magic docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md" --budget 2000`; `knowledge-rag` для новых плана и отчёта вернул `no_results`, поэтому выводы ниже основаны на первичных файлах и командах.
 
-## 2. Critical — Test count cited is stale: 29 vs factual 53
+## Итог
 
-- **Importance:** important
-- **Location:** report line 139
-- **Issue:** Report states: `29 passed in 0.34s`. Actual run of the exact command on line 136 (`./.venv/bin/python -m pytest tests/test_mt5_execution_diagnostics.py tests/test_parse_mt5_execution_report.py tests/test_mt5_signal_executor_schema.py -q`) gives **`53 passed in 0.47s`**.
-- **Evidence:**
-  - Rerun: `53 passed in 0.47s`.
-  - Test count: `test_mt5_execution_diagnostics.py` has 24 test functions, `test_parse_mt5_execution_report.py` has 6, `test_mt5_signal_executor_schema.py` has 23 → 53.
-  - Running only `test_mt5_execution_diagnostics.py` + `test_parse_mt5_execution_report.py` gives `30 passed` — closer to the report's 29, suggesting the report's command text doesn't match the actual command run.
-- **Why:** Verification line is the canonical proof that the report is reproducible. A wrong pass count raises doubt that the cited command was actually run, or that artifacts changed post-publication.
-- **Recommendation:** rerun the exact pytest command, update the line number, and either: (a) update the count to `53 passed` if all three files genuinely ran, or (b) align the command on line 136 to match what actually produced 29. The latter is unlikely; the report was written before added tests.
+Статус этапа: **FAIL для заявленной цели "full refactoring"**, **DIAGNOSTIC_ONLY/BLOCKED для экспериментального вывода**.
 
-## 3. Improvement — `HEAD=aad3bc9 plus working-tree audit changes` is ambiguous
+Код компилируется по сохранённому логу с `0 errors, 2 warnings`, а Python-тесты прошли. Но заявленная функция "каждая позиция, включая одновременные same-direction, получает собственное управление" не доказана и частично противоречит коду: установка новых ордеров всё ещё блокируется legacy-полями `BUY.Val`/`SEL.Val`, часть close-path может пометить не ту сторону, а диагностический lifecycle остаётся однотикетным.
 
-- **Importance:** improvement
-- **Location:** report line 139
-- **Issue:** Current `HEAD` is `8c961ad` (docs: report mt5 fill rate probe), not `aad3bc9`. The hash `aad3bc9` DOES exist in git history as `fix: keep mt5 hygiene verdict diagnostic only`, validating the claim that at publication time the report was based on that commit + uncommitted fixes. It is now committed and HEAD moved on.
-- **Evidence:** `git rev-parse HEAD` → `8c961ad0cf516adbe4346df8261de528c890169b`; `git log --all | grep aad3bc9` → found.
-- **Why:** The phrase "plus working-tree audit changes" leaves it ambiguous whether the audit-changed report itself was recommitted. For reproducibility, the final committed state should match the report.
-- **Recommendation:** replace with a single pinned commit that reflects the final state at report publication, or delete the `HEAD=` note since the audit fixes are now committed.
+## Замечания
 
-## 4. Important — All numeric claims in Structured Artifact Cross-Check verified
+### 1. Критично: same-direction multi-position фактически блокируется в `SET_BUY/SET_SEL`
 
-- **Importance:** important (positive)
-- **Location:** report lines 105–121 (Structured Artifact Cross-Check) and 143–149 (Results)
-- **Issue:** Every number verified against source artifacts:
-  - 6 discovered `ERROR_SoSimple_*.csv`: `error_inventory.json.files` count = 6 ✓
-  - Missing `ERROR_SoSimple_163856259.csv`: present in `error_inventory.json.unknowns.not_found_expected_files` ✓
-  - 1879 classified rows: `error_summary.json.total_rows = 1879` ✓
-  - Error classes (`INVALID_STOPS=670`, `OTHER=621`, `REQUOTE=550`, `MODIFICATION_TOO_CLOSE=35`, `MARKET_CLOSED=2`, `INVALID_PRICE=1`): match `error_summary.json.by_error_class` exactly ✓
-  - Source buckets (`mt4_files=1174`, `mt_tester_files=705`): match `error_summary.json.by_source_bucket` ✓
-  - Lifecycle `position_count=269`, `CLOSED_TX=269`, `UNEXPLAINED=0`, `same_h1_count=17`: match `mt5_execution_metrics_20260731_tx_lifecycle.json.reconciliation` ✓
-  - Single-rule `ORDER_EXPIRED=9`: matches metric file order_counts ✓
-  - 32 batch event paths, `_smoke` excluded: `batch_run_count=32`, `excluded_service_dirs=['_smoke']` ✓
-  - Batch `OPEN_FAILED=22767`, `ORDER_EXPIRED=67`: match `event_anomaly_summary.json.batch_runs.event_counts` ✓
-  - Linkage `UNKNOWN`: ✓
-  - `BATCH_NO_WINNER`, 11 failed low bootstrap lower bound, buckets `100-149=9` and `150+=2`, one profit-concentration fail: match `post_batch_diagnostics.json.top_failure_modes`
-  - Top candidate `PF=1.2323`, `BS_p05=0.8867479736061653`, `trades_count=102`, `fill_rate=0.09444444444444444`, `gross_profit=5468.199999999997`, `gross_loss=4437.3`, `average_win=130.19523809523804`, `average_loss_abs=73.955`: all match `post_batch_diagnostics.json.top_candidates[0]` ✓
-- **Recommendation:** none.
+Место: `MT/MQL5/Include/ORDERS.mqh:22`, `MT/MQL5/Include/ORDERS.mqh:46`, `MT/MQL5/Include/ORDERS.mqh:184-187`; план `docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md:5`, `:36-38`, `:407-430`.
 
-## 5. Important — Sample Size Disclosure fully verified
+Суть проблемы: план обещает поддержку одновременных позиций в одну сторону, а `INPUT.mqh` и `lib_ML_Signal.mqh` действительно снимают часть gate-ов. Но фактическая отправка ордера всё ещё выполняется только в циклах `while (repeat>0 && BUY.Val==0)` и `while (repeat>0 && SEL.Val==0)`. `ORDER_CHECK()` при любом существующем BUY/SELL зеркалит последнюю найденную позицию обратно в legacy `BUY`/`SEL`, поэтому при уже открытой BUY-позиции `SET_BUY()` не войдёт в цикл отправки нового BUY-ордера.
 
-- **Importance:** important (positive)
-- **Location:** report lines 125–131 (Sample Size Disclosure)
-- **Issue:** All quoted sample sizes verified:
-  - Reference event artifacts: 23050 events = `event_anomaly_summary.json.reference_runs.total_rows` ✓
-  - Batch event artifacts: 54078 events across 32 runs = `batch_runs.total_rows=54078`, `batch_run_count=32` ✓
-  - Batch candidate table: 32 valid + 11 eligible = `n_valid=32`, `n_eligible=11` ✓
-  - 1424 trades among 11 eligible = `sample_sizes.eligible_top_candidate_trades=1424` ✓
-  - 14954 active signal rows; 7092 buy, 7862 sell = `sample_sizes.eligible_top_candidate_*` ✓
-- **Recommendation:** none.
+Доказательство: `nl -ba MT/MQL5/Include/ORDERS.mqh | sed -n '14,60p;157,190p'` показывает условия цикла на `BUY.Val==0`/`SEL.Val==0` и backcompat-заполнение `BUY=p.data`/`SEL=p.data`. Это противоречит `INPUT.mqh:29-32`, где multi-pos gate разрешает вход при `BuyActiveCnt < MT5_MaxPositions`.
 
-## 6. Important — Hypothesis claim ("per-run reconciliation UNEXPLAINED=0") verified
+Почему важно: это бьёт в центральную цель этапа. Даже если диагностический логгер починить, советник может не поставить вторую позицию в ту же сторону, поэтому вывод "multi-position не улучшает PF" или "блокер только в диагностике" будет недостоверен.
 
-- **Importance:** important (positive)
-- **Location:** report line 159
-- **Issue:** Report claims `batch reconciliation remains UNEXPLAINED=0 in per-run metrics`. Verified: across all 32 runs in `event_anomaly_summary.json.batch_runs.reconciliation_by_run`, no run has `UNEXPLAINED != 0`. Total: `UNEXPLAINED=0`, `CLOSED_TX=2508`, `OPEN_AT_END=0`.
-- **Evidence:** `[(rid, v.class_counts.UNEXPLAINED) for rid,v in runs.items() if !=0]` returns empty list; total UNEXPLAINED across 32 runs = 0.
-- **Recommendation:** none — the hypothesis basis is sound.
+Рекомендуемое исправление: в `SET_BUY/SET_SEL` заменить legacy-условие цикла на сторону-зависимую проверку лимита при `MT5_MaxPositions>1`: считать активные и pending позиции нужной стороны по `Pos[]`/тикетам и разрешать отправку, пока count `< MT5_MaxPositions`. Для `MT5_MaxPositions==1` оставить старое поведение. Добавить минимальный тест/логовый smoke, где при уже существующей BUY-позиции и `MT5_MaxPositions=2` второй BUY действительно отправляется или хотя бы доходит до `OrderSend`.
 
-## 7. Improvement — Report omits TX_OPEN count for batch (potential for confusion)
+### 2. Критично: `CloseBuySide(0)` / `CloseSellSide(0)` помечают все позиции, а не только свою сторону
 
-- **Importance:** improvement
-- **Location:** report line 147 (event anomaly summary sentence)
-- **Issue:** Report discloses `OPEN_FAILED=22767` and `ORDER_EXPIRED=67` only. Available counters showing scale of execution: `TX_OPEN=2508`, `TX_CLOSE=2508`, `ORDER_PLACED=2601`, `OPEN=2367`. These show that 22659 of 22767 `OPEN_FAILED` events (~99.5%) are policy-block retries against the 2508 actually opened positions. This is structurally what later fill-rate probe analyzes; readers may misread `OPEN_FAILED=22767` as if 22767 distinct orders failed.
-- **Evidence:** `event_anomaly_summary.json.batch_runs.event_counts` — full table.
-- **Why:** The `OPEN_FAILED` number alone overstates execution failures because retries against the one-position policy are counted once per attempt; without `TX_OPEN` for context, the number can be misread.
-- **Recommendation:** Add one sentence to Results: "Batch totals: `ORDER_PLACED=2601`, `OPEN=2367`, `TX_OPEN=2508` (one open position per run); the 22767 `OPEN_FAILED` events count retry attempts per same-bar signal under the single-position policy, not distinct broker refusals."
+Место: `MT/MQL5/Include/OUTPUT.mqh:173-180`, `MT/MQL5/Include/OUTPUT.mqh:209-215`, вызовы `CLOSE_BUY(0)`/`CLOSE_SEL(0)` в `MT/MQL5/Include/OUTPUT.mqh:400-406`.
 
-## 8. Improvement — Methodology citations valid but 09-validation-freeze.md is not central
+Суть проблемы: в multi-position helpers проверка `if (price == 0) { Pos[i].data.Val = 0; continue; }` стоит до `PositionSelectByTicket()` и проверки стороны. Значит `CloseBuySide(0, ...)` пометит к удалению/закрытию и SELL-позиции, а `CloseSellSide(0, ...)` пометит BUY-позиции.
 
-- **Importance:** improvement
-- **Location:** report line 36
-- **Issue:** Report cites `00-research-management.md`, `09-validation-freeze.md`, `12-backtest-costs.md`, `13b-mt5-execution-parity.md`, `16-reporting-audit.md`, `A5-post-mortem-diagnostics.md`. All six exist and are relevant. `09-validation-freeze.md` is weakly invoked — the stage does not perform validation selection or open locked_test — but its split-role and `locked_test`-forbidden rules indirectly bind the report. Other cited files (A5, 00, 13b, 12:50/:127/:130, 16) are directly applied.
-- **Evidence:** all six files confirmed present; `09-validation-freeze.md:46` ("Запретить изменение rule после просмотра `locked_test`") and `:57` ("`locked_test` не участвует в выборе") are the actually relevant lines.
-- **Recommendation:** none required; optionally drop `09-validation-freeze.md` from the list since this stage performs neither selection nor freeze, and split disclosure (line 174) already handles it.
+Доказательство: `rg -n "CLOSE_BUY\\(0|CLOSE_SEL\\(0" MT/MQL5/Include` находит реальные вызовы с `price=0`; `nl -ba MT/MQL5/Include/OUTPUT.mqh | sed -n '169,220p;392,408p'` показывает порядок операций.
 
-## 9. Important — All Related Materials files exist
+Почему важно: это краевой, но принципиальный дефект управления жизненным циклом. При включении веток POC/near pending logic в multi-pos режиме side-specific close может закрывать противоположную сторону.
 
-- **Importance:** important
-- **Location:** report lines 187–192
-- **Issue:** All seven related-material paths exist:
-  - Plan: `docs/superpowers/plans/2026-08-01-mt5-execution-hygiene-postbatch.md` ✓
-  - `docs/reports/2026-07-30-mt5-single-rule-diagnostic-run.md` ✓
-  - `docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md` ✓
-  - `docs/reports/2026-07-31-mt5-nero-parity.md` ✓
-  - `docs/reports/2026-07-31-mt5-batch-selection.md` ✓
-  - `docs/superpowers/roadmap.md` ✓
-  - `ML/reports/mt5_execution_loop/diagnostics/` (directory) ✓
-- **Recommendation:** none.
+Рекомендуемое исправление: в `CloseBuySide`/`CloseSellSide` сначала выбрать тикет и проверить сторону, и только затем обрабатывать `price == 0`. Добавить синтетическую проверку на массив из BUY+SELL: `CloseBuySide(0)` не меняет SELL.
 
-## 10. Important — Report structure matches `16-reporting-audit.md` requirements
+### 3. Важно: диагностический blocker описан как "не баг рефакторинга", но это неподтверждённое утверждение
 
-- **Importance:** important (positive)
-- **Location:** whole report
-- **Issue:** `16-reporting-audit.md:18–30` lists required sections: Context, Stage Level, What Was Done, Multiple Testing Context, Changed Files, Verification, Results, Conclusions, Limitations/Open Questions, Split Disclosure, Next Step, Related Materials. Plus Research-first disclosure (lines 64–77). The report contains all required sections:
-  - Context (✓ line 26) — NO `Уровень этапа` heading but Stage Level section (✓ line 9)
-  - Research-first disclosure (✓ line 13)
-  - Multiple Testing Context (✓ line 40)
-  - What Was Done (✓ line 44) with commands
-  - Changed Files (✓ line 65)
-  - Artifact Hashes (✓ extra)
-  - Structured Artifact Cross-Check (✓ extra)
-  - Sample Size Disclosure (✓ extra, matches `16:94` requirement)
-  - Verification (✓ line 133)
-  - Results (✓ line 141)
-  - Conclusions (✓ line 151)
-  - Limitations/Open Questions (✓ line 165)
-  - Split Disclosure (✓ line 173)
-  - Forbidden Interpretations (✓ line 177) — requirements met
-  - Next Step (✓ line 181) — exactly one action as required
-  - Related Materials (✓ line 185)
-- **Recommendation:** none — exceeds the mandatory minimum.
+Место: `docs/reports/2026-08-02-mt5-multi-position-probe.md:139-162`; код `MT/MQL5/Include/lib_ML_Signal.mqh:582-648`.
 
-## 11. Important — Forbidden interpretations explicit and compliant
+Суть проблемы: отчёт говорит, что timing-contract сбой в max=2 - это "архитектурное ограничение диагностического слоя executor-а, а не баг рефакторинга плана". Фактически плановая цель включает "life-cycle management" для каждой позиции, а изменённый этап оставил `MT5_TrackedTicket`, `MT5_TrackedIdx`, `MT5_TrackedOpenLogged` однотикетными. Это не внешний шум, а несоответствие реализации заявленному multi-position lifecycle.
 
-- **Importance:** important (positive)
-- **Location:** report lines 24 and 179
-- **Issue:** Both explicit `forbidden_interpretations` line (24) and Forbidden Interpretations section (179) list: `profitable, ready, live-ready, tradable, new winner, model-quality proof`. No content claim raises verdict above `DIAGNOSTIC_ONLY`. No claim of "candidate" or model-quality. Report explicitly preserves `BATCH_NO_WINNER` (line 117, 153).
-- **Evidence:** grep for forbidden words in report — none of them appear as claims.
-- **Recommendation:** none.
+Доказательство: `rg -n "MT5_TrackedTicket|MT5_LastPlacedIdx|MT5_FindActiveTicket" MT/MQL5/Include/lib_ML_Signal.mqh` показывает один глобальный tracked ticket. `MT5_LogLifecycleForCurrentState()` выбирает один `buy_market` или `sell_market` и записывает его в один `MT5_TrackedTicket` (`lib_ML_Signal.mqh:582-596`). Методика `docs/methodology/13b-mt5-execution-parity.md:65-73` требует timing contract `decision_time <= execution_time` для signal-linked events.
 
-## 12. Important — A5 partial-scope honestly disclosed (positive)
+Почему важно: отчёт снижает серьёзность причины BLOCKED. Пока lifecycle logger однотикетный, нельзя проверить ни fill-rate, ни PF, ни корректность multi-position исполнения.
 
-- **Importance:** important (positive)
-- **Location:** report lines 160–163
-- **Issue:** Report explicitly states A5 scope is partial and lists what is NOT done: oracle component decomposition, TP/SL/TIMEOUT exit slices, yearly gross loss contribution, feature-period contrasts, negative controls. Reason: "those require additional saved inputs or a new diagnostic cycle". This matches `A5-post-mortem-diagnostics.md` requirement to be honest about scope limits, and the A5 stop condition on missing required inputs.
-- **Evidence:** `A5-post-mortem-diagnostics.md:309–320` lists stop conditions including insufficient objects and missing preconditions; report meets that honesty requirement.
-- **Recommendation:** none.
+Рекомендуемое исправление: переформулировать отчёт: это блокирующий дефект покрытия multi-position lifecycle в рамках заявленной цели. Исправить через per-ticket/per-signal tracker и повторить max=2 smoke до batch.
 
-## 13. Improvement — Costs limitation claim is procedurally OK
+### 4. Важно: backcompat "identical" не доказан
 
-- **Importance:** improvement
-- **Location:** report line 171 ("Cost model remains incomplete: swap, commission, slippage, latency, and stress-cost checks are not closed")
-- **Issue:** Limitation matches `12-backtest-costs.md:20–22` (commission, swap, slippage requirements) and `:71` ("Spread/commission/slippage не оставлены 'на потом'"). Since the stage is `DIAGNOSTIC_ONLY` and produces no trading verdict, the open cost model is disclosed as a limitation, not as a violation.
-- **Evidence:** plan for this stage explicitly bounds verdict to `DIAGNOSTIC_ONLY`, so unproven cost model is compliant.
-- **Recommendation:** none — handled correctly.
+Место: `docs/reports/2026-08-02-mt5-multi-position-probe.md:25-27`, `:113-131`, `:165-167`; план `docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md:23`, `:430`.
 
-## 14. Improvement — `CONTEXT_HANDOFF.md` no longer references this report as "latest report"
+Суть проблемы: отчёт утверждает, что `--max-positions=1` "identical to previous baseline" и "canonical guarantee подтверждена". Но приведённое доказательство - только smoke `positions=3, UNEXPLAINED=0`; полный batch был `SKIP` по уже существующим метрикам, а план требовал совпадения всех `batch_summary.json` для max=1 и "same events"/"102 trades".
 
-- **Importance:** improvement
-- **Location:** report line 83 lists `CONTEXT_HANDOFF.md` as modified.
-- **Issue:** Current `CONTEXT_HANDOFF.md` lists active track as `MT5 entry mechanics / trade-count frozen probe planning`; the report it points to is no longer this one (it has been superseded by the fill-rate probe report). This is normal because two later reports have since superseded this stage.
-- **Evidence:** `CONTEXT_HANDOFF.md:5` reads `MT5 entry mechanics / trade-count frozen probe planning`; CHANGELOG entries for `2026-08-01 — MT5 Saved-Batch Fill-Rate Probe` and `2026-08-01 — MT5 diagnostic timing contract` are above this one.
-- **Why:** The handoff state is correct for the project's current position, not a defect in this report.
-- **Recommendation:** none — the report was correct at publication time.
+Доказательство: отчёт `docs/reports/2026-08-02-mt5-multi-position-probe.md:119-127` показывает `32/32 SKIP`, то есть новые метрики для 32 кандидатов не пересчитаны. Текущий smoke artifact `ML/reports/mt5_execution_loop/batch/_smoke/metrics.json:3-42` содержит только агрегаты `position_count=3`, `UNEXPLAINED=0`; это не сверка всех событий, цен, tickets, side, PnL и close reasons. План `:430` ожидает "102 trades, same events", что само противоречит отчётному `positions=3`.
 
-## 15. Improvement — `execution_hygiene_status: EXECUTION_HYGIENE_PARTIAL` is project-specific, not methodology-defined
+Почему важно: backcompat - главный предохранитель рефакторинга. Совпадение двух счётчиков в smoke не доказывает, что single-position режим не изменился.
 
-- **Importance:** improvement
-- **Location:** report line 16
-- **Issue:** The field `execution_hygiene_status` is not defined in any methodology file; it is project-internal vocabulary. It is consistent with related reports (`2026-08-01-mt5-diagnostic-timing-contract.md` uses `lifecycle_status: DIAGNOSTIC_ONLY` without execution_hygiene_status). The field adds information without contradicting methodology.
-- **Evidence:** grep methodology files for `EXECUTION_HYGIENE` returns no matches.
-- **Recommendation:** none — project-internal field; consider documenting the vocabulary in `docs/methodology/13b-mt5-execution-parity.md` if it appears in more reports.
+Рекомендуемое исправление: заменить формулировку на "частичный smoke PASS". Для канонической гарантии прогнать выбранный baseline заново в отдельный output path, сравнить event CSV/metrics с предыдущим эталоном по ключевым колонкам и явно указать, какие поля совпали. Если полный batch намеренно не пересчитывался, не писать "identical".
 
----
+### 5. Важно: отчёт о компиляции противоречит методике и фактическим артефактам
 
-## Summary
+Место: `docs/reports/2026-08-02-mt5-multi-position-probe.md:92-103`; методика `docs/methodology/13b-mt5-execution-parity.md:136-151`.
 
-| Category    | Count | Items |
-|-------------|-------|-------|
-| Critical    | 0     | — |
-| Important   | 9     | #1 hashes ✓, #2 verified, #3 sample ✓, #4 per-run UNEXPLAINED=0 ✓, #5 related materials ✓, #6 structure ✓, #7 forbidden interp ✓, #8 A5 partial ✓, #9 all numeric claims ✓ |
-| Improvement | 6     | #3 HEAD ambiguity, #7 missing TX_OPEN context, #8 weak 09 ref, #13 cost limitation, #14 handoff superseded, #15 hygiene_status vocabulary |
-| Issues      | 1     | #2 stale pytest count (29 vs 53) |
+Суть проблемы: методика требует успех компиляции как `0 errors, 0 warnings` и проверку обновления `.ex5`. Отчёт фиксирует `0 errors, 2 warnings` и называет это PASS, объясняя warnings как pre-existing. Но warning всё равно нарушает буквальный критерий методики, а текущее время файлов не доказывает связь сохранённого лога с актуальным `.ex5`.
 
-**Единственная реальная проблема:** строка 139 — устаревшее число тестов `29 passed` вместо фактического `53 passed`. Предположительно отчёт писался до того, как в `test_mt5_execution_diagnostics.py` и `test_mt5_signal_executor_schema.py` добавили новых тестов, и число не было обновлено. Все прочие числовые утверждения, хеши, cross-ссылки, методологические проверки и A5-scope disclosure — корректны и подтверждены напрямую из structured-артефактов.
+Доказательство: команда `iconv -f UTF-16LE -t UTF-8 /tmp/sosimple_mt5_compile.log | tail -n 20` даёт `Result: 0 errors, 2 warnings`. Команда `ls -l /tmp/sosimple_mt5_compile.log MT/MQL5/Experts/'$o$imple.ex5'` показала лог `Aug 2 18:40`, а `.ex5` `Aug 3 03:47`, то есть сохранённый лог старше текущего бинарника.
 
-**Существенных расхождений с методологией `docs/methodology/` не найдено.** Отчёт честно документирует неполноту A5, запрещённые интерпретации, split disclosure и `BATCH_NO_WINNER` без скрытого переопределения verdict.
+Почему важно: для parity-контуров нельзя ссылаться на лог, который не подтверждает текущий скомпилированный файл. Warnings можно принять как риск, но не как PASS по критерию "0 warnings".
+
+Рекомендуемое исправление: пересобрать эксперт, сохранить лог в репозитории или отчётном каталоге, указать `mtime` `.ex5`. Если warnings остаются, статус проверки должен быть `PASS_WITH_WARNINGS`/`DIAGNOSTIC_ONLY`, а не чистый PASS; лучше исправить тип `ticket` на `ulong` или документировать, почему это невозможно.
+
+### 6. Важно: в research-first disclosure отсутствует `research_priority`
+
+Место: `docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md:14-24`, `docs/reports/2026-08-02-mt5-multi-position-probe.md:6-23`; методика `docs/methodology/00-research-management.md:55-64`, `docs/methodology/16-reporting-audit.md:64-74`.
+
+Суть проблемы: для `research_hypothesis` методика требует `research_priority`, но в плане и отчёте его нет.
+
+Доказательство: в disclosure блоках перечислены `lifecycle_status`, `origin_bias`, `roadmap_track`, `current_search_budget`, `cumulative_search_budget`, `next_probe_freeze`, `allowed_max_verdict`, `forbidden_interpretations`, но нет `research_priority`.
+
+Почему важно: priority нужен для управления очередью исследований и предотвращения бесконтрольного расширения поиска после просмотра результатов.
+
+Рекомендуемое исправление: добавить `research_priority: low|medium|high` с причиной. Для этого этапа разумно указать `medium` или `high` только если он прямо разблокирует проверку fill-rate гипотезы; иначе `medium` с ограничением "diagnostic blocker".
+
+### 7. Важно: план Task 6 содержит неверные команды и критерии
+
+Место: `docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md:422-444`.
+
+Суть проблемы: в плане есть команда `./.venv/bin/python -m ML.baseline.tester`, которой нет среди изменённых модулей, и повреждённая строка `./.venv/bin/pythonスス... root … --max-positions=16 ...`. Там же критерий "102 trades, same events" не совпадает с отчётным smoke `positions=3`.
+
+Доказательство: `sed -n '420,444p' docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md` показывает эти строки; `rg -n "def main|argparse" ML/baseline/run_mt5_batch.py` показывает фактический CLI `ML.baseline.run_mt5_batch`.
+
+Почему важно: план должен быть воспроизводимым. Повреждённые команды и неверный ожидаемый результат делают последующий аудит и повторный запуск неоднозначными.
+
+Рекомендуемое исправление: исправить команды на `./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --max-positions=2` и аналогично для 16; заменить ожидаемые числа на проверяемые артефакты или явно указать, какой baseline даёт 102 сделки.
+
+### 8. Улучшение: тесты не покрывают новую смысловую MQL5-логику
+
+Место: `tests/test_mt5_batch_runtime_contract.py`, изменённые MQL5-файлы.
+
+Суть проблемы: единственный изменённый Python-тест адаптирует mock `create_set_file` под новый аргумент. Нет теста/статического guard-а, который ловит legacy-блокер `while (... && BUY.Val==0)` в multi-pos режиме, side leak в `Close*Side(0)` или однотикетный lifecycle tracker.
+
+Доказательство: `./.venv/bin/python -m pytest tests/test_mt5_batch_runtime_contract.py tests/test_parse_mt5_execution_report.py tests/test_mt5_signal_executor_schema.py -q` прошёл: `34 passed`. При этом найденные дефекты остаются в MQL5-коде, который эти тесты не исполняют.
+
+Почему важно: прохождение текущих тестов создаёт ложное чувство завершённости этапа.
+
+Рекомендуемое исправление: добавить хотя бы статические contract-тесты на текст MQL5 до появления полноценного MT5 integration test: запрет `while (... BUY.Val==0)` без ветки `MT5_MaxPositions`, проверка порядка side selection в `Close*Side`, проверка отсутствия одиночного `MT5_TrackedTicket` в multi-pos диагностике после следующего исправления.
+
+### 9. Улучшение: `BuyPosCnt` в `INPUT.mqh` мёртвый и вводит в заблуждение
+
+Место: `MT/MQL5/Include/INPUT.mqh:18-19`.
+
+Суть проблемы: переменная `BuyPosCnt = CountActiveByType(MARKET)` не используется и комментарий признаёт, что это грубая оценка обеих сторон.
+
+Доказательство: `rg -n "BuyPosCnt" MT/MQL5/Include/INPUT.mqh` находит только объявление.
+
+Почему важно: в зоне gate-логики лишняя переменная мешает аудиту и может быть ошибочно принята за часть ограничения.
+
+Рекомендуемое исправление: удалить `BuyPosCnt` и комментарий, оставить только `BuyActiveCnt`/`SelActiveCnt`.
+
+### 10. Вопрос: тип `POSITION_TRACKER.ticket` остаётся `int`, хотя MT5 ticket - `ulong`
+
+Место: `MT/MQL5/Include/FUNCTIONS.mqh:118`, `MT/MQL5/Include/ORDERS.mqh:77`, `MT/MQL5/Include/ORDERS.mqh:167`.
+
+Суть проблемы: предупреждения компилятора связаны с преобразованием `ulong` в `int`. Отчёт называет это pre-existing, но новая структура `POSITION_TRACKER` закрепляет `int ticket` в центральном multi-position массиве.
+
+Доказательство: compile log показывает `0 errors, 2 warnings`; `FUNCTIONS.mqh:118` задаёт `int ticket`, а `ORDERS.mqh:167` присваивает `OrderTicket()`.
+
+Почему важно: если ticket выйдет за диапазон `int`, поиск позиции по ticket и lifecycle-связь сломаются. Даже если в текущем tester это маловероятно, multi-position refactor усиливает зависимость от ticket как основного ключа.
+
+Рекомендуемое исправление: проверить совместимость MQL4Compat и, если возможно, перевести `ticket` и helper-аргументы на `ulong`. Если невозможно, явно оставить риск в отчёте с границами применимости.
+
+## Проверки, выполненные аудитором
+
+```bash
+graphify query "MT5 multi-position refactor plan reports commits position lifecycle close policy ticket magic docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md" --budget 2000
+```
+
+```bash
+./.venv/bin/python -m pytest tests/test_mt5_batch_runtime_contract.py tests/test_parse_mt5_execution_report.py tests/test_mt5_signal_executor_schema.py -q
+# 34 passed in 0.34s
+```
+
+```bash
+git diff --check
+# без вывода
+```
+
+```bash
+iconv -f UTF-16LE -t UTF-8 /tmp/sosimple_mt5_compile.log | tail -n 20
+# Result: 0 errors, 2 warnings, 5384 ms elapsed, cpu='X64 Regular'
+```
+
+## Что не удалось подтвердить
+
+- Не подтверждён полный backcompat `InpMT5_MaxPositions=1`: доступный smoke подтверждает только `position_count=3` и `UNEXPLAINED=0`, а не идентичность всех событий и метрик.
+- Не подтверждена работоспособность same-direction multi-position: max=2 остановлен на диагностическом слое, а код отправки ордеров содержит legacy-блокер.
+- Не подтверждён `0 warnings` compile gate из методики: сохранённый лог содержит 2 warnings.
+
