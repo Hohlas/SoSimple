@@ -1,136 +1,223 @@
-# Аудит плана: 2026-08-03-mt5-multi-position-closeout.md
+# Аудит плана `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md`
 
-> Дата аудита: 2026-08-07 · Предмет: `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md` (1299 строк).
-> Метод: доказательная проверка каждого утверждения плана по фактическому коду, документам, методикам и git. Каждое замечание содержит важность, место, суть, доказательство, причину и исправление.
+Дата аудита: 2026-08-07. Файл очищен и заполнен заново по запросу пользователя;
+прежнее содержимое не читалось.
 
-## Резюме
+Все утверждения ниже проверены по фактическому состоянию репозитория
+(ветка `mt5-execution-loop`, HEAD `8a85a87`). Метод: чтение файлов,
+`rg`-поиск, запуск pytest, сверка с методикой.
 
-План в целом реализуем и корректно диагностирует состояние кода: все базовые предпосылки подтверждены фактами (legacy-гейт открытия, порядок side-check в закрытии, single-ticket трекер, доказательство backcompat через SKIP, битые команды в старом плане). НО обнаружены **2 материальных дефекта** и ряд важных/улучшающих замечаний:
+## Статус выполнения плана (факт)
 
-- **КРИТИЧНО**: план ссылается на несуществующее требование методики 16 (`roadmap_track`) и указывает несуществующий трек в roadmap.
-- **КРИТИЧНО/ВАЖНО**: команды Task 6 Step 5/6 (`--phase tester`) запускают не только smoke, но и полный batch из 32 кандидатов — ожидания плана о «лёгкой» проверке не соответствуют поведению `main()`.
-- **ВАЖНО**: `include_pending` в предлагаемом `CountActiveBySide` фактически не учитывает отложенные ордера (мёртвый параметр).
-- **ВАЖНО**: привязка «сигнал → тикет» в `MT5_FindFilledTicketForSignal` может перепутать тикеты между сигналами при мультипозиции.
+- Коммиты `4b7eddd` (Task 1), `b1a714d` (Task 2), `c9563fa` (Task 3) присутствуют.
+- Task 4 НЕ выполнен: `MT/MQL5/Include/lib_ML_Signal.mqh:73` всё ещё содержит
+  singleton `ulong MT5_TrackedTicket`; тест
+  `test_diagnostic_lifecycle_uses_multi_ticket_tracker` падает.
+- Task 5 НЕ выполнен: в `ML/baseline/run_mt5_batch.py` нет `build_arg_parser()`,
+  `--force-rerun`, `--smoke-only`; `run_batch()` не принимает `force_rerun`
+  (4 теста в `tests/test_mt5_batch_runtime_contract.py` падают с
+  `TypeError: run_batch() got an unexpected keyword argument 'force_rerun'`).
+- Tasks 6–9 НЕ выполнены: отчёт
+  `docs/reports/2026-08-03-mt5-multi-position-closeout.md` отсутствует.
+- Итог прогона: `./.venv/bin/python -m pytest tests/test_mt5_mql5_multiposition_contract.py tests/test_mt5_batch_runtime_contract.py -q`
+  → 5 failed, 10 passed.
 
----
+## Подтверждённые факты плана (сверено, замечаний нет)
 
-## Проверенные подтверждённые предпосылки (факты, совпадающие с планом)
-
-1. Legacy-гейт открытия существует: `while (repeat>0 && BUY.Val==0)` — `MT/MQL5/Include/ORDERS.mqh:22`; `while (repeat>0 &&  SEL.Val==0)` — `ORDERS.mqh:46` (два пробела, как в тесте плана).
-2. Порядок в close-хелперах ошибочен: `if (price == 0) { Pos[i].data.Val = 0; continue; }` стоит **до** `PositionSelectByTicket`/side-check в `OUTPUT.mqh:176` (CloseBuySide) и `OUTPUT.mqh:212` (CloseSellSide) — соответствует аудит-замечанию №2.
-3. Single-ticket трекер существует: `MT5_TrackedTicket/MT5_TrackedMagic/MT5_TrackedIdx/MT5_TrackedOpenLogged` — `lib_ML_Signal.mqh:73-76`; касты `OrderSelect((int)MT5_TrackedTicket, ...)` — `lib_ML_Signal.mqh:606,638`; `MT5_TrackedMagic = Mgc;` — `lib_ML_Signal.mqh:764`.
-4. `struct POSITION_TRACKER { int ticket; ... }` и helpers с `int ticket` — `FUNCTIONS.mqh:118,162,171`; единственный lossy-каст через helper: `FindPosIndexByTicket(OrderTicket())` — `ORDERS.mqh:77`.
-5. Backcompat доказывался через SKIP: `run_batch` пропускает при `UNEXPLAINED==0` — `ML/baseline/run_mt5_batch.py:481-486`; в старом отчёте строка «metrics untouched (SKIPPED paths). PASS» — `docs/reports/2026-08-02-mt5-multi-position-probe.md:167`.
-6. Битые команды в старом плане существуют: `ML.baseline.tester` — `plans/2026-08-02...refactor.md:435`; `pythonスス...` — `:436`; `mt5_exec_diagnostic --phase multi-pos-comparison` — `:444`; критерий «102 trades, same events» — `:430`.
-7. Оверклеймы старого отчёта существуют: «identical» — `probe.md:26,166`; «Canonical guarantee ... подтверждена» — `probe.md:130-131`; compile-статусы «PASS, 0 errors N warnings» — `probe.md:54-59`.
-8. Имя входного параметра `InpMT5_MaxPositions` корректно: `$o$imple.mq5:79`; runtime-глобал `MT5_MaxPositions=1` — `:114`; синк `MT5_MaxPositions=InpMT5_MaxPositions` — `:128`. `create_set_file` пишет именно `InpMT5_MaxPositions=` — `run_mt5_batch.py:278`.
-9. Битые/существующие артефакты: `tests/test_mt5_batch_runtime_contract.py`, `tests/test_parse_mt5_execution_report.py`, `tests/test_mt5_signal_executor_schema.py` существуют; файла `tests/test_mt5_mql5_multiposition_contract.py` нет (создаётся).
-10. Все helper-символы, на которые опирается новый код Task 4, существуют: `DiagnosticMlExitScore` (`:191`), `MT5_CalculateOpenPositionFeatures` (`:202`), `MT5_FindActiveTicket` (`:118`), `MT5_LogSignalEvent` (`:371`), `MT5_RegisterPosition(ulong,int)` (`:84`), `MT5_ML_LogEvent` (`:253`), массивы `MT5_Sides[]/MT5_DecisionTimes[]/MT5_RuleIds[]` (`:59-61`).
-11. Разделитель событий `;` соответствует методике (`docs/methodology/13b-mt5-execution-parity.md:73`) и коду Task 7.
+- Task 2/3 уже отражены в коде: гейты `while (repeat>0 && CanPlaceBuyOrder())` /
+  `CanPlaceSellOrder()` (`ORDERS.mqh:22,46`), `struct POSITION_TRACKER { ulong ticket; ... }`
+  (`FUNCTIONS.mqh:118`), `FindPosIndexByTicket(ulong)` / `RemovePositionByTicket(ulong)`
+  (`FUNCTIONS.mqh:171,162`), side-проверка до `if (price == 0)` в `CloseBuySide`/`CloseSellSide`
+  (`OUTPUT.mqh:173-214`), `BuyPosCnt` и `CountActiveByType` удалены.
+- Остаточные ticket-касты ровно там, где план обещает: только
+  `(int)MT5_TrackedTicket` в `lib_ML_Signal.mqh:606,638`
+  (команда `rg -n "\(int\)OrderTicket\(\)|\(int\)Pos\[|\(int\)ticket|\(int\)MT5_" MT/MQL5/Include/`).
+- Утверждения Task 5 о текущем коде точны: skip-guard в `run_batch`
+  (`run_mt5_batch.py:479-486`), smoke падает без entry CSV (`run_mt5_batch.py:431-434`),
+  `--phase tester` всегда идёт в FULL BATCH (`run_mt5_batch.py:800-807`),
+  `--phase`/`--max-positions` уже есть в `main()` (строки 771-773).
+- Ограничения CLOSE-события соответствуют `docs/methodology/13b-mt5-execution-parity.md`
+  (раздел «Ограничения прототипа»: `broker_history_limited`, ручная сверка
+  `order_close_price`/`take_profit`/`swap`/`commission`). Ссылка на строки 138-141
+  по порядку текста верна.
+- Disclosure-блок методики 16 — ровно 8 полей без `roadmap_track`
+  (`docs/methodology/16-reporting-audit.md:69-76`); решение плана НЕ добавлять
+  `roadmap_track` корректно.
+- Поломанные команды в старом плане существуют именно там, где заявлено
+  (`docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md:430,435,436,444`:
+  `ML.baseline.tester`, `pythonスス...`, `mt5_exec_diagnostic --phase multi-pos-comparison`,
+  «102 trades, same events»).
+- Файл эксперта `$o$imple.mq5` существует; `InpiSignal=3` по умолчанию (строка 41).
+- Monkeypatch-имена в тестах Task 1 Step 3 (`BATCH_DIR`, `TESTER_FILES`,
+  `make_run_id`, `create_set_file`, `create_ini_file`, `wait_for_liveupdate_clear`,
+  `copy_entry_signal_file`, `run_tester`, `parse_events`) существуют в модуле.
 
 ---
 
 ## Замечания
 
-### КРИТИЧНО
+### 1. КРИТИЧНО — Task 7 Step 5: проверка связки сигнал→тикет использует несуществующую колонку `idx`
 
-#### К1. Выдуманное требование методики: `roadmap_track` не входит в disclosure методики 16
-- **Место**: Task 8 Step 3 (`:1121-1130`), шаблон отчёта Task 9 Step 1 (`:1169`), Completion Criteria (`:1280`).
-- **Суть**: план утверждает: «`roadmap_track` is required by `docs/methodology/16-reporting-audit.md` disclosure; it references the named track in `docs/superpowers/roadmap.md`». Это не подтверждено фактом — в методике 16 нет такого поля.
-- **Доказательство**: `rg -c "roadmap_track" docs/methodology/16-reporting-audit.md` → 0 совпадений (exit=1). Блок disclosure в методике (`docs/methodology/16-reporting-audit.md:64-77`) содержит ровно: `lifecycle_status`, `origin_bias`, `research_priority`, `current_search_budget`, `cumulative_search_budget`, `next_probe_freeze`, `allowed_max_verdict`, `forbidden_interpretations`. `roadmap_track` отсутствует.
-- **Почему важно**: ложное обоснование вносит в отчёт обязательное поле, которое (а) не требуется методикой и (б) ссылается на трек, которого нет в roadmap (см. К2). Это противоречит требованию AGENTS.md давать «точный ответ на основе проверенных фактов» и создаёт рассинхрон между отчётом и roadmap.
-- **Исправление**: либо удалить `roadmap_track` из шаблона, критериев и Task 8 Step 3; либо — если оставить — добавить реальный именованный трек в `roadmap.md` (Task 9 Step 4) и указать существующее имя, а не выдуманное.
+- Место: план, Task 7 Step 5 (строки ~1225-1243).
+- Суть: скрипт делает `sig = events[["event", "ticket", "idx"]]` и
+  `lifecycle.groupby("ticket")["idx"].nunique()`. Колонки `idx` в CSV событий нет:
+  заголовок writer-а — `event,time,feature_time,...,request_seq,...,comment`
+  (`MT/MQL5/Include/lib_ML_Signal.mqh:300`). Сигнальный индекс пишется в колонку
+  `request_seq`: все вызовы `MT5_ML_LogEvent(..., idx, magic, Symbol(), ...)`
+  попадают в параметр `request_seq` (сигнатура `lib_ML_Signal.mqh:253-289`,
+  хвостовые параметры по умолчанию: `error_code, error_class, retcode,
+  retcode_text, request_seq, magic, symbol_name, entry_type`; существующие
+  вызовы — строки 612, 628, 631, 642).
+- Доказательство: `lib_ML_Signal.mqh:300` (заголовок без `idx`); вызовы 612/628/631/642;
+  `ML/baseline/parse_mt5_execution_report.py:17` (`"request_seq": -1` в схеме).
+- Почему важно: это единственная проверка пункта аудита V3 (уникальность связки
+  сигнал→тикет при multi-position). В текущем виде скрипт упадёт с `KeyError`,
+  и пункт Completion Criteria про `binding_violations: 0` невыполним.
+- Исправление: зафиксировать в Task 4, что сигнальный индекс читается из
+  `request_seq`, и переписать Task 7 Step 5 на колонку `request_seq`
+  (с фильтром `request_seq >= 0`); либо добавить настоящую колонку `idx`
+  в writer и в заголовок (тогда нужен отдельный шаг про перезапись заголовка,
+  т.к. он пишется только при `FileSize(handle) == 0`).
 
-#### К2. Значение `roadmap_track: mt5-execution-closeout` ссылается на несуществующий трек
-- **Место**: Task 8 Step 3 (`:1127`), Task 9 Step 1 (`:1169`), Task 9 Step 4 (`:1247`).
-- **Суть**: поле заполняется значением `mt5-execution-closeout`, однако в `docs/superpowers/roadmap.md` такого трека нет; ACTIVE-трек называется «MT5 entry mechanics / trade-count frozen probe» (`roadmap.md:15-17`).
-- **Доказательство**: `rg -n "mt5-execution|closeout" docs/superpowers/roadmap.md` → 0 совпадений. При этом Task 9 Step 4: «Update roadmap only if the closeout changes the ACTIVE track. If only smoke passed, do not change the roadmap direction» — то есть при закрытии только smoke-результатом roadmap не меняется, и значение `roadmap_track: mt5-execution-closeout` остаётся висячей ссылкой. Дополнительно правило roadmap — «только один ACTIVE-трек за раз» (`roadmap.md:9,162`).
-- **Почему важно**: отчёт закрытия этапа со ссылкой на несуществующий трек нарушает целостность навигации проекта (STRUCT-несоответствие по классификации AGENTS.md) и противоречит собственной ссылке плана «references the named track in roadmap.md».
-- **Исправление**: согласовать с К1: либо убрать поле, либо ввести в roadmap именованный трек `mt5-execution-closeout` и явно указать, в каком статусе он находится (ACTIVE/BACKLOG), не нарушая правило одного ACTIVE.
+### 2. КРИТИЧНО — Task 4: удаление singleton-состояния не покрывает все места использования `MT5_TrackedMagic`
 
-### ВАЖНО
+- Место: план, Task 4 Step 1 и Step 6.
+- Суть: Step 1 заменяет блок из четырёх переменных, включая `int MT5_TrackedMagic = 0;`,
+  а Step 6 удаляет лишь присваивание `MT5_TrackedMagic = Mgc;` (нынешняя строка 764).
+  Переменная используется ещё в местах, которые план не трогает:
+  `lib_ML_Signal.mqh:185`, `308` (`MT5_OpenPositionsForMagic(MT5_TrackedMagic)` —
+  от этого зависит колонка `open_positions` каждого события), `309` (fallback
+  `event_magic`), `407`.
+- Доказательство: `rg -n "MT5_TrackedMagic" MT/MQL5/Include/` → строки 74, 185, 308, 309, 407, 592, 764.
+- Почему важно: после Step 1 код не скомпилируется (неопределённый идентификатор),
+  т.е. compile gate Task 6 Step 3 провалится. Если же «тихо» оставить переменную,
+  `open_positions` будет считаться для magic=0 и колонка будет давать неверные
+  значения в multi-pos режиме.
+- Исправление: добавить в Task 4 шаг «обновить `MT5_ML_LogEvent` и прочие точки
+  использования `MT5_TrackedMagic` на per-event `magic`» и перечислить строки
+  185, 308, 309, 407 явно.
 
-#### В1. Команды Task 6 Step 5/6 запускают полный batch, а не только smoke
-- **Место**: Task 6 Step 4-6 (`:920-959`), Task 5 Step 3 (`:793-794`).
-- **Суть**: план ожидает от `--phase tester --max-positions=2 --force-rerun` «smoke metrics parse successfully» и «If this fails, stop. Do not run max=16 or aggregate» — как от лёгкой проверки. Реально `main()` для `--phase tester` выполняет compile + smoke **и затем полный batch всех кандидатов** (`run_batch`), а с `--force-rerun` SKIP-гейт инертен для всех 32 кандидатов.
-- **Доказательство**: `ML/baseline/run_mt5_batch.py:789-807` — блок `if args.phase in ("tester","all")`: smoke, затем `print("--- FULL BATCH ---"); run_batch(candidates, max_positions=...)`. `--force-rerun` (Task 5 Step 4) как раз отключает SKIP, то есть заставляет каждый кандидат прогонять тестер. Task 6 Step 5 «If this fails, stop» физически невозможно остановить на границе smoke без прерывания batch.
-- **Почему важно**: исполнитель либо потеряет часы на 32 тестерных прогона на каждом max=2 и max=16, либо не сможет выполнить инструкцию «остановиться после smoke»; ожидания плана не соответствуют поведению кода.
-- **Исправление**: ввести smoke-only режим (например, флаг `--smoke-only` или фазу `--phase smoke` в `main()`), либо переформулировать Task 6 Step 5/6 так, чтобы они явно требовали только smoke (отдельной командой), а полный batch выносился в Task 7 Step 4 как осознанное отдельное решение с указанием стоимости.
+### 3. ВАЖНО — «0 warnings» недостижим без правки `MQL4Compat.mqh`, а план её не включает
 
-#### В2. `include_pending` в `CountActiveBySide` — мёртвый параметр: отложенные ордера не учитываются
-- **Место**: Task 2 Step 2 (`:334-345`), Task 2 Step 3 (`:352-361`).
-- **Суть**: `CanPlaceBuyOrder()` вызывает `CountActiveBySide(POSITION_TYPE_BUY, true)` с намерением учитывать отложенные ордера (pending) в лимит. Но `PositionSelectByTicket()` выбирает только **позиции** (market), отложенный **ордер** (OP_BUYLIMIT/OP_BUYSTOP/…) этой функцией не выбирается → `continue`, и pending не засчитывается при любом значении `include_pending`.
-- **Доказательство**: код плана `if (!PositionSelectByTicket(Pos[i].ticket)) continue;` для pending-записи с `data.Typ != MARKET` всегда вернёт false (MT5: PositionSelectByTicket по тикету ордера не находит позицию). Семантика «include_pending=true» ни на что не влияет. Параллельно существующие счётчики считают только MARKET: `INPUT.mqh:20-27` (`Pos[i].data.Typ != MARKET`), `lib_ML_Signal.mqh` (`mt5_buy_cnt`, `same_dir_cnt`).
-- **Почему важно**: расхождение между заявленной и фактической семантикой гейта: при висящем отложенном ордере + открытой market-позиции в ту же сторону вход может быть разрешён (пока market < MaxPositions), хотя по замыслу pending должен занимать слот. Влияет на интерпретацию smoke max=2 (количество одновременных позиций) и честность вывода.
-- **Исправление**: реализовать учёт pending через `OrdersTotal()/OrderSelect(SELECT_BY_POS, MODE_TRADES)` + `OrderType()` в наборе `{OP_BUYLIMIT, OP_BUYSTOP, OP_SELLLIMIT, OP_SELLSTOP}` и сторону, либо убрать параметр и явно задокументировать «только market-позиции».
+- Место: план, Global Constraints (строка 18), Task 4 Step 4/4b; факт —
+  `MT/MQL5/Include/MQL4Compat.mqh:309,313,456`.
+- Суть: план утверждает «MT5 `OrderSelect` принимает `ulong` напрямую» и требует
+  убрать явные касты `(int)ticket`. Но весь код компилируется через макрос
+  `#define OrderSelect OrderSelect_MQL4` (`MQL4Compat.mqh:456`), а сигнатура
+  `bool OrderSelect_MQL4(int index, ...)` принимает ticket как `int`.
+  Передача `ulong ticket` без каста — неявное сужение `ulong → int`,
+  тот же класс предупреждений «possible loss of data». `MQL4Compat.mqh`
+  отсутствует в File Structure плана.
+- Доказательство: `MQL4Compat.mqh:309` (`int index`), `:313` (`ulong ticket = (ulong)index;`), `:456` (макрос).
+- Почему важно: критерий Completion Criteria «0 errors, 0 warnings» логически
+  невыполним в рамках заявленного набора файлов; исполнитель упрётся в
+  неразрешимое противоречие или молча примет предупреждения.
+- Исправление: добавить в Task 4 модификацию `MQL4Compat.mqh` (вариант
+  `OrderSelect` с `ulong ticket` для `SELECT_BY_TICKET`) и включить файл в
+  File Structure; либо честно разрешить статус `PASS_WITH_WARNINGS` для этого
+  класса предупреждений и снять требование «0 warnings».
 
-#### В3. Привязка «сигнал → тикет» в `MT5_FindFilledTicketForSignal` может перепутать тикеты между сигналами
-- **Место**: Task 4 Step 3 (`:587-603`).
-- **Суть**: функция возвращает первый **неотслеженный** market-ордер с подходящим magic и типом, открытый после `MT5_DecisionTimes[idx]`. При нескольких одновременных сигналах одного magic (мультипозиция) порядок обхода `OrdersTotal()` не гарантирует соответствие порядку сигналов, поэтому тикет сигнала N может быть привязан к позиции сигнала N+1 (и наоборот).
-- **Доказательство**: код плана `for (int i = 0; i < OrdersTotal(); i++) { if (OrderSelect(i, ...) != true) continue; ... if (OrderOpenTime() < MT5_DecisionTimes[idx]) continue; return ticket; }` — выбирается первый по порядку обхода, порядок тикетов не обязан совпадать с порядком решений. Отфильтровываются только уже отслеженные (`FindTrackedIndexByTicket >= 0`).
-- **Почему важно**: весь диагностический вывод (timing-contract `decision_time <= execution_time`, выравнивание фич) зависит от корректной связки сигнал→тикет. При неверной привязке smoke max=2/max=16 может дать ложные нарушения или ложное их отсутствие, а отчёт не сможет это отличить.
-- **Исправление**: либо привязываться к уникальному идентификатору из комментария ордера/сигнала, либо валидировать попадание `OrderOpenTime()` в окно `[DecisionTimes[idx], следующий decision_time)` и фиксировать неоднозначности в отчёте; добавить в Task 7 сверку «каждый tracked тикет соответствует ровно одному сигналу».
+### 4. ВАЖНО — код теста в тексте Task 1 Step 1 содержит синтаксическую ошибку Python
 
-#### В4. Task 5 выдаёт `--max-positions` и `--phase` за новые, хотя они уже существуют
-- **Место**: Task 5 Step 1 (`:754-773`), Task 1 Step 4 (`:284-287`).
-- **Суть**: план строит `build_arg_parser()` с `--phase` и `--max-positions` как часть «нового» кода и ожидает FAIL на их отсутствие. Фактически `--phase`, `--max-positions`, `max_positions` у `run_smoke_test`/`run_batch` и инъекция `InpMT5_MaxPositions` уже реализованы; новыми являются только `--force-rerun` и сам `build_arg_parser`.
-- **Доказательство**: `run_mt5_batch.py:771-778` (уже есть `--phase`, `--max-positions`), `:425` и `:467` (уже `*, max_positions=1`), `:278` (уже `InpMT5_MaxPositions=`). Формулировка Task 1 Step 3/4 «`build_arg_parser()` / `--force-rerun` do not exist yet» верна только для этих двух сущностей.
-- **Почему важно**: исполнитель может запутаться в объёме работ; при буквальном выполнении «добавить build_arg_parser» рядом с уже существующим инлайн-парсером появится дублирование (хотя Step 2 и предписывает замену).
-- **Исправление**: в Task 5 явно указать: «уже существуют — только добавить `--force-rerun` и вынести парсер в `build_arg_parser()`».
+- Место: план, Task 1 Step 1, строки ~141-142.
+- Суть: regex-литералы в тексте плана сломаны:
+  `re.compile(r"while\s*\(\s*repeat\s*>\s*0\s*&&\s*BUY\.Val\s*==\s*0'")`
+  (лишняя `'` перед закрывающей `"`, скобка паттерна не закрыта).
+  Коммит `4b7eddd` записал корректную версию
+  (`...==\s*0\s*\)`, см. `tests/test_mt5_mql5_multiposition_contract.py:67-68`),
+  т.е. исполнитель уже исправлял план на ходу, но текст плана не обновлён.
+- Доказательство: сравнение строк 141-142 плана и строк 67-68 коммитнутого теста.
+- Почему важно: план перечитывается исполнителями; буквальный перенос кода
+  даст `SyntaxError` на этапе сбора тестов, а расхождение «план vs коммит»
+  подрывает воспроизводимость.
+- Исправление: заменить обе строки в плане на фактически закоммиченный вариант.
 
-### УЛУЧШЕНИЕ
+### 5. ВАЖНО — sentinel `DATETIME_MAX` не определён в дереве MT, а предложенные альтернативы неверны
 
-#### У1. Тайпографика/опечатки
-- **Место**: Completion Criteria (`:1281`).
-- **Суть**: «Catss `(int)` not found» — опечатка (должно быть «Casts»).
-- **Исправление**: поправить слово.
+- Место: план, Task 4 Step 3 (строки ~654-691).
+- Суть: `MT5_FindFilledTicketForSignal` использует `DATETIME_MAX` как «верхней
+  границы нет», а примечание плана предлагает «использовать `(datetime)0` или
+  `TimeCurrent()+PERIOD_*`» как эквиваленты. `(datetime)0` — нижняя граница
+  времени, а не верхняя; подстановка его как sentinela «без ограничения»
+  инвертирует условие `if (hi < DATETIME_MAX && ot >= hi) continue;`.
+- Доказательство: `rg -n "DATETIME_MAX" MT/` → 0 совпадений (факт). Отсутствие
+  такого предопределённого идентификатора в самом языке MQL5 — моя проверка по
+  документации не выполнялась, помечаю как гипотезу; но в репо константы нет,
+  значит компиляция предложенного кода упадёт в любом случае.
+- Почему важно: функция — ядро mitigation пункта V3 (окно привязки fill→signal);
+  неверный sentinel ломает фильтрацию кандидатов.
+- Исправление: определить локальную константу (например
+  `const datetime MT5_NO_HI_BOUND = D'2100.01.01';`) и использовать её, либо
+  отдельный флаг `bool has_hi`; убрать вариант с `(datetime)0`.
 
-#### У2. Жёсткость строковых тестов на пробелы
-- **Место**: Task 1 Step 1 (`:133-134`).
-- **Суть**: негативные проверки опираются на точные строки `while (repeat>0 && BUY.Val==0)` и `while (repeat>0 &&  SEL.Val==0)` (разное число пробелов). Это корректно для текущего кода, но при переформатировании (например, `while(repeat>0 && BUY.Val==0)`) тест «пройдёт вхолостую», а регресс гейта останется незамеченным.
-- **Доказательство**: `ORDERS.mqh:22` (один пробел) и `:46` (два пробела) — совпадает с тестом сегодня, но хрупко по дизайну.
-- **Исправление**: использовать нормализованное регулярное выражение (например, `while\s*\(\s*repeat\s*>\s*0\s*&&\s*BUY\.Val\s*==\s*0`) для негативной проверки; позитивная проверка (`CanPlaceBuyOrder()`) уже устойчива.
+### 6. УЛУЧШЕНИЕ — Task 1 Step 1: усиление A5 фактически не проверяет компакцию
 
-#### У3. Прекондиция smoke: требуются заранее сгенерированные сигналы
-- **Место**: Task 6 Step 4 (`:920-932`).
-- **Суть**: `run_smoke_test` возвращает False «entry CSV not found», если `BATCH_DIR/<run_id>/entry_signals.csv` отсутствует (`run_mt5_batch.py:431-434`). План не указывает, что перед `--phase tester` нужно выполнить `--phase signals`.
-- **Исправление**: добавить в Task 6 прекондицию (сгенерировать сигналы) либо отметить зависимость от ранее сохранённых сигналов.
+- Место: план, строка ~181; тест `tests/test_mt5_mql5_multiposition_contract.py:107`.
+- Суть: `assert "MT5_TrackedPositionCount--" in ml_signal or "close_logged" in ml_signal`
+  проходит, если в файле есть просто слово `close_logged` (оно появляется уже
+  в объявлении структуры из Task 4 Step 1), т.е. swap-remove компакция не проверяется.
+- Исправление: убрать ветку `or`, оставить только `"MT5_TrackedPositionCount--"`,
+  либо проверять `ArrayResize(MT5_TrackedPositions, MT5_TrackedPositionCount)`.
 
-#### У4. Мёртвый `CountActiveByType` после удаления `BuyPosCnt`
-- **Место**: Task 3 Step 3 (`:468-482`).
-- **Суть**: единственная точка использования `CountActiveByType(MARKET)` — удаляемая строка `INPUT.mqh:18`. После удаления метод `FUNCTIONS.mqh:176` остаётся неиспользуемым.
-- **Исправление**: либо удалить `CountActiveByType`, либо явно указать, что он сохраняется намеренно (риск предупреждения компилятора на «0 warnings»-гейте).
+### 7. УЛУЧШЕНИЕ — Task 8 Step 2: строка для замены цитируется неточно
 
-#### У5. Область поиска кастов в Task 2/Task 4 неполна по файлам
-- **Место**: Task 2 Step 5b (`:401-409`), Task 4 Step 4b (`:666-676`).
-- **Суть**: greps проверяют `ORDERS.mqh`, `ERRORs.mqh` и `lib_ML_Signal.mqh`. Остальные потребители `Pos[i].ticket` (`OUTPUT.mqh`, `COUNT.mqh`, `lib_ML_Signal_TB.mqh`, `INPUT.mqh`, `MODIFY`) не перечислены. По факту lossy-касты тикетов найдены только в `lib_ML_Signal.mqh:606,638` (остальные `(int)` — это `(int)OrderMagicNumber()`, не тикет: `SERVICE.mqh:761`, `ORDERS.mqh:258`, `MQL4Compat.mqh:491`), поэтому риск низкий, но покрытие стоит расширить.
-- **Исправление**: в Step 4b использовать `rg -n "\(int\)OrderTicket\(\)|\(int\)Pos\[|\(int\)ticket|\(int\)MT5_" MT/MQL5/Include/` и добавить сверку после миграции `ulong ticket`.
+- Место: план, Task 8 Step 2.
+- Суть: план предлагает заменить «not a bug refactoring plan», но фактическая
+  формулировка в отчёте на русском: «Это архитектурное ограничение диагностического
+  слоя executor-а, а не баг» (`docs/reports/2026-08-02-mt5-multi-position-probe.md:158`).
+  Буквальный поиск строки из плана ничего не найдёт.
+- Исправление: привести точную цитату и номер строки.
 
----
+### 8. УЛУЧШЕНИЕ — мелкий сдвиг номеров строк `INPUT.mqh`
 
-## Семантические проверки предлагаемого кода (смысловой уровень)
+- Место: план, Scope (строка 26), Task 2 Step 2 (комментарий про «INPUT.mqh:18-32»).
+- Суть: MARKET-фильтр фактически в `INPUT.mqh:16-27` (сброс `set.BUY`/`set.SEL` —
+  строки 13-14, тут план точен; условие `Pos[i].data.Typ != MARKET` — строка 18,
+  верхняя граница 27, а не 32).
+- Доказательство: чтение `MT/MQL5/Include/INPUT.mqh`.
+- Исправление: поправить диапазон на 16-27 либо убрать конкретные номера.
 
-### S1. `test_run_batch_force_rerun_overrides_skip_when_unexplained_zero` (Task 1 Step 3) — корректен
-- Фикстура создаёт `entry_signals.csv` в `out_dir` (`:222`), поэтому после удаления metrics/events поток `run_batch` доходит до `run_tester`. Утверждение `calls["run_tester"] == 1` достижимо. Обратный тест (SKIP без force_rerun) также корректен: SKIP-гейт `run_mt5_batch.py:481-486` совпадает с ожиданием.
-- Вывод: TDD-цикл Task 1 Step 3/4 выполним.
+### 9. ВОПРОС — где физически искать `ambiguous_fills_in_window`
 
-### S2. Компактирование массива в `MT5_LogLifecycleForTicket` + цикл Step 5 — согласованы
-- Swap-remove (`last` на `tracked_i`, `MT5_TrackedPositionCount--`) и повторная проверка индекса `if (MT5_TrackedPositionCount < before) i--` корректны: после удаления слот `i` содержит перемещённый элемент, и он перепроверяется.
+- Место: план, Task 7 Step 5 (последний абзац).
+- Суть: «grep the MT5 tester log / journal» — в Wine-окружении журнал тестера
+  лежит внутри `WINEPREFIX` (`/home/hohla/.mt5/...`), точный путь не указан.
+  `Print()` в тестере попадает в journal, а не в событийный CSV, поэтому без
+  явного пути шаг невыполним «как написано».
+- Исправление: зафиксировать точный путь к журналу тестера
+  либо дублировать WARN-строки в событийный CSV (например `event=WARN`).
 
-### S3. `_body()` в статическом тесте — рабочий для целевых функций
-- Якоря `void EXPERT::CloseBuySide`, `void EXPERT::CloseSellSide`, `void EXPERT::CLOSE_BUY` и `SET_BUY/SET_SEL/MODIFY` соседствуют без промежуточных функций, поэтому поиск «первой сигнатуры после якоря» возвращает корректное тело (`OUTPUT.mqh:173-208-245`, `ORDERS.mqh:22-46-?`).
+### 10. ВОПРОС — воспроизводимость ссылок на `docs/superpowers/audit.md`
 
-### S4. Прямая проверка side-before-zero (Task 3) — тест сегодня падает, после фикса пройдёт
-- `output.index("pt != POSITION_TYPE_BUY")` (после фикса — до `price == 0`) соответствует новому порядку. Текущий код: `price == 0` на `OUTPUT.mqh:176` раньше side-check на `:179`. TDD-предпосылка верна.
+- Место: план, строки 5, 1356; Completion Criteria; Task 9 Step 2.
+- Суть: план ссылается на пункты прежнего аудита U2/U4/U5, V1-V3, A4-A14, K1/K2
+  и «audit items 1-10» из `docs/superpowers/audit.md`. По требованию пользователя
+  этот файл полностью очищен данным аудитом; старые идентификаторы пунктов
+  больше не читаются из репо (восстановимы только из git-истории).
+- Почему важно: будущий исполнитель плана не сможет сопоставить строки
+  «Audit Findings Addressed» с исходными формулировками без обращения к истории.
+- Исправление: в Task 9 Step 2 отчёта closeout встраивать краткую цитату каждого
+  пункта аудита, а не только номер; либо зафиксировать SHA коммита со старым audit.md.
 
-### S5. Барьер `0 warnings` достижим
-- Установлено: единственные lossy-касты тикетов — `lib_ML_Signal.mqh:606,638` и передача `OrderTicket()` (ulong) в `FindPosIndexByTicket(int)` (`ORDERS.mqh:77`). После Task 2 Step 1/Step 5 и Task 4 Step 4b гейт `0 errors, 0 warnings` правдоподобен; пункт про `PASS_WITH_WARNINGS`/`FAIL` в Task 6 Step 3 предусмотрен.
+## Вне плана (наблюдение, не замечание плану)
 
-### S6. Предложенная логика входного гейта не ломает single-position (обратная совместимость)
-- `CanPlaceBuyOrder()` при `MT5_MaxPositions==1` возвращает `BUY.Val == 0`, то есть воспроизводит legacy-условие цикла (`ORDERS.mqh:22`). Соответствует Global Constraint «`=1` обязан сохранить single-position поведение».
+В истории ветки присутствуют коммиты, выглядящие как служебные/шаблонные и не
+относящиеся к задаче: `f0d2067 "Implement new feature for user authentication..."`,
+`7a27666 "fix: enhance MT5 multi-position close helpers..."` (дубль содержания
+`c9563fa`). При закрытии ветки стоит решить, оставлять ли их в истории
+(решение за пользователем; самостоятельно историю не трогаю).
 
----
+## Итог
 
-## Вывод
-
-План можно исполнять после устранения К1/К2 (согласование `roadmap_track` с методикой и roadmap) и уточнения В1 (smoke vs full batch в Task 6). Замечания В2-В4, У1-У5 не блокируют, но должны быть отражены в отчёте Task 9 как ограничения/решения. Базовый диагноз плана подтверждён кодом; архитектура исправлений (четыре слоя) корректна.
+- Структура плана, покрытие пунктов прежнего аудита, дисциплина DIAGNOSTIC_ONLY и
+  соответствие методикам 13b/16 — корректны; большинство фактических утверждений
+  о коде подтверждено (см. раздел «Подтверждённые факты»).
+- Два критичных дефекта делают план невыполнимым «как написано»: проверка V3
+  ссылается на несуществующую колонку `idx` (фактически данные лежат в
+  `request_seq`), а удаление `MT5_TrackedMagic` оставляет незакрытые
+  использования (компиляция упадёт).
+- Одно важное противоречие: gate «0 warnings» требует правки `MQL4Compat.mqh`,
+  которая не входит в File Structure плана.
+- Tasks 4-9 на момент аудита не выполнены; фактическое состояние репозитория
+  соответствует завершённым Tasks 1-3 (тесты Task 1 Step 3 написаны вперёд и
+  закономерно падают до Task 5).

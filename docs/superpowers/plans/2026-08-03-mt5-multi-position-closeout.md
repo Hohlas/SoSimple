@@ -15,7 +15,7 @@
 - Не открывать `locked_test`; не выбирать winner; не менять модель, threshold, признаки или frozen export.
 - Максимальный verdict этапа: `DIAGNOSTIC_ONLY`.
 - `InpMT5_MaxPositions=1` обязан сохранить single-position поведение; `InpMT5_MaxPositions>1` не является торговым режимом.
-- MT5 compile gate по методике: лог должен показывать `Result: 0 errors, 0 warnings`, либо отчёт обязан явно зафиксировать `FAIL/PASS_WITH_WARNINGS` и не закрывать parity gate как PASS. Чтобы убрать `possible loss of data` warnings от ticket-кастов, все `OrderSelect((int)ticket, ...)` по `SELECT_BY_TICKET` должны быть заменены на `OrderSelect(ticket, ...)` (MT5 `OrderSelect` принимает `ulong` напрямую); см. Task 4 Step 4b.
+- MT5 compile gate по методике: лог должен показывать `Result: 0 errors, 0 warnings`, либо отчёт обязан явно зафиксировать `FAIL/PASS_WITH_WARNINGS` и не закрывать parity gate как PASS. Чтобы убрать `possible loss of data` warnings от ticket-кастов, все `OrderSelect((int)ticket, ...)` по `SELECT_BY_TICKET` должны быть заменены на `OrderSelect(ticket, ...)`; поскольку проект компилируется через `MQL4Compat` (`#define OrderSelect OrderSelect_MQL4`, сигнатура `int index`), для этого в `MQL4Compat.mqh` добавляется `ulong`-перегрузка (Task 4 Step 4c), иначе неявное сужение `ulong -> int` сохранит те же warnings; см. Task 4 Step 4b/4c.
 - Для tester-прогонов фиксировать фактические paths, model, date range, broker/server, symbol, deposit/currency/leverage, spread mode, account mode, время `.ex5`.
 - Не делать `git push`.
 
@@ -30,6 +30,8 @@
 
 ## File Structure
 
+- Modify: `MT/MQL5/Include/MQL4Compat.mqh`
+  - Добавляет `ulong`-перегрузку `OrderSelect_MQL4` для `SELECT_BY_TICKET`, чтобы вызовы `OrderSelect(ticket, ...)` с `ulong` не давали неявное сужение `ulong -> int` (gate `0 warnings`, Task 4 Step 4c).
 - Modify: `MT/MQL5/Include/FUNCTIONS.mqh`
   - Хранит `POSITION_TRACKER`, helper-функции по `Pos[]`, тип ticket.
 - Modify: `MT/MQL5/Include/ORDERS.mqh`
@@ -138,8 +140,8 @@ def test_set_buy_sell_do_not_use_legacy_singleton_as_multi_pos_loop_gate() -> No
     # test green. Use a normalised regex so ANY re-tokenisation of the legacy
     # gate that still references `repeat`, `>`, `0`, `&&` and `BUY.Val==0` fails
     # the test until the line is replaced by the CanPlace* helper.
-    _legacy_buy = re.compile(r"while\s*\(\s*repeat\s*>\s*0\s*&&\s*BUY\.Val\s*==\s*0')")
-    _legacy_sel = re.compile(r"while\s*\(\s*repeat\s*>\s*0\s*&&\s*SEL\.Val\s*==\s*0'")
+    _legacy_buy = re.compile(r"while\s*\(\s*repeat\s*>\s*0\s*&&\s*BUY\.Val\s*==\s*0\s*\)")
+    _legacy_sel = re.compile(r"while\s*\(\s*repeat\s*>\s*0\s*&&\s*SEL\.Val\s*==\s*0\s*\)")
     assert not _legacy_buy.search(buy_body), "legacy BUY.Val==0 loop gate must be replaced by CanPlaceBuyOrder()"
     assert not _legacy_sel.search(sell_body), "legacy SEL.Val==0 loop gate must be replaced by CanPlaceSellOrder()"
     # Positive checks remain tolerant to whitespace (optional) — keep the exact
@@ -177,8 +179,11 @@ def test_diagnostic_lifecycle_uses_multi_ticket_tracker() -> None:
     assert "MT5_TrackedTicket" not in ml_signal
     assert "MT5_FindTrackedIndexByTicket" in ml_signal
     assert "MT5_LogLifecycleForTicket" in ml_signal
-    # NEW (A5 cleanup): closed tracked positions must be compacted out of the active array.
-    assert "MT5_TrackedPositionCount--" in ml_signal or "close_logged" in ml_signal
+    # NEW (A5 cleanup): closed tracked positions must be compacted out of the
+    # active array. Audit fix: keep ONLY the counter-decrement check. The old
+    # `or "close_logged" in ml_signal` branch passed as soon as the struct from
+    # Task 4 Step 1 declared the field, without proving any compaction happens.
+    assert "MT5_TrackedPositionCount--" in ml_signal
 
 
 def test_position_tracker_ticket_uses_ulong() -> None:
@@ -366,7 +371,7 @@ Inside `EXPERT_PARENT_CLASS`, after `CountActiveByType(char typ)`, add:
 // Pending orders (LIMIT/STOP in Pos[].data.Typ) are intentionally NOT counted:
 // MT5 PositionSelectByTicket selects positions, not pending orders, so a
 // pending ticket would always fail the select below and skip (audit V2).
-// Same contract as the existing INPUT.mqh:18-32 side filter that also ignores
+// Same contract as the existing INPUT.mqh:16-27 side filter that also ignores
 // pending (Pos[i].data.Typ != MARKET -> continue). Multi-pos gate is therefore
 // per MARKET side; pending semantics are tracked separately in the diagnostic
 // logger (Task 4 Step 5), not in the placement gate.
@@ -560,6 +565,7 @@ git commit -m "fix: make mt5 multi-position close helpers side-safe and drop dea
 
 **Files:**
 - Modify: `MT/MQL5/Include/lib_ML_Signal.mqh`
+- Modify: `MT/MQL5/Include/MQL4Compat.mqh` (Step 4c)
 - Modify: `tests/test_mt5_mql5_multiposition_contract.py`
 
 **Interfaces:**
@@ -590,6 +596,9 @@ struct MT5_TRACKED_POSITION {
 
 MT5_TRACKED_POSITION MT5_TrackedPositions[];
 int MT5_TrackedPositionCount = 0;
+
+// Sentinel «верхней границы окна нет» для MT5_FindFilledTicketForSignal (Step 3).
+const datetime MT5_NO_HI_BOUND = D'2100.01.01 00:00';
 ```
 
 - [ ] **Step 2: Add tracker helpers**
@@ -657,7 +666,7 @@ ulong MT5_FindFilledTicketForSignal(int magic, int idx) {
    datetime lo = MT5_DecisionTimes[idx];
    datetime hi = (idx + 1 < MT5_EntrySignalCount && MT5_DecisionTimes[idx + 1] > lo)
                    ? MT5_DecisionTimes[idx + 1]
-                   : DATETIME_MAX;
+                   : MT5_NO_HI_BOUND;
    int ambiguous = 0;
    ulong first_ticket = 0;
    for (int i = 0; i < OrdersTotal(); i++) {
@@ -670,7 +679,7 @@ ulong MT5_FindFilledTicketForSignal(int magic, int idx) {
       if (MT5_FindTrackedIndexByTicket(ticket) >= 0) continue;
       datetime ot = OrderOpenTime();
       if (ot < lo) continue;
-      if (hi < DATETIME_MAX && ot >= hi) continue;
+      if (hi < MT5_NO_HI_BOUND && ot >= hi) continue;
       if (first_ticket == 0) { first_ticket = ticket; continue; }
       ambiguous++;
    }
@@ -683,12 +692,21 @@ ulong MT5_FindFilledTicketForSignal(int magic, int idx) {
 }
 ```
 
-`DATETIME_MAX` is the MQL5 sentinel for "no upper bound" (use `(datetime)0` or
-`TimeCurrent()+PERIOD_*` consistently with the rest of the file; pin one and
-document it in a comment). The exact sentinel is an implementation detail; the
-contract is: a fill with `OrderOpenTime() >= MT5_DecisionTimes[idx]` AND
-(strictly less than the next decision time when one exists) is a candidate,
-and any non-unique window is logged as ambiguous.
+`MT5_NO_HI_BOUND` — локальная константа-sentinel «верхней границы нет»,
+объявить рядом с массивами состояния (Task 4 Step 1):
+
+```cpp
+const datetime MT5_NO_HI_BOUND = D'2100.01.01 00:00';
+```
+
+Аудит: `DATETIME_MAX` в дереве `MT/` не определён (`rg -n "DATETIME_MAX" MT/` →
+0 совпадений), поэтому использовать его нельзя. Варианты «`(datetime)0` или
+`TimeCurrent()+PERIOD_*`» из прежней редакции НЕ эквивалентны: `(datetime)0` —
+нижняя граница времени, её подстановка инвертирует условие
+`if (hi < MT5_NO_HI_BOUND && ot >= hi) continue;`. Контракт остаётся прежним:
+кандидат — fill с `OrderOpenTime() >= MT5_DecisionTimes[idx]` И (строго меньше
+следующего decision time, если он существует); неуникальное окно логируется
+как ambiguous.
 
 - [ ] **Step 4: Split one-ticket logging into `MT5_LogLifecycleForTicket`**
 
@@ -763,6 +781,71 @@ For each match, replace the cast with a direct `ulong` pass-through (MT5 `OrderS
 
 Expected after this step: empty grep output; no `possible loss of data` warnings related to ticket types remain in any MQL5 include.
 
+- [ ] **Step 4c: Add `ulong` `OrderSelect` overload to `MQL4Compat.mqh` (audit: gate «0 warnings»)**
+
+Аудит: без этого шага gate «0 warnings» недостижим. Весь код компилируется
+через `#define OrderSelect OrderSelect_MQL4` (`MQL4Compat.mqh:456`), а текущая
+сигнатура `bool OrderSelect_MQL4(int index, int selectMode, int pool=MODE_TRADES)`
+(`MQL4Compat.mqh:309`) принимает ticket как `int`. Передача `ulong ticket`
+без явного каста даёт неявное сужение `ulong -> int` — тот же класс
+предупреждений, от которого очищают `lib_ML_Signal.mqh` в Step 4/4b.
+
+В `MT/MQL5/Include/MQL4Compat.mqh` рядом с `OrderSelect_MQL4` добавить
+перегрузку (MQL5 перегрузку функций поддерживает; вызовы с `ulong`-аргументом
+уйдут в неё):
+
+```cpp
+// ulong-ticket overload: callers holding a real MT5 ticket (ulong) must not
+// narrow it to int at the call site (would keep `possible loss of data`).
+bool OrderSelect_MQL4(ulong ticket, int selectMode, int pool=MODE_TRADES) {
+   if (selectMode != SELECT_BY_TICKET) return false; // index modes stay int-only
+   g_selectedOrder.ticket = 0;
+   if (pool == MODE_TRADES) {
+      if (PositionSelectByTicket(ticket)) {
+         g_selectedOrder.ticket    = ticket;
+         g_selectedOrder.openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+         g_selectedOrder.stopLoss  = PositionGetDouble(POSITION_SL);
+         g_selectedOrder.takeProfit= PositionGetDouble(POSITION_TP);
+         g_selectedOrder.lots      = PositionGetDouble(POSITION_VOLUME);
+         return true;
+      }
+      return false;
+   }
+   // MODE_HISTORY: find the deal/position in history by ticket.
+   // Реализацию взять из существующей int-версии (ветка MODE_HISTORY),
+   // подставив ticket без каста; при желании вынести общее тело в
+   // static-хелпер `OrderSelectByTicketULong(ulong ticket, int pool)`
+   // и вызывать его из обеих перегрузок (int-версия передаёт `(ulong)index` —
+   // расширение, предупреждение не даёт).
+   return false;
+}
+```
+
+Контроль: после этого шага `rg -n "OrderSelect\(\(int\)" MT/MQL5/Include/` пуст,
+и вызовы вида `OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES)` с `ulong ticket`
+(`MT5_LogLifecycleForTicket`, Step 4) компилируются без warnings. Если MetaEditor
+всё же выдаёт warning на этой перегрузке (например, неоднозначность с int-версией
+для литеральных аргументов), зафиксировать в отчёте `PASS_WITH_WARNINGS` с
+точной цитатой лога — но не молча.
+
+- [ ] **Step 4d: Tighten the committed A5 static assertion**
+
+В `tests/test_mt5_mql5_multiposition_contract.py` (коммит `4b7eddd` записал
+ослабленную версию) заменить:
+
+```python
+assert "MT5_TrackedPositionCount--" in ml_signal or "close_logged" in ml_signal
+```
+
+на:
+
+```python
+assert "MT5_TrackedPositionCount--" in ml_signal
+```
+
+Ветка `or "close_logged"` проходила бы уже от объявления поля структуры
+(Step 1) и ничего не доказывала про компакцию.
+
 - [ ] **Step 5: Rewrite `MT5_LogLifecycleForCurrentState`**
 
 Replace the old singleton implementation with:
@@ -799,15 +882,53 @@ void MT5_LogLifecycleForCurrentState(int magic, int &ml_close_order_type) {
 }
 ```
 
-- [ ] **Step 6: Update ML_TRADE assignment**
+- [ ] **Step 6: Remove ALL remaining uses of the singleton state (not only the ML_TRADE assignment)**
 
-In `EXPERT::ML_TRADE()`, delete:
+Аудит: Step 1 удаляет объявление `MT5_TrackedMagic` (вместе с остальными тремя
+переменными), поэтому КАЖДОЕ использование обязано быть закрытым в этом шаге,
+иначе компиляция падает с «undeclared identifier». Фактические точки
+использования на момент написания плана
+(`rg -n "MT5_TrackedMagic|MT5_TrackedTicket|MT5_TrackedIdx|MT5_TrackedOpenLogged" MT/MQL5/Include/`):
+
+1. `lib_ML_Signal.mqh:764` — в `EXPERT::ML_TRADE()` удалить:
 
 ```cpp
 MT5_TrackedMagic = Mgc;
 ```
 
-because tracked magic is now per tracked position.
+(tracked magic теперь хранится per tracked position).
+
+2. `lib_ML_Signal.mqh:185` и `lib_ML_Signal.mqh:407` — хвосты `FileWrite` в
+   event-логгерах передают `MT5_TrackedMagic` в колонку `magic`. Заменить на
+   `MT5_LastPlacedMagic` (ближайший живой источник magic сигнального события);
+   для событий жизненного цикла позиций magic и так приходит параметром (см. п.3).
+
+3. `lib_ML_Signal.mqh:308-309` — внутри `MT5_ML_LogEvent`:
+
+```cpp
+int open_positions = MT5_OpenPositionsForMagic(MT5_TrackedMagic);
+int event_magic = (magic != 0 ? magic : MT5_TrackedMagic);
+```
+
+заменить на per-event magic, например:
+
+```cpp
+int event_magic = magic;
+int open_positions = MT5_OpenPositionsForMagic(event_magic);
+```
+
+Все вызовы `MT5_ML_LogEvent` в диагностическом lifecycle передают ненулевой
+`magic` (параметр `MT5_LogLifecycleForTicket(int tracked_i, int magic, ...)`),
+поэтому fallback на глобальный tracked magic больше не нужен. Если где-то
+вызов с `magic=0` всё же существует — исправить вызов, а не возвращать глобал:
+иначе колонка `open_positions` в multi-pos режиме будет считаться для magic=0.
+
+4. Строки `592` (`MT5_TrackedMagic = magic;`), `591/593-595`, `606-646` —
+   тело старого singleton-lifecycle, которое полностью заменяется Step 2-5.
+
+Контроль шага: `rg -n "MT5_TrackedMagic|MT5_TrackedTicket|MT5_TrackedIdx|MT5_TrackedOpenLogged" MT/MQL5/Include/`
+возвращает пусто (статический тест `test_diagnostic_lifecycle_uses_multi_ticket_tracker`
+проверяет только `MT5_TrackedTicket`, этого недостаточно).
 
 - [ ] **Step 7: Run static lifecycle test**
 
@@ -822,7 +943,7 @@ Expected: PASS.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add MT/MQL5/Include/lib_ML_Signal.mqh tests/test_mt5_mql5_multiposition_contract.py
+git add MT/MQL5/Include/lib_ML_Signal.mqh MT/MQL5/Include/MQL4Compat.mqh tests/test_mt5_mql5_multiposition_contract.py
 git commit -m "fix: track mt5 diagnostic lifecycle per ticket"
 ```
 
@@ -1227,13 +1348,19 @@ from pathlib import Path
 import pandas as pd
 
 events = pd.read_csv(Path("ML/reports/mt5_execution_loop/batch/_smoke/events.csv"), sep=";")
-sig = events[["event", "ticket", "idx"]].dropna()
-# Restrict to lifecycle events that carry a signal idx (OPEN/ML_EVAL/ML_CLOSE/CLOSE).
-lifecycle = sig[sig["event"].isin(["OPEN", "ML_EVAL", "ML_CLOSE", "CLOSE"])]
+# Аудит: колонки `idx` в событийном CSV НЕТ (заголовок writer-а —
+# lib_ML_Signal.mqh:300). Сигнальный индекс пишется в колонку `request_seq`:
+# хвостовые аргументы вызовов MT5_ML_LogEvent(..., idx, magic, Symbol(), ...)
+# попадают в параметр request_seq (сигнатура lib_ML_Signal.mqh:253-289).
+# Несигнальные события имеют request_seq == -1 (схема parse_mt5_execution_report.py:17).
+lifecycle = events[
+    events["event"].isin(["OPEN", "ML_EVAL", "ML_CLOSE", "CLOSE"])
+    & (pd.to_numeric(events["request_seq"], errors="coerce") >= 0)
+]
 if lifecycle.empty:
     print({"checked": 0, "binding_violations": 0})
 else:
-    by_ticket = lifecycle.groupby("ticket")["idx"].nunique()
+    by_ticket = lifecycle.groupby("ticket")["request_seq"].nunique()
     bad = by_ticket[by_ticket > 1]
     print({"checked": int(by_ticket.shape[0]), "binding_violations": int(bad.shape[0])})
     if not bad.empty:
@@ -1242,11 +1369,23 @@ else:
 PY
 ```
 
-Expected: `binding_violations: 0`. Also grep the MT5 tester log / journal for
+Expected: `binding_violations: 0`. Also grep the MT5 tester journal for
 `ambiguous_fills_in_window` and copy any such line into the closeout report
 under `Limitations` — a non-zero count means signal→ticket binding is NOT
 provable for that window and the timing-contract result for those rows must be
 treated as evidence-insufficient, not as a clean PASS.
+
+Журнал тестера в Wine-окружении лежит внутри prefix-а; точный файл определить
+командой (имя содержит дату прогона):
+
+```bash
+find "$HOME/.mt5/drive_c/Program Files/MetaTrader 5/Tester" -name "*.log" -newer MT/MQL5/Experts/'$o$imple.ex5'
+```
+
+и затем `grep -n "ambiguous_fills_in_window" <найденный файл>`. `Print()` из
+советника в тестере попадает именно в этот журнал, а не в событийный CSV;
+дублировать WARN-строки в CSV НЕ нужно — неизвестный `event` сломает
+reconciliation (`UNEXPLAINED`) в `parse_mt5_execution_report.py`.
 
 ---
 
@@ -1299,7 +1438,7 @@ Expected: no output (all malformed lines removed).
 In `docs/reports/2026-08-02-mt5-multi-position-probe.md`:
 - replace "identical to previous baseline" with "matches previous smoke counters available in this report";
 - replace "Canonical guarantee ... подтверждена" with "Canonical guarantee partially checked by smoke; full event-level backcompat remains open until closeout";
-- replace "not a bug refactoring plan" with "blocking gap in multi-position lifecycle coverage";
+- replace the exact phrase at `docs/reports/2026-08-02-mt5-multi-position-probe.md:158-159` — «Это **архитектурное ограничение** диагностического слоя executor-а, а не баг рефакторинга плана.» (аудит: прежняя редакция плана цитировала её как «not a bug refactoring plan», буквальный поиск такой строки ничего не найдёт) — with «blocking gap in multi-position lifecycle coverage»;
 - replace compile `PASS` wording with `PASS_WITH_WARNINGS` or `FAIL` according to the new closeout compile log (Task 6 Step 3).
 
 - [ ] **Step 3: Add `research_priority` (A10)**
@@ -1398,6 +1537,18 @@ For each audit item 1-10, write one row:
 | 1 same-direction blocked | PASS/FAIL | file lines + command |
 ```
 
+Аудит: `docs/superpowers/audit.md` перезаписывается каждым новым аудитом,
+поэтому номера пунктов U2/U4/U5, V1-V3, A4-A14, K1/K2 и «items 1-10» сами по
+себе не воспроизводимы. Правила этого шага:
+
+- в каждой строке таблицы давать краткую цитату сути пункта (1-2 фразы), а не
+  только номер;
+- в секции `Related Materials` зафиксировать SHA коммита, в котором лежит
+  доредакционный `audit.md`: `f0d20673805d3e93708bc5c8e911ab08c692b5b1`
+  (последний коммит, менявший файл; проверка:
+  `git log -1 --format=%H -- docs/superpowers/audit.md`), чтобы формулировки
+  пунктов восстанавливались через `git show <SHA>:docs/superpowers/audit.md`.
+
 - [ ] **Step 3: Fill `Verification` with exact commands**
 
 Include:
@@ -1458,7 +1609,7 @@ git commit -m "docs: close mt5 multi-position refactor audit"
 The stage can be considered closed only if all are true:
 
 - Static contract tests pass (including force-rerun behavioral tests from Task 1 Step 3).
-- MT5 compile log for current `.ex5` shows `0 errors, 0 warnings` (Task 4 Step 4b removed `(int)ticket` casts); batch compile log agrees.
+- MT5 compile log for current `.ex5` shows `0 errors, 0 warnings` (Task 4 Step 4b removed `(int)ticket` casts, Step 4c added the `ulong` `OrderSelect` overload in `MQL4Compat.mqh`); batch compile log agrees.
 - `--max-positions=1 --force-rerun` smoke passes and is described as smoke unless event-level comparison is done.
 - `--max-positions=2 --force-rerun` smoke passes without timing-contract violation.
 - `--max-positions=16 --force-rerun` smoke either passes or is explicitly `NOT_RUN` with stage remaining `BLOCKED/UNKNOWN` for full multi-pos batch.
