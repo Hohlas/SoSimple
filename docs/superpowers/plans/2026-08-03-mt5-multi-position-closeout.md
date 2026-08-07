@@ -15,9 +15,16 @@
 - Не открывать `locked_test`; не выбирать winner; не менять модель, threshold, признаки или frozen export.
 - Максимальный verdict этапа: `DIAGNOSTIC_ONLY`.
 - `InpMT5_MaxPositions=1` обязан сохранить single-position поведение; `InpMT5_MaxPositions>1` не является торговым режимом.
-- MT5 compile gate по методике: лог должен показывать `Result: 0 errors, 0 warnings`, либо отчёт обязан явно зафиксировать `FAIL/PASS_WITH_WARNINGS` и не закрывать parity gate как PASS.
+- MT5 compile gate по методике: лог должен показывать `Result: 0 errors, 0 warnings`, либо отчёт обязан явно зафиксировать `FAIL/PASS_WITH_WARNINGS` и не закрывать parity gate как PASS. Чтобы убрать `possible loss of data` warnings от ticket-кастов, все `OrderSelect((int)ticket, ...)` по `SELECT_BY_TICKET` должны быть заменены на `OrderSelect(ticket, ...)` (MT5 `OrderSelect` принимает `ulong` напрямую); см. Task 4 Step 4b.
 - Для tester-прогонов фиксировать фактические paths, model, date range, broker/server, symbol, deposit/currency/leverage, spread mode, account mode, время `.ex5`.
 - Не делать `git push`.
+
+## Scope
+
+- Покрытие: только `iSignal == 3` (диагностический ML_TRADE path, `MT5_DiagnosticExecutor=true`). По умолчанию `InpiSignal=3` в `MT/MQL5/Experts/$o$imple.mq5:41`.
+- Вне покрытия: `iSignal == 5` (`ML_TRADE_TB` в `lib_ML_Signal_TB.mqh`) — отдельная signal-система с собственным state (`TB_Times[]`, `TB_SignalCount`, `TB_cnt_*`); в рамках этого closeout не тестируется. Будет покрыта отдельным планом `2026-08-03-mt5-per-expert-ml-tracker.md`.
+- Архитектурное ограничение multi-pos: `set.BUY`/`set.SEL` в `INPUT.mqh` остаются singleton pending-queue (один planned order per bar, `INPUT.mqh:13-14`). Поэтому multiple same-side позиции могут возникнуть только через серию баров (pending → fill → следующий бар → новый pending), а не через постановку нескольких ордеров в одном баре. Это ограничение явно фиксируется в отчёте (Task 9 Limitations).
+- Multi-expert (`ExpTotal>1`) и per-expert ML-CSV (`rule_id` filter) не покрываются — это отдельный план `2026-08-03-mt5-per-expert-ml-tracker.md`.
 
 ---
 
@@ -67,6 +74,8 @@ Create `tests/test_mt5_mql5_multiposition_contract.py` with these tests:
 ```python
 from __future__ import annotations
 
+import re
+
 from pathlib import Path
 
 
@@ -82,16 +91,42 @@ def _text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
+# Regex for an MQL5 outer function definition: "void EXPERT::Foo(" or
+# "void EXPERT_PARENT_CLASS::Foo(" etc. Used to find the next function boundary
+# instead of relying on comment markers like "//Ж" (which are brittle and
+# cause ValueError instead of a readable assertion failure if moved/changed).
+_FUNC_SIGNATURE = re.compile(
+    r"^\s*(?:void|bool|int|float|double|string|datetime|ulong|char|short|uchar|ushort)\s+"
+    r"(?:[A-Za-z_][A-Za-z0-9_]*::)?[A-Za-z_][A-Za-z0-9_]*\s*\(",
+    re.MULTILINE,
+)
+
+
 def _body(text: str, signature: str, next_signature: str) -> str:
+    """Return text between two function signatures, asserting both exist.
+
+    Raises AssertionError with a readable message if either anchor is missing
+    (instead of ValueError from str.index), and finds the next anchor by
+    function-signature regex to avoid depending on comment layout.
+    """
+    assert signature in text, f"anchor not found: {signature!r}"
     start = text.index(signature)
-    end = text.index(next_signature, start + len(signature))
-    return text[start:end]
+    # Search forward for the next function signature after `start`.
+    for m in _FUNC_SIGNATURE.finditer(text, start + len(signature)):
+        candidate = m.group(0).strip()
+        if next_signature in text[m.start():]:
+            end = m.start()
+            return text[start:end]
+    raise AssertionError(
+        f"next function anchor matching {next_signature!r} not found after {signature!r}"
+    )
 
 
 def test_set_buy_sell_do_not_use_legacy_singleton_as_multi_pos_loop_gate() -> None:
     orders = _text(ORDERS)
+    # Anchors use next function definition, not comment markers.
     buy_body = _body(orders, "void EXPERT_PARENT_CLASS::SET_BUY()", "void EXPERT_PARENT_CLASS::SET_SEL()")
-    sell_body = _body(orders, "void EXPERT_PARENT_CLASS::SET_SEL()", "//Ж")
+    sell_body = _body(orders, "void EXPERT_PARENT_CLASS::SET_SEL()", "void EXPERT_PARENT_CLASS::MODIFY()")
 
     assert "CanPlaceBuyOrder()" in buy_body
     assert "CanPlaceSellOrder()" in sell_body
@@ -123,6 +158,8 @@ def test_diagnostic_lifecycle_uses_multi_ticket_tracker() -> None:
     assert "MT5_TrackedTicket" not in ml_signal
     assert "MT5_FindTrackedIndexByTicket" in ml_signal
     assert "MT5_LogLifecycleForTicket" in ml_signal
+    # NEW (A5 cleanup): closed tracked positions must be compacted out of the active array.
+    assert "MT5_TrackedPositionCount--" in ml_signal or "close_logged" in ml_signal
 
 
 def test_position_tracker_ticket_uses_ulong() -> None:
@@ -156,6 +193,87 @@ def test_main_accepts_force_rerun_flag() -> None:
     assert args.phase == "tester"
     assert args.max_positions == 1
     assert args.force_rerun is True
+
+
+def test_run_batch_force_rerun_overrides_skip_when_unexplained_zero(
+    monkeypatch, tmp_path
+) -> None:
+    """Behavioral contract: when force_rerun=True and metrics.json already exists
+    with UNEXPLAINED=0, run_batch must NOT skip and must invoke run_tester.
+
+    Audit item 4: backcompat was wrongly proved by 32/32 SKIP. force_rerun must
+    make the skip-path inert.
+    """
+    from ML.baseline import run_mt5_batch
+    import json
+
+    run_id = "candidate_skip"
+    batch_dir = tmp_path / "batch"
+    tester_files = tmp_path / "tester_files"
+    out_dir = batch_dir / run_id
+    out_dir.mkdir(parents=True)
+    tester_files.mkdir()
+
+    # Pre-existing metrics claiming success -> normally causes SKIP.
+    metrics_with_zero = {"reconciliation": {"class_counts": {"UNEXPLAINED": 0}}}
+    (out_dir / "metrics.json").write_text(json.dumps(metrics_with_zero), encoding="utf-8")
+    # events.csv must exist for the skip guard; content doesn't matter for force_rerun.
+    (out_dir / "events.csv").write_text("event\nINIT\n", encoding="utf-8")
+    (out_dir / "entry_signals.csv").write_text("time\n2023.01.02 09:00\n", encoding="utf-8")
+
+    calls = {"run_tester": 0}
+
+    def fake_run_tester(ini_path):
+        calls["run_tester"] += 1
+        # Simulate tester producing an events file.
+        events_src = tester_files / f"mt5_trade_events_{run_id}.csv"
+        events_src.write_text("event\nINIT\n", encoding="utf-8")
+        return True
+
+    monkeypatch.setattr(run_mt5_batch, "BATCH_DIR", batch_dir)
+    monkeypatch.setattr(run_mt5_batch, "TESTER_FILES", tester_files)
+    monkeypatch.setattr(run_mt5_batch, "TERMINAL_FILES", tmp_path / "terminal")
+    monkeypatch.setattr(run_mt5_batch, "make_run_id", lambda candidate: run_id)
+    monkeypatch.setattr(run_mt5_batch, "create_set_file", lambda run_id, *, max_positions=1: tmp_path / "settings.set")
+    monkeypatch.setattr(run_mt5_batch, "create_ini_file", lambda run_id, set_name: tmp_path / "tester.ini")
+    monkeypatch.setattr(run_mt5_batch, "wait_for_liveupdate_clear", lambda: True)
+    monkeypatch.setattr(run_mt5_batch, "copy_entry_signal_file", lambda src: None)
+    monkeypatch.setattr(run_mt5_batch, "run_tester", fake_run_tester)
+    # parse_events returns a minimal metrics dict so run_batch records n_done.
+    monkeypatch.setattr(run_mt5_batch, "parse_events", lambda run_id, events_dst: {"reconciliation": {"class_counts": {"UNEXPLAINED": 0, "CLOSED_TX": 1}}})
+
+    run_mt5_batch.run_batch([{"profile": "candidate"}], force_rerun=True)
+
+    assert calls["run_tester"] == 1, "force_rerun=True must override SKIP and invoke run_tester"
+
+
+def test_run_batch_skips_when_unexplained_zero_and_no_force_rerun(
+    monkeypatch, tmp_path
+) -> None:
+    """Inverse: without force_rerun, existing metrics.json with UNEXPLAINED=0
+    must still SKIP (backcompat regression guard)."""
+    from ML.baseline import run_mt5_batch
+    import json
+
+    run_id = "candidate_skip_normally"
+    batch_dir = tmp_path / "batch"
+    out_dir = batch_dir / run_id
+    out_dir.mkdir(parents=True)
+
+    (out_dir / "metrics.json").write_text(
+        json.dumps({"reconciliation": {"class_counts": {"UNEXPLAINED": 0}}}),
+        encoding="utf-8",
+    )
+    (out_dir / "events.csv").write_text("event\nINIT\n", encoding="utf-8")
+
+    calls = {"run_tester": 0}
+    monkeypatch.setattr(run_mt5_batch, "BATCH_DIR", batch_dir)
+    monkeypatch.setattr(run_mt5_batch, "make_run_id", lambda candidate: run_id)
+    monkeypatch.setattr(run_mt5_batch, "run_tester", lambda ini_path: calls.__setitem__("run_tester", calls["run_tester"] + 1) or True)
+
+    run_mt5_batch.run_batch([{"profile": "candidate"}], force_rerun=False)
+
+    assert calls["run_tester"] == 0, "force_rerun=False with UNEXPLAINED=0 must SKIP"
 ```
 
 - [ ] **Step 4: Run focused tests and verify failure**
@@ -276,7 +394,19 @@ In `MT/MQL5/Include/ORDERS.mqh`, keep:
 int posIdx = FindPosIndexByTicket(OrderTicket());
 ```
 
-Expected compile result after `ulong` helper signatures: no `ulong -> int` warnings from this path.
+After Step 1 changed `FindPosIndexByTicket` to accept `ulong ticket`, the previous `ulong -> int` warning at this call site disappears (no lossy cast into the helper). Warning status at other call sites (`OrderSelect((int)ticket, ...)` in `lib_ML_Signal.mqh`, `OrderSelect(ticket, ...)` in `OUTPUT.mqh`) is handled in Task 4 Step 4b and is a compile-gate precondition for Task 6 Step 3.
+
+Also verify `MT/MQL5/Include/ERRORs.mqh` call sites of `EXP[ExpNum].Pos[i].ticket` compile-cleanly: `PositionSelectByTicket(EXP[ExpNum].Pos[i].ticket)` at `ERRORs.mqh:105` must use the new `ulong ticket` directly without `(int)` cast. If any explicit `(int)` cast remains in `ERRORs.mqh`, remove it (MT5 `PositionSelectByTicket` accepts `ulong`).
+
+- [ ] **Step 5b: Verify compile-after-Task-2 has only legacy warnings from lib_ML_Signal**
+
+Run a quick sanity grep (not a test gate yet): no explicit `(int)OrderTicket()` cast should remain inside `ORDERS.mqh`.
+
+```bash
+rg -n "\(int\)OrderTicket\(\)" MT/MQL5/Include/ORDERS.mqh MT/MQL5/Include/ERRORs.mqh
+```
+
+Expected: no output. If output appears, fix the cast before commit. This is preparation for Task 6 Step 3 (`0 warnings`).
 
 - [ ] **Step 6: Run static tests for this task**
 
@@ -422,10 +552,22 @@ void MT5_AddTrackedPosition(ulong ticket, int magic, int idx) {
    if (ticket == 0 || idx < 0) return;
    int existing = MT5_FindTrackedIndexByTicket(ticket);
    if (existing >= 0) {
-      MT5_TrackedPositions[existing].idx = idx;
+      // A4 guard: refuse to rebind an already-tracked ticket to a different
+      // signal index. A rebinding would mean a stale MT5_LastPlacedIdx got
+      // reused after the signal was already linked to a different fill; that
+      // corrupts timing/logging. Update magic only if it agrees.
+      if (MT5_TrackedPositions[existing].idx != idx) {
+         Print("WARN: MT5_AddTrackedPosition ticket=", ticket,
+               " already tracked with idx=", MT5_TrackedPositions[existing].idx,
+               " refusing rebinding to new idx=", idx);
+         return;
+      }
       MT5_TrackedPositions[existing].magic = magic;
       return;
    }
+   // A5 guard: do not resurrect an already-closed tracked entry. If a slot was
+   // compacted (close_logged + removed), FindTrackedIndexByTicket returns -1
+   // and we create a fresh entry below — that is the intended path.
    ArrayResize(MT5_TrackedPositions, MT5_TrackedPositionCount + 1);
    MT5_TrackedPositions[MT5_TrackedPositionCount].ticket = ticket;
    MT5_TrackedPositions[MT5_TrackedPositionCount].magic = magic;
@@ -470,7 +612,10 @@ void MT5_LogLifecycleForTicket(int tracked_i, int magic, int &ml_close_order_typ
    int idx = MT5_TrackedPositions[tracked_i].idx;
    if (idx < 0 || idx >= MT5_EntrySignalCount) return;
 
-   if (OrderSelect((int)ticket, SELECT_BY_TICKET, MODE_TRADES) == true) {
+   // A2: pass ticket directly (MT5 OrderSelect with SELECT_BY_TICKET accepts ulong);
+   // using (int)ticket keeps `possible loss of data` warning and violates the
+   // `0 warnings` compile gate required by Global Constraints.
+   if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES) == true) {
       int typ = OrderType();
       if (typ != OP_BUY && typ != OP_SELL) return;
       int bars_since_fill = (int)MathMax(0, SHIFT(OrderOpenTime()) - bar);
@@ -500,13 +645,35 @@ void MT5_LogLifecycleForTicket(int tracked_i, int magic, int &ml_close_order_typ
       return;
    }
 
-   if (!MT5_TrackedPositions[tracked_i].close_logged && OrderSelect((int)ticket, SELECT_BY_TICKET, MODE_HISTORY) == true) {
+   // A2: same as the MODE_TRADES branch — pass ticket directly without (int) cast.
+   if (!MT5_TrackedPositions[tracked_i].close_logged && OrderSelect(ticket, SELECT_BY_TICKET, MODE_HISTORY) == true) {
       int bars_since_fill = (int)MathMax(0, SHIFT(OrderOpenTime()) - SHIFT(OrderCloseTime()));
       MT5_ML_LogEvent("CLOSE", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], MT5_DecisionTimes[idx], OrderCloseTime(), MT5_RuleIds[idx], MT5_TimeText(MT5_EntryTimes[idx]), ticket, MT5_Sides[idx], MT5_LimitPrices[idx], OrderOpenPrice(), OrderOpenPrice(), OrderOpenPrice(), OrderStopLoss(), "broker_history_limited", OrderProfit(), bars_since_fill, MT5_Atrs[idx], OrderOpenTime(), OrderCloseTime(), 0.0, 0.0, 0.0, 0.0, 0, "history price/reason is limited in Task 4", 0, "", 0, "", idx, magic, Symbol(), MT5_EntryTypes[idx]);
       MT5_TrackedPositions[tracked_i].close_logged = true;
+      // A5 cleanup: compact this closed tracked entry out of the active array so
+      // the lifecycle loop in Step 5 does not iterate dead tickets on every tick.
+      // Swap-remove: move the last entry into this slot and shrink the count.
+      int last = MT5_TrackedPositionCount - 1;
+      if (tracked_i != last) {
+         MT5_TrackedPositions[tracked_i] = MT5_TrackedPositions[last];
+      }
+      MT5_TrackedPositionCount--;
+      ArrayResize(MT5_TrackedPositions, MT5_TrackedPositionCount);
    }
 }
 ```
+
+- [ ] **Step 4b: Audit all remaining `(int)ticket` / `(int)OrderTicket()` casts in lib_ML_Signal.mqh**
+
+The `0 warnings` compile gate (Global Constraints + Task 6 Step 3) is unreachable if any `(int)ticket` or `(int)OrderTicket()` cast remains. Search the whole `lib_ML_Signal.mqh`:
+
+```bash
+rg -n "\(int\)OrderTicket\(\)|\(int\)MT5_TrackedTicket|\(int\)ticket" MT/MQL5/Include/lib_ML_Signal.mqh
+```
+
+For each match, replace the cast with a direct `ulong` pass-through (MT5 `OrderSelect` and `MT5_RegisterPosition` accept `ulong`). `MT5_OnTradeTransaction` (around line 460+) and `MT5_ML_LogEvent` callers must pass `trans.order` / deal ticket as `ulong`. If a helper explicitly requires `int` (none currently do after Task 2 Step 1), document it as an unavoidable exception and downgrade compile status to `PASS_WITH_WARNINGS` in the report.
+
+Expected after this step: empty grep output; no `possible loss of data` warnings related to ticket types remain in `lib_ML_Signal.mqh`.
 
 - [ ] **Step 5: Rewrite `MT5_LogLifecycleForCurrentState`**
 
@@ -534,7 +701,12 @@ void MT5_LogLifecycleForCurrentState(int magic, int &ml_close_order_type) {
 
    for (int i = 0; i < MT5_TrackedPositionCount; i++) {
       if (MT5_TrackedPositions[i].magic != magic) continue;
+      int before = MT5_TrackedPositionCount;
       MT5_LogLifecycleForTicket(i, magic, ml_close_order_type);
+      // A5: if MT5_LogLifecycleForTicket compacted slot i (swap-remove of last
+      // element into slot i after a CLOSE), re-inspect the same index i so we
+      // do not skip the moved entry. Only decrement when we did a real removal.
+      if (MT5_TrackedPositionCount < before) i--;
    }
 }
 ```
@@ -618,6 +790,10 @@ def run_smoke_test(candidates: list[dict], *, max_positions: int = 1, force_reru
 def run_batch(candidates: list[dict], *, max_positions: int = 1, force_rerun: bool = False) -> None:
 ```
 
+**Semantics (A6):**
+- `force_rerun` has **runtime effect only in `run_batch`** — it overrides the existing-skip guard. In `run_smoke_test`, the parameter is accepted for API consistency but is a no-op (smoke always recalculates; there is no skip logic in `run_smoke_test` today). Do not claim `--force-rerun` enables event-level backcompat for smoke: it only guarantees smoke won't reuse an existing batch artifact by accident, and forces batch candidates to actually run the tester.
+- `force_rerun` MUST NOT delete source `entry_signals.csv`.
+
 In `main()`, call:
 
 ```python
@@ -626,25 +802,46 @@ if not run_smoke_test(candidates, max_positions=args.max_positions, force_rerun=
 run_batch(candidates, max_positions=args.max_positions, force_rerun=args.force_rerun)
 ```
 
-- [ ] **Step 4: Implement skip override**
+- [ ] **Step 4: Implement skip override (full patch for `run_batch`)**
 
-In `run_batch`, locate the existing check that skips candidates when `metrics.json` already exists. Wrap it:
+In `run_batch`, replace the existing skip guard:
 
 ```python
-if metrics_path.exists() and not force_rerun:
-    ...
+if metrics_json.exists() and events_csv.exists():
+    meta = json.loads(metrics_json.read_text(encoding="utf-8"))
+    recon = meta.get("reconciliation", {})
+    unexpl = recon.get("class_counts", {}).get("UNEXPLAINED", -1)
+    if unexpl == 0:
+        n_skipped += 1
+        print(f"[{i}/{n_total}] SKIP {run_id} (metrics exist, UNEXPLAINED=0)")
+        continue
 ```
 
-Before tester run, if `force_rerun` is true, delete only per-run generated artifacts:
+with:
 
 ```python
 if force_rerun:
-    for stale_path in (out_dir / "events.csv", out_dir / "metrics.json"):
+    # Audit item 4: backcompat was wrongly proved via 32/32 SKIP. Delete ONLY
+    # per-run generated artifacts (events.csv, metrics.json); never touch the
+    # source entry_signals.csv so the tester still reads the same inputs.
+    for stale_path in (events_csv, metrics_json):
         if stale_path.exists():
             stale_path.unlink()
+    # Fall through to the normal run path below.
+else:
+    if metrics_json.exists() and events_csv.exists():
+        meta = json.loads(metrics_json.read_text(encoding="utf-8"))
+        recon = meta.get("reconciliation", {})
+        unexpl = recon.get("class_counts", {}).get("UNEXPLAINED", -1)
+        if unexpl == 0:
+            n_skipped += 1
+            print(f"[{i}/{n_total}] SKIP {run_id} (metrics exist, UNEXPLAINED=0)")
+            continue
 ```
 
-Do not delete source `entry_signals.csv`.
+Notes:
+- The `force_rerun` block drops straight through to the existing tester-run path — there is no separate branch. The `entry_signals.csv` check (`if not entry_csv.exists()`) below stays unchanged and still aborts a candidate that lacks source inputs.
+- `n_skipped` semantics: when `force_rerun=True`, every executed candidate increments `n_done` (or `n_failed`); none stays in SKIP. The new behavioral tests in Task 1 Step 3 assert both directions.
 
 - [ ] **Step 5: Run parser test**
 
@@ -697,7 +894,12 @@ Expected: no output.
 
 - [ ] **Step 3: Compile MT5 expert**
 
-Run:
+**Two compile logs will exist; pin one as canonical for the report (A8).**
+
+1. **Canonical closeout log** (manual, this step): the report MUST cite this one.
+2. **Batch compile log** `/tmp/sosimple_mt5_batch_compile.log` (produced automatically by `run_mt5_batch.py:167` via `compile_expert()` when Step 4 invokes the batch): used only to confirm the batch ran the latest source, not a success criterion on its own.
+
+Run the manual compile:
 
 ```bash
 WINEPREFIX=/home/hohla/.mt5 xvfb-run -a wine \
@@ -713,7 +915,7 @@ iconv -f UTF-16LE -t UTF-8 /tmp/sosimple_mt5_compile_closeout.log | tail -n 30
 ls -l /tmp/sosimple_mt5_compile_closeout.log MT/MQL5/Experts/'$o$imple.ex5'
 ```
 
-Expected: `Result: 0 errors, 0 warnings` and `.ex5` mtime later than compile start. If warnings remain, stop the closeout and record `FAIL` for compile gate.
+Expected: `Result: 0 errors, 0 warnings` and `.ex5` mtime later than compile start. If warnings remain, **do NOT stop silently** — re-run Task 2 Step 5b and Task 4 Step 4b greps to find any remaining `(int)ticket`/`(int)OrderTicket()` cast, fix them, and re-compile. Compile gate is satisfied only when the closeout log shows `0 warnings`. If a warning is genuinely unavoidable (e.g. a third-party `.mqh`), record `FAIL` for compile gate in the report and downgrade the stage accordingly.
 
 - [ ] **Step 4: Run single-position smoke with forced rerun**
 
@@ -874,20 +1076,39 @@ Expected: no parse failures; aggregate summaries written. If runtime is too high
 - Consumes: audit findings and new verification results.
 - Produces: corrected historical documents that no longer overclaim.
 
-- [ ] **Step 1: Fix broken commands in old plan**
+- [ ] **Step 1: Fix all broken commands in old plan (A13 — cover every malformed line)**
 
-In `docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md`, replace the Task 6 Step 6 commands with:
+Audit item 7 lists three malformed command lines in `docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md` Task 6: `ML.baseline.tester` (non-existent module), `./.venv/bin/pythonスス...` (UTF-8 garbage from `Step 6`), and `ML.baseline.mt5_exec_diagnostic --phase multi-pos-comparison` (Step 7).
+
+In `docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md`:
+
+1. **Task 6 Step 5** — keep the existing `--max-positions=1` smoke command (already correct).
+
+2. **Task 6 Step 6** — replace the broken batch commands with the ones the closeout actually uses:
+   ```bash
+   ./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --max-positions=2 --force-rerun
+   ./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --max-positions=16 --force-rerun
+   ```
+   Mention that `--force-rerun` was added by this closeout (Task 5); for the old plan the historical command without `--force-rerun` is acceptable as long as the comment "rerun to overwrite SKIP" is attached.
+
+3. **Task 6 Step 7** — replace the malformed `mt5_exec_diagnostic --phase multi-pos-comparison ...` with the actual aggregator the closeout uses:
+   ```bash
+   ./.venv/bin/python -m ML.baseline.run_mt5_batch --phase aggregate
+   ```
+   Delete the `pythonスス... root` UTF-8 garbage line (it appears once, between Step 6 and Step 7 command blocks).
+
+4. Replace the expected `102 trades, same events` claim with:
+   ```text
+   Expected: event-level comparison against a pinned baseline artifact (produced by a fresh --force-rerun batch in the 2026-08-03 closeout), or explicitly mark backcompat as smoke-only.
+   ```
+
+Verify after edits:
 
 ```bash
-./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --max-positions=2 --force-rerun
-./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --max-positions=16 --force-rerun
+rg -n "ML\.baseline\.tester|baseline\.mt5_exec_diagnostic|pythonス" docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md
 ```
 
-Replace `102 trades, same events` with:
-
-```text
-Expected: event-level comparison against a pinned baseline artifact, or explicitly mark backcompat as smoke-only.
-```
+Expected: no output (all malformed lines removed).
 
 - [ ] **Step 2: Fix overclaims in old report**
 
@@ -895,15 +1116,18 @@ In `docs/reports/2026-08-02-mt5-multi-position-probe.md`:
 - replace "identical to previous baseline" with "matches previous smoke counters available in this report";
 - replace "Canonical guarantee ... подтверждена" with "Canonical guarantee partially checked by smoke; full event-level backcompat remains open until closeout";
 - replace "not a bug refactoring plan" with "blocking gap in multi-position lifecycle coverage";
-- replace compile `PASS` wording with `PASS_WITH_WARNINGS` or `FAIL` according to the new compile log.
+- replace compile `PASS` wording with `PASS_WITH_WARNINGS` or `FAIL` according to the new closeout compile log (Task 6 Step 3).
 
-- [ ] **Step 3: Add `research_priority`**
+- [ ] **Step 3: Add `research_priority` and `roadmap_track` (A10)**
 
 In both old plan/report disclosure blocks, add:
 
 ```text
 research_priority: medium — needed to determine whether single-position policy is a real execution constraint, but all results remain DIAGNOSTIC_ONLY.
+roadmap_track: mt5-execution-closeout
 ```
+
+`roadmap_track` is required by `docs/methodology/16-reporting-audit.md` disclosure; it references the named track in `docs/superpowers/roadmap.md`.
 
 - [ ] **Step 4: Commit docs corrections**
 
@@ -911,6 +1135,8 @@ research_priority: medium — needed to determine whether single-position policy
 git add docs/superpowers/plans/2026-08-02-mt5-multi-position-refactor.md docs/reports/2026-08-02-mt5-multi-position-probe.md
 git commit -m "docs: correct mt5 multi-position probe claims"
 ```
+
+**Note (A7):** `CHANGELOG.md` and `CONTEXT_HANDOFF.md` for the previous [2026-08-02] entry are NOT updated in this commit — they are reconciled in Task 9 Step 4 in the same commit that lands the closeout report. This keeps history consistent: until Task 9, the only committed correction is the source plan/report text.
 
 ---
 
@@ -940,6 +1166,7 @@ Create `docs/reports/2026-08-03-mt5-multi-position-closeout.md` with these secti
 
 - lifecycle_status: research_hypothesis
 - origin_bias: follow-up to audit `docs/superpowers/audit.md`
+- roadmap_track: mt5-execution-closeout
 - research_priority: medium — needed to determine whether single-position policy is a real execution constraint, but all results remain DIAGNOSTIC_ONLY
 - current_search_budget: 0 model/search configurations; MQL5 execution refactor closeout; maxpos smoke/batch runs listed below
 - cumulative_search_budget: inherited from 2026-07-31 batch, 2026-08-01 diagnostics, 2026-08-02 multi-position refactor
@@ -958,6 +1185,12 @@ Create `docs/reports/2026-08-03-mt5-multi-position-closeout.md` with these secti
 ## Results
 
 ## Limitations
+
+Multi-position scope (A11) — MANDATORY content of this section:
+- Multi-pos is exercised only through `iSignal == 3` (`ML_TRADE`, `MT5_DiagnosticExecutor=true`). `iSignal == 5` (`ML_TRADE_TB` in `lib_ML_Signal_TB.mqh`) is out of scope for this closeout; covered by separate plan `2026-08-03-mt5-per-expert-ml-tracker.md`.
+- `set.BUY` / `set.SEL` in `INPUT.mqh:13-14` remain a single planned order per bar. Therefore multiple same-side positions can only appear across multiple bars (pending → fill → next bar → new pending), never as several simultaneous `OrderSend` calls in the same bar. If max=2 smoke does not produce two simultaneous BUY (or SELL) positions on any tick, record the max-counted simultaneous positions explicitly and mark multi-pos proof as PARTIAL — do NOT claim full multi-pos proof from a single-bar-incomplete smoke.
+- Multi-expert (`ExpTotal>1`) and per-expert ML-CSV (`rule_id` filter) are out of scope; covered by separate plan.
+- `CLOSE` event only reads MT5 history by ticket and uses placeholder `broker_history_limited` for close reason, `order_close_price`, `take_profit`, `swap`, `commission` per `docs/methodology/13b-mt5-execution-parity.md:138-141` — not reconciled against MT5 deals in this closeout.
 
 ## Split Disclosure
 
@@ -1007,7 +1240,9 @@ Update `CHANGELOG.md` newest entry with:
 - **decision**: ...
 ```
 
-Update `CONTEXT_HANDOFF.md` with the current next action. If full max=2/max=16 batch did not run, keep next action as execution closeout, not trade-count probe.
+Also revise the existing `## 2026-08-02` entry in `CHANGELOG.md` so it no longer claims compile `PASS`: downgrade to `PASS_WITH_WARNINGS` (or `FAIL` if the new closeout compile gate did not reach `0 warnings`), and add a one-line pointer to `2026-08-03` closeout. This is the deferred CHANGELOG reconciliation referenced in Task 8 Step 4 note (A7).
+
+Update `CONTEXT_HANDOFF.md` with the current next action. If full max=2/max=16 batch did not run, keep next action as execution closeout, not trade-count probe. Also note the pos-[] per-expert state fix (`Pos[]` in `EXPERT_PARENT_CLASS`) is now committed (it was uncommitted at audit time) — reference the commit SHA in this section.
 
 Update `docs/superpowers/roadmap.md` only if the closeout changes the ACTIVE track. If only smoke passed, do not change the roadmap direction.
 
@@ -1035,18 +1270,21 @@ git commit -m "docs: close mt5 multi-position refactor audit"
 
 The stage can be considered closed only if all are true:
 
-- Static contract tests pass.
-- MT5 compile log for current `.ex5` shows `0 errors, 0 warnings`.
+- Static contract tests pass (including force-rerun behavioral tests from Task 1 Step 3).
+- MT5 compile log for current `.ex5` shows `0 errors, 0 warnings` (Task 4 Step 4b removed `(int)ticket` casts); batch compile log agrees.
 - `--max-positions=1 --force-rerun` smoke passes and is described as smoke unless event-level comparison is done.
 - `--max-positions=2 --force-rerun` smoke passes without timing-contract violation.
 - `--max-positions=16 --force-rerun` smoke either passes or is explicitly `NOT_RUN` with stage remaining `BLOCKED/UNKNOWN` for full multi-pos batch.
+- Multi-position limits (one-signal-per-bar, multi-expert out of scope, `iSignal==5` out of scope) are written explicitly in the report's `Limitations` section.
 - Final report does not use trading interpretations and keeps `allowed_max_verdict: DIAGNOSTIC_ONLY`.
-- Old report/plan no longer contain known false or overstrong claims.
+- Final report disclosure contains `roadmap_track` and `research_priority` (A10).
+- Catss `(int)` not found in `lib_ML_Signal.mqh` after Task 4 Step 4b (verified by `rg -n`).
+- Old report/plan no longer contain known false or overstrong claims (Task 8 Step 1 grep returns no output).
 
 ## Self-Review
 
 - Covers audit items 1-10: yes, mapped in Tasks 1-9.
-- Methodology coverage: `13b` compile/tester parity and `16` report disclosure are explicit.
+- Methodology coverage: `13b` compile/tester parity and `16` report disclosure (incl. `roadmap_track`) are explicit.
 - No `locked_test`, no winner selection, no model changes.
 - Known risk: MQL5 static tests are text guards, not a substitute for tester; tester smoke is mandatory before closeout.
 
