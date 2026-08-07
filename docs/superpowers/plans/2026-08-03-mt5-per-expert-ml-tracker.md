@@ -60,7 +60,7 @@ Expected: первая команда возвращает **0 строк** (sin
 
 If **все 4 grep checks прошли** → записать в `docs/reports/2026-08-03-mt5-per-expert-precondition.md` с одной строкой `precondition: OK` и SHA всех проверенных файлов; продолжить Task 1.
 
-If **хотя бы один check failed** → записать тот же файл с `precondition: FAILED` и списком незакрытых аудиторских замечаний. **STOP**. Сообщить, что план BLOCKED на closeout. Незакрытые замечания указать по заголовкам задач из `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md` (Tasks A1-A14): какие из A1..A14-led задач (Task P0: remove singleton, Task 1: struct + PosMap indexer, Task 2: MT5_RegisterPosition wiring, Task 3: MT5_FindEntrySignal by ticket, Task 4: LogLifecycleForTicket, Task 5: expire/fail handling, Task 6: consume-after-fill, Task 7: per-rule per-expert logging, Task 8: external API + compile gate, Task 9: docs + report sync) не исполнены — каждому поставит в соответствие grep-check, который провалился. Не переходить к Task 1.
+If **хотя бы один check failed** → записать тот же файл с `precondition: FAILED` и списком незакрытых пунктов. **STOP**. Сообщить, что план BLOCKED на closeout. Незакрытые пункты указывать по фактическим заголовкам задач closeout-плана `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md` (Tasks 1-9): «Task 1: Static Contract Tests For Audit Findings», «Task 2: Fix POSITION ticket type and order placement gate», «Task 3: Fix side-specific close helpers and clean INPUT», «Task 4: Replace single-ticket diagnostic lifecycle with multi-ticket tracker», «Task 5: Add forced rerun support for reproducible backcompat checks», «Task 6: Compile gate and focused tester checks», «Task 7: Backcompat and multi-position evidence comparison», «Task 8: Correct old plan/report claims», «Task 9: Final closeout report and project state sync». Соответствие grep-check → задача: absence `MT5_TrackedTicket` / наличие struct+массива+`MT5_LogLifecycleForTicket` → Task 4; absence int-кастов ticket → Tasks 2-4; наличие `force_rerun` → Task 5. Не переходить к Task 1.
 
 - [ ] **Step 3: Commit precondition check**
 
@@ -953,7 +953,7 @@ def main() -> None:
 ```python
 def main() -> None:
     parser = argparse.ArgumentParser(description="MT5 batch selection pipeline")
-    parser.add_argument("--phase", choices=["signals", "tester", "aggregate", "all"], default="all")
+    parser.add_argument("--phase", choices=["signals", "tester", "aggregate", "all", "smoke-multi-expert"], default="all")
     parser.add_argument(
         "--max-positions",
         type=int,
@@ -976,6 +976,18 @@ def main() -> None:
         "(или 2 в режиме all, см. batch-size в multi-expert grouping).",
     )
     args = parser.parse_args()
+    if args.phase == "smoke-multi-expert":
+        # Отдельный multi-expert smoke (Task 8 Step 5): без --multi-expert-magics,
+        # магики берутся из эталонного прогона MAGIC_GENERATOR (К-6).
+        if not compile_expert():
+            print("ABORT: compilation failed")
+            sys.exit(1)
+        result = run_smoke_test_multi_expert(max_positions=args.max_positions)
+        if not result["passed"]:
+            print("Smoke multi-expert FAILED.")
+            sys.exit(1)
+        print("Smoke multi-expert PASSED.")
+        return
 ```
 
 Добавить новую функцию сразу после `main()`:
@@ -1009,7 +1021,12 @@ def main_multi_expert(candidates: list[dict], *, magics: list[int], batch_size: 
             print(f"SKIP incomplete group {start // batch_size} (only {len(group)} candidates)")
             continue
         batch_id = f"mbatch_{start // batch_size}"
-        out_dir = BATCH_DIR / batch_id
+        # К-4: tester-ветка ищет CSV через make_run_id(cand). Чтобы каталог генерации
+        # совпал с каталогом поиска в run_batch (run_mt5_batch.py:474-488), имя
+        # каталога строится из того же pseudo-candidate через make_run_id.
+        pseudo_cand = {"profile": batch_id, "model_key": "multi", "horizon": 0, "threshold_value": 0.0}
+        run_id = make_run_id(pseudo_cand)
+        out_dir = BATCH_DIR / run_id
         entry_csv = out_dir / "entry_signals.csv"
         entry_json = out_dir / "entry_signals.json"
 
@@ -1102,17 +1119,20 @@ def _runtime_ctx_or_empty() -> dict:
                 print("ABORT: tester_file property missing")
                 sys.exit(1)
             print("\n--- SMOKE TEST (multi-expert) ---")
-            if not run_smoke_test(candidates, max_positions=args.max_positions):
-                print("ABORT: smoke test failed")
+            # К-4: обычный run_smoke_test берёт candidates[0] и ищет single-expert CSV,
+            # который multi-expert генерация не создаёт. Используем multi-expert smoke.
+            smoke_result = run_smoke_test_multi_expert(max_positions=args.max_positions)
+            if not smoke_result["passed"]:
+                print("ABORT: multi-expert smoke test failed")
                 sys.exit(1)
             print("Smoke test PASSED.\n")
             print("--- MULTI-EXPERT BATCH ---")
-            # В multi-expert mode batch = один tester per batch_id.
+            # К-4: pseudo-cand идентичен тому, что main_multi_expert использует для
+            # make_run_id — run_batch найдёт CSV в том же каталоге BATCH_DIR/run_id.
             for start in range(0, len(candidates), 2):
                 batch_id = f"mbatch_{start // 2}"
-                # Здесь tester-loop пока идентична single-expert (Task 7 доработает per-batch tester).
-                run_batch([{"profile": batch_id, "model_key": "multi", "horizon": 0, "threshold_value": 0.0}],
-                          max_positions=args.max_positions)
+                pseudo_cand = {"profile": batch_id, "model_key": "multi", "horizon": 0, "threshold_value": 0.0}
+                run_batch([pseudo_cand], max_positions=args.max_positions)
         if args.phase in ("aggregate", "all"):
             aggregate_batch(candidates)
         return
@@ -1913,12 +1933,12 @@ Expected: PASS (без syntax-ошибок).
 
 - [ ] **Step 3: Compile MT5 expert**
 
-Run (метаданные из `docs/methodology/13b-mt5-execution-parity.md:148-153`). **В-8**: путь содержит `$o$imple` — bash раскрывает `$` как переменнуюесли строку выполнять в двойных кавычках или без экранирования. Команда ниже экранирует доллары через `\$`, что безопасно и в одно-, и в двойных кавычках:
+Run (метаданные из `docs/methodology/13b-mt5-execution-parity.md:148-153`). **В-8**: путь содержит `$o$imple` — `$` раскрывается bash как переменная, если строку выполнять в двойных кавычках или без кавычек. Команда ниже обёрнута в **одинарные** кавычки — внутри них bash не раскрывает `$` и не обрабатывает `\$`, поэтому бэкслэши НЕ нужны (с ними wine получит несуществующий путь `\$o\$imple.mq5`):
 
 ```bash
 WINEPREFIX=/home/hohla/.mt5 xvfb-run -a wine \
   '/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/MetaEditor64.exe' \
-  /compile:'/home/hohla/git/SoSimple/MT/MQL5/Experts/\$o\$imple.mq5' \
+  /compile:'/home/hohla/git/SoSimple/MT/MQL5/Experts/$o$imple.mq5' \
   /log:'/tmp/sosimple_mt5_per_expert_compile.log'
 ```
 
@@ -2053,7 +2073,7 @@ git commit -m "test: multi-expert smoke for per-rule ml-tracker (0 warnings, 0 u
 ## Context
 
 - Closeout plan `2026-08-03-mt5-multi-position-closeout.md` исполнен (precondition OK, см. `docs/reports/2026-08-03-mt5-per-expert-precondition.md`).
-- Per-expert mode: `run_mt5_batch --multi-expert --multi-expert-magics "163856259,987654321" --max-positions 1`.
+- Per-expert smoke: `run_mt5_batch --phase smoke-multi-expert --max-positions 1` (магики из эталонного прогона `MAGIC_GENERATOR`); batch-режим: `run_mt5_batch --multi-expert --multi-expert-magics "<magic_A>,<magic_B>" --max-positions 1`.
 - Конвенция `rule_id`: `"mt5_rule_" + (string)Mgc` для строкового представления int magic из `#.csv`.
 
 ## Implementation Summary
@@ -2079,7 +2099,7 @@ git commit -m "test: multi-expert smoke for per-rule ml-tracker (0 warnings, 0 u
 На момент закрытия плана: N/A — исполнитель заполняет после smoke. Стандарт:
 - `n_experts_in_smoke`: 2
 - `n_rules_in_csv`: 2
-- `CLOSED_TX per rule`: {mt5_rule_163856259: X, mt5_rule_987654321: Y}
+- `CLOSED_TX per rule`: {mt5_rule_<magic_A>: X, mt5_rule_<magic_B>: Y}
 - `overall UNEXPLAINED`: 0
 
 ## Limitations
@@ -2190,12 +2210,12 @@ git commit -m "docs: close mt5 per-expert ml-tracker plan (DIAGNOSTIC_ONLY)"
 - Existing contract tests pass: `tests/test_mt5_signal_executor_schema.py`, `tests/test_mt5_batch_runtime_contract.py`, `tests/test_parse_mt5_execution_report.py`, `tests/test_mt5_execution_diagnostics.py`.
 - Compile log `/tmp/sosimple_mt5_per_expert_compile.log` показывает `Result: 0 errors, 0 warnings` (13b:161).
 - Grep checks подтверждают: `(int)OrderTicket()`/`(int)ticket`/`MT5_TrackedTicket` отсутствуют (closeout precondition сохранён).
-- Multi-expert smoke (`--multi-expert --multi-expert-magics "163856259,987654321" --max-positions 1`): `per_rule_reconciliation` содержит оба `rule_id` с `UNEXPLAINED=0`.
+- Multi-expert smoke (`--phase smoke-multi-expert --max-positions 1`, магики из эталонного прогона `MAGIC_GENERATOR`, К-6): `per_rule_reconciliation` содержит оба `rule_id` (`mt5_rule_<magic_A>`, `mt5_rule_<magic_B>`), каждый с `CLOSED_TX >= 1` и общим `UNEXPLAINED == 0`, плюс положительный сигнал `metrics["order_counts"]["ORDER_PLACED"] >= 2` (защита от ложного PASS пустого прогона).
 - `parse_mt5_execution_report.py` возвращает `per_rule_reconciliation` key в metrics.json.
 - `run_mt5_batch.py --multi-expert` flag регистрируется и исполняет multi-rule генерацию.
-- Backcompat single-expert smoke (без `--multi-expert`) — НЕ запускался повторно, но `test_mt5_batch_runtime_contract.py` passes (backcompat гарантирован static-тестами).
+- Backcompat single-expert smoke (без `--multi-expert`) — НЕ запускался повторно; backcompat путь верифицирован К-3 fallback в `ML_TRADE` и static-тестом `test_ml_trade_backcompat_when_rule_id_filter_empty` (`test_mt5_batch_runtime_contract.py` проходит).
 - Финальный отчёт `docs/reports/2026-08-03-mt5-per-expert-ml-tracker.md`:
-  - disclosure содержит все обязательные поля (`lifecycle_status`, `origin_bias`, `roadmap_track`, `research_priority`, `allowed_max_verdict`, `forbidden_interpretations`).
+  - disclosure содержит все 8 обязательных полей методологии 16 (`lifecycle_status`, `origin_bias`, `research_priority`, `current_search_budget`, `cumulative_search_budget`, `next_probe_freeze`, `allowed_max_verdict`, `forbidden_interpretations`); `roadmap_track` — добровольное расширение проекта.
   - `allowed_max_verdict: DIAGNOSTIC_ONLY` (16-reporting-audit.md).
   - Limitations явно включают: `iSignal==5` вне coverage, `Real=true` requirement, `max_positions=1` smoke-only.
   - `Implementation Summary` завершён (не содержит TODO/«executor fills later» если smoke запущен).
@@ -2246,7 +2266,7 @@ git commit -m "docs: close mt5 per-expert ml-tracker plan (DIAGNOSTIC_ONLY)"
 - Запрещено объявлять tester-result качеством ML без leakage, split, locked_test, robustness, reconciliation-проверок (13b:208). → Все results в отчёте остаются `DIAGNOSTIC_ONLY`.
 - Запрещено подгонять модель или export по tester-результату (13b:216). → Plan не меняет model/export, только execution tracker.
 - Запрещено считать `wine=1` ошибкой компиляции без чтения MetaEditor log (13b:215). → Task 8 Step 4 явно читает log через `iconv`.
-- Запрещено не экранировать `$o$imple.mq5` кавычками в shell-команде (13b:213). → Task 8 Step 3 экранирует через `\$` (В-8).
+- Запрещено не экранировать `$o$imple.mq5` кавычками в shell-команде (13b:213). → Task 8 Step 3 оборачивает путь в одинарные кавычки без бэкслэшей (В-8).
 
 ---
 
@@ -2256,7 +2276,7 @@ git commit -m "docs: close mt5 per-expert ml-tracker plan (DIAGNOSTIC_ONLY)"
 
 1. **`MT5_AddTrackedPosition` сигнатура**: план предполагает `void MT5_AddTrackedPosition(ulong ticket, int idx, int magic)`. Если closeout завёл её без `magic` (только `ticket, idx`) — executor в Task 6 Step 3 добавляет `magic` field к `MT5_TRACKED_POSITION` struct и адаптирует сигнатуру. Под вопросом остаётся обратная compatibility — нужно ли backcompat path для старых вызовов с 2 аргументами. Решение: **нет backcompat** — closeout ещё не зарелижен в production (мы в diagnostic preview), старых вызовов нет. executor адаптирует все вызовы на 3-аргументную сигнатуру.
 
-2. **Magic generation для smoke**: `MAGIC_GENERATOR()` (`SERVICE.mqh:95-100`) детерминирован от `Symbol()+Period()+iSignal+iParam+...`. Магики 163856259 и 987654321 в `--multi-expert-magics` должны существовать в `#.csv` строк. Executor готовит тестовый `#.csv` вручную (Task 8 Step 5), либо снимает магики из `MAGIC_GENERATOR()` для конкретной конфигурации (run `MAGIC_GENERATOR` отладчиком или из старого лога OnInit). Если магики не соответствуют — `EXPERT_SET` (SERVICE.mqh:240) вернёт false для всех `e` кроме одного, и multi-expert flow degraded к single-expert. Это тест-уровневая проблема, не blocker плана.
+2. **Magic generation для smoke**: `MAGIC_GENERATOR()` (`SERVICE.mqh:95-100`) детерминирован от `Symbol()+Period()+iSignal+iParam+...`. Smoke берёт магики из эталонного прогона `MAGIC_GENERATOR` (Task 8 Step 5, К-6), поэтому `CHECKSUM` (`SERVICE.mqh:251`) проходит и эксперты не отключаются. Для batch-режима (`--multi-expert-magics`) действует то же требование: переданные магики должны совпадать со значениями `MAGIC_GENERATOR()` для соответствующих строк `#.csv`, иначе `EXPERT_SET` (SERVICE.mqh:240) вернёт false и эксперт не торгует. Если магики не соответствуют — smoke/batch деградирует к меньшему числу экспертов; положительный критерий `ORDER_PLACED >= 2` (Completion Criteria) это ловит.
 
 3. **`EXP[CurExp].Mgc` vs `EXP[e].Mgc`**: `Mgc` в `EXPERT::ML_TRADE` — это `this->Mgc`, который `EXPERT_SET` заполнил из `EXP[e].Mgc` (SERVICE.mqh:240). В multi-expert mode каждый вызов `ML_TRADE()` работает с правильным `Mgc` своего эксперта. План предполагает это. Если фактически `Mgc` в момент `ML_TRADE()` ещё singleton — это баг closeout, не этого плана. Executor сверь: `rg -n "this->Mgc|EXP\[CurExp\].Mgc|EXP\[e\].Mgc" MT/MQL5/`.
 
