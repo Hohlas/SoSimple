@@ -173,11 +173,10 @@ bool EXPERT::POC_CLOSE_TO_SEL() { // цена "отдохнула" (пик ил�
 void EXPERT::CloseBuySide(char price, string comment) {
    for (int i = 0; i < PosCount; i++) {
       if (!Pos[i].active || Pos[i].data.Typ == NONE) continue;
-      if (price == 0) { Pos[i].data.Val = 0; continue; }
-      // Get live side via PositionSelectByTicket (MT5) — works for multi-pos
       if (!PositionSelectByTicket(Pos[i].ticket)) continue;
       ENUM_POSITION_TYPE pt = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
       if (pt != POSITION_TYPE_BUY) continue;
+      if (price == 0) { Pos[i].data.Val = 0; continue; }
       if (Pos[i].data.Typ != MARKET) {           // pending -> mark for delete
          X("DelPosBUY" + ORDTYP(Pos[i].data.Typ) + ": " + comment, Pos[i].data.Val, bar - 1, clrRed);
          Pos[i].data.Val = 0;
@@ -209,10 +208,10 @@ void EXPERT::CloseBuySide(char price, string comment) {
 void EXPERT::CloseSellSide(char price, string comment) {
    for (int i = 0; i < PosCount; i++) {
       if (!Pos[i].active || Pos[i].data.Typ == NONE) continue;
-      if (price == 0) { Pos[i].data.Val = 0; continue; }
       if (!PositionSelectByTicket(Pos[i].ticket)) continue;
       ENUM_POSITION_TYPE pt = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
       if (pt != POSITION_TYPE_SELL) continue;
+      if (price == 0) { Pos[i].data.Val = 0; continue; }
       if (Pos[i].data.Typ != MARKET) {
          X("DelPosSELL" + ORDTYP(Pos[i].data.Typ) + ": " + comment, Pos[i].data.Val, bar - 1, clrRed);
          Pos[i].data.Val = 0;
