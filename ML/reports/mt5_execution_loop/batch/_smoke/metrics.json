@@ -1,43 +1,41 @@
 {
   "status": "DIAGNOSTIC_ONLY",
   "order_counts": {
-    "ML_EVAL": 115,
-    "ML_CLOSE": 82,
-    "OPEN_FAILED": 76,
-    "ORDER_PLACED": 4,
-    "TX_CLOSE": 3,
-    "TX_OPEN": 3,
-    "OPEN": 2,
-    "INIT": 1,
-    "ORDER_EXPIRED": 1,
-    "CLOSE": 1
+    "ML_EVAL": 332,
+    "ORDER_PLACED": 79,
+    "TX_CLOSE": 74,
+    "TX_OPEN": 74,
+    "ML_CLOSE": 57,
+    "OPEN": 36,
+    "CLOSE": 36,
+    "INIT": 1
   },
   "open_counts": {
-    "OPEN": 2,
-    "ORDER_PLACED": 4
+    "OPEN": 36,
+    "ORDER_PLACED": 79
   },
   "close_counts": {
-    "CLOSE": 1
+    "CLOSE": 36
   },
   "close_reason_counts": {
-    "broker_history_limited": 1
+    "broker_history_limited": 36
   },
-  "ml_close_decision_count": 82,
-  "profit_sum": -104.0,
-  "missing_open_estimate": 2,
-  "open_without_close_estimate": 1,
+  "ml_close_decision_count": 57,
+  "profit_sum": -83.80000000000003,
+  "missing_open_estimate": 43,
+  "open_without_close_estimate": 0,
   "reconciliation": {
-    "position_count": 3,
+    "position_count": 74,
     "class_counts": {
-      "CLOSED_TX": 3,
+      "CLOSED_TX": 74,
       "OPEN_AT_END": 0,
       "UNEXPLAINED": 0
     },
     "unexplained_position_ids": [],
     "open_at_end_position_ids": [],
-    "same_h1_count": 1,
-    "tx_open_count": 3,
-    "tx_close_count": 3,
-    "signal_linked_tx_open_count": 2
+    "same_h1_count": 3,
+    "tx_open_count": 74,
+    "tx_close_count": 74,
+    "signal_linked_tx_open_count": 36
   }
 }
