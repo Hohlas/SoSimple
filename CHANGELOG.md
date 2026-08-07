@@ -15,20 +15,28 @@
 ```
 ---
 
+## [2026-08-03] — MT5 Multi-Position Closeout (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-08-03-mt5-multi-position-closeout.md`
+- **topics**: `mt5`, `multi-position`, `lifecycle-tracker`, `closeout`, `audit-fixes`
+- **summary**: Закрыты замечания аудита по multi-position refactor: диагностический lifecycle переведён с single-ticket на массив tracked tickets (`MT5_TrackedPositions[]`), гейты размещения и side-close исправлены, добавлены `--force-rerun`/`--smoke-only` в `run_mt5_batch.py`, compile gate достиг `0 errors, 0 warnings`. Smoke max=1/2/16 пройдены с UNEXPLAINED=0, без нарушений timing-контракта и связки сигнал→тикет.
+- **artifacts**: `MT/MQL5/Include/lib_ML_Signal.mqh`, `MT/MQL5/Include/MQL4Compat.mqh`, `ML/baseline/run_mt5_batch.py`, `tests/test_mt5_mql5_multiposition_contract.py`
+- **decision**: этап закрыт как `DIAGNOSTIC_ONLY` на smoke-уровне; полный батч max=2/max=16 — `NOT_RUN` (`UNKNOWN`). `InpMT5_MaxPositions=1` остаётся каноническим режимом; `>1` — не торговый режим. Побочный фикс: history-ветка `OrderSelect_MQL4` теперь ищет закрытие по `DEAL_POSITION_ID`, а не по deal-тикету.
+- **notes**: backcompat при `=1` доказан только smoke-счётчиками (event-level сравнение не выполнялось); гейт считает только MARKET-позиции, поэтому при задержке fill одновременных позиций может быть больше лимита (задокументировано).
+
 ## [2026-08-07] — MT5 multi-position + per-expert plans deferred
 - **report**: (нет отдельного отчёта — плановая пометка в методологию)
 - **topics**: `mt5`, `multi-position`, `per-expert`, `deferred`, `methodology-note`
 - **summary**: В `docs/methodology/13b-mt5-execution-parity.md` → секция «Ограничения прототипа» добавлена пометка: multi-position lifecycle tracking и per-expert multi-tester режимы реализованы не до конца и отложены. Single-expert диагностические прогоны работают корректно.
 - **artifacts**: `docs/methodology/13b-mt5-execution-parity.md`, `CONTEXT_HANDOFF.md`
 - **decision**: Планы `2026-08-03-mt5-multi-position-closeout.md` и `2026-08-03-mt5-per-expert-ml-tracker.md` отложены без изменения статуса старых вердиктов (`DIAGNOSTIC_ONLY` сохранён). Очередность при возобновлении: сначала closeout-план, затем per-expert (per-expert зависит от closeout).
-- **notes**: Multi-position **order management** уже исполнен (отчёт `docs/reports/2026-08-02-mt5-multi-position-probe.md`, вердикт `DIAGNOSTIC_ONLY — BLOCKED на диагностическом слое`) — не путать с closeout-планом, который относится к lifecycle tracking и не исполнен в коде.
+- **notes**: Multi-position **order management** уже исполнен (отчёт `docs/reports/2026-08-02-mt5-multi-position-probe.md`, вердикт `DIAGNOSTIC_ONLY — BLOCKED на диагностическом слое`) — не путать с closeout-планом, который относится к lifecycle tracking и на момент этой записи не был исполнен в коде. Обновление: closeout-план исполнен 2026-08-07, см. запись `[2026-08-03]` и отчёт `docs/reports/2026-08-03-mt5-multi-position-closeout.md`.
 
 ## [2026-08-02] — MT5 Multi-Position Probe (DIAGNOSTIC_ONLY — BLOCKED)
 - **report**: `docs/reports/2026-08-02-mt5-multi-position-probe.md`
 - **topics**: `multi-position`, `MQL5-refactoring`, `Pos[]-array`, `backcompat`, `diagnostic-executor-blocker`
 - **summary**: Реализован плановый рефакторинг `PRICE BUY, SEL` → `POSITION_TRACKER Pos[64]` + `input int InpMT5_MaxPositions` (default `=1`). Backcompat smoke с `--max-positions=1` PASS (positions=3, UNEXPLAINED=0), прежний fill-rate verdict сохраняется. Batch max=2/max=16 не завершён: MT5_DiagnosticExecutor single-ticket tracker ломает timing contract в multi-pos режиме.
 - **artifacts**: `MT/MQL5/Include/FUNCTIONS.mqh`, `MT/MQL5/Include/ORDERS.mqh`, `MT/MQL5/Include/OUTPUT.mqh`, `MT/MQL5/Include/COUNT.mqh`, `MT/MQL5/Include/INPUT.mqh`, `MT/MQL5/Include/lib_ML_Signal.mqh`, `MT/MQL5/Include/lib_ML_Signal_TB.mqh`, `MT/MQL5/Include/ERRORs.mqh`, `MT/MQL5/Experts/$o$imple.mq5`, `ML/baseline/run_mt5_batch.py`
-- **decision**: (а) MQL5 refactoring PASS — компилируется 0 errors, backcompat при `=1` канонически подтверждена. (б) Multi-pos probe BLOCKED на диагностическом слое: `MT5_LogLifecycleForCurrentState`追踪_single-ticket — нужно расширение под multi-pos. (в) Предыдущий вердикт fill-rate probe сохраняется: «single-position policy блокирует 99.2%» — пока multi-pos batch не завершён. (г) Forbidden interpretations: new winner / live-ready / tradable / profitable — все applies.
+- **decision**: (а) MQL5 refactoring PASS_WITH_WARNINGS (0 errors, 2 warnings ticket-касты; закрыто в `[2026-08-03]` closeout) — backcompat при `=1` канонически подтверждена. (б) Multi-pos probe BLOCKED на диагностическом слое: `MT5_LogLifecycleForCurrentState` single-ticket — нужно расширение под multi-pos (выполнено в `[2026-08-03]` closeout). (в) Предыдущий вердикт fill-rate probe сохраняется: «single-position policy блокирует 99.2%» — пока multi-pos batch не завершён. (г) Forbidden interpretations: new winner / live-ready / tradable / profitable — все applies.
 - **notes**: (1) Risk: высокий — следующий план должен расширять `MT5_LogLifecycleForCurrentState` (строки 582-628 в lib_ML_Signal.mqh) либо на массив tracked-tickets, либо на per-bar full snapshot. (2) Глобальный массив `Pos[]` корректен только при `ExpTotal==1` (SERVICE.mqh:47), для `ExpTotal>1` потребуется per-expert field. (3) `set.BUY/SEL` pending queue остаётся single (по плану: одна bar = один новый pending ордер). (4) Pytest suite (58 tests) — PASS.
 
 ## [2026-08-01] — MT5 Saved-Batch Fill-Rate Probe (DIAGNOSTIC_ONLY)

@@ -27,12 +27,12 @@ MT5 diagnostic timing contract continues as `DIAGNOSTIC_ONLY`.
 - Default mode remains `latency_bars=0`; positive latency is diagnostic-only export mode and must not enter winner selection.
 - MT5 LiveUpdate startup interception is now handled in `run_mt5_batch.py`: the runner detects `LiveUpdate start ... /config:<ini>`, waits for update completion, settles briefly, then retries the same tester `.ini`.
 
-MT5 multi-position + per-expert plans are **deferred** (execution postponed until "дойдут руки"):
+MT5 multi-position: closeout-план **исполнен** (2026-08-07), per-expert остаётся отложен:
 
-- `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md` — multi-position lifecycle tracking. **Не исполнен в коде** (коммит `54b4089` содержит только документ).
-- `docs/superpowers/plans/2026-08-03-mt5-per-expert-ml-tracker.md` — per-expert `rule_id` filter + multi-expert smoke. **Не исполнен**; зависит от closeout-плана.
-- Order management refactor (`POSITION[]` array) уже исполнен (отчёт `docs/reports/2026-08-02-mt5-multi-position-probe.md`, вердикт `DIAGNOSTIC_ONLY — BLOCKED на диагностическом слое`).
-- Ограничение зафиксировано в `docs/methodology/13b-mt5-execution-parity.md` → секция «Ограничения прототипа». Single-expert диагностические прогоны работают корректно.
+- `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md` — multi-position lifecycle tracking. **Исполнен**: диагностический слой переведён на массив tracked tickets (`MT5_TrackedPositions[]`), compile gate `0 errors, 0 warnings`, smoke max=1/2/16 с `UNEXPLAINED=0` и без нарушений timing-контракта. Отчёт: `docs/reports/2026-08-03-mt5-multi-position-closeout.md` (вердикт `DIAGNOSTIC_ONLY`; полный батч max=2/max=16 — `NOT_RUN`/`UNKNOWN`).
+- `docs/superpowers/plans/2026-08-03-mt5-per-expert-ml-tracker.md` — per-expert `rule_id` filter + multi-expert smoke. **Не исполнен**; зависел от closeout-плана, теперь разблокирован.
+- Order management refactor (`POSITION_TRACKER Pos[]`) уже исполнен (отчёт `docs/reports/2026-08-02-mt5-multi-position-probe.md`, вердикт `DIAGNOSTIC_ONLY — BLOCKED на диагностическом слое`); блокер закрыт closeout-планом. Побочный фикс per-expert `Pos[]` — коммит `b1a714d` (`FUNCTIONS.mqh`, `EXPERT_PARENT_CLASS`).
+- Ограничение зафиксировано в `docs/methodology/13b-mt5-execution-parity.md` → секция «Ограничения прототипа». Single-expert диагностические прогоны работают корректно; `InpMT5_MaxPositions=1` остаётся каноническим режимом.
 
 ## Current Diagnostic Facts
 
