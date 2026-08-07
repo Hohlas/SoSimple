@@ -330,23 +330,40 @@ bool OrderSelectByTicket_MQL4(ulong ticket, int pool) {
       return SelectPendingOrderByTicket_MQL4(ticket);
    }
    if (!HistorySelect(0, TimeCurrent())) return false;
-   long dealEntry = HistoryDealGetInteger(ticket, DEAL_ENTRY);
-   if (dealEntry != DEAL_ENTRY_OUT && dealEntry != DEAL_ENTRY_INOUT) return false;
+   // `ticket` is an MT5 position ticket; closing deals carry their own deal
+   // tickets and link back via DEAL_POSITION_ID. Match by position id, not by
+   // deal ticket (a deal ticket can collide with an unrelated position id and
+   // return wrong prices/times).
+   int deals_total = HistoryDealsTotal();
+   ulong out_deal = 0;
+   double in_price = 0.0;
+   for (int i = 0; i < deals_total; i++) {
+      ulong deal_ticket = HistoryDealGetTicket(i);
+      if (deal_ticket == 0) continue;
+      if (HistoryDealGetInteger(deal_ticket, DEAL_POSITION_ID) != (long)ticket) continue;
+      long entry = HistoryDealGetInteger(deal_ticket, DEAL_ENTRY);
+      if (entry == DEAL_ENTRY_IN) {
+         in_price = HistoryDealGetDouble(deal_ticket, DEAL_PRICE);
+      } else if (entry == DEAL_ENTRY_OUT || entry == DEAL_ENTRY_INOUT) {
+         out_deal = deal_ticket;
+      }
+   }
+   if (out_deal == 0) return false;
    g_selectedOrder.ticket    = ticket;
-   g_selectedOrder.openPrice = HistoryDealGetDouble(ticket, DEAL_PRICE);
+   g_selectedOrder.openPrice = in_price;
    g_selectedOrder.stopLoss  = 0;
    g_selectedOrder.takeProfit= 0;
-   g_selectedOrder.lots      = HistoryDealGetDouble(ticket, DEAL_VOLUME);
-   g_selectedOrder.magic     = HistoryDealGetInteger(ticket, DEAL_MAGIC);
-   g_selectedOrder.symbol    = HistoryDealGetString(ticket, DEAL_SYMBOL);
-   g_selectedOrder.openTime  = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
-   g_selectedOrder.closeTime = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
-   g_selectedOrder.profit    = HistoryDealGetDouble(ticket, DEAL_PROFIT);
-   g_selectedOrder.swap      = HistoryDealGetDouble(ticket, DEAL_SWAP);
-   g_selectedOrder.commission= HistoryDealGetDouble(ticket, DEAL_COMMISSION);
-   g_selectedOrder.comment   = HistoryDealGetString(ticket, DEAL_COMMENT);
+   g_selectedOrder.lots      = HistoryDealGetDouble(out_deal, DEAL_VOLUME);
+   g_selectedOrder.magic     = HistoryDealGetInteger(out_deal, DEAL_MAGIC);
+   g_selectedOrder.symbol    = HistoryDealGetString(out_deal, DEAL_SYMBOL);
+   g_selectedOrder.openTime  = (datetime)HistoryDealGetInteger(out_deal, DEAL_TIME);
+   g_selectedOrder.closeTime = (datetime)HistoryDealGetInteger(out_deal, DEAL_TIME);
+   g_selectedOrder.profit    = HistoryDealGetDouble(out_deal, DEAL_PROFIT);
+   g_selectedOrder.swap      = HistoryDealGetDouble(out_deal, DEAL_SWAP);
+   g_selectedOrder.commission= HistoryDealGetDouble(out_deal, DEAL_COMMISSION);
+   g_selectedOrder.comment   = HistoryDealGetString(out_deal, DEAL_COMMENT);
    g_selectedOrder.isHistory = true;
-   g_selectedOrder.type      = (HistoryDealGetInteger(ticket, DEAL_TYPE) == DEAL_TYPE_BUY) ? OP_BUY : OP_SELL;
+   g_selectedOrder.type      = (HistoryDealGetInteger(out_deal, DEAL_TYPE) == DEAL_TYPE_BUY) ? OP_BUY : OP_SELL;
    return true;
 }
 
