@@ -104,7 +104,7 @@ def test_diagnostic_lifecycle_uses_multi_ticket_tracker() -> None:
     assert "MT5_FindTrackedIndexByTicket" in ml_signal
     assert "MT5_LogLifecycleForTicket" in ml_signal
     # NEW (A5 cleanup): closed tracked positions must be compacted out of the active array.
-    assert "MT5_TrackedPositionCount--" in ml_signal or "close_logged" in ml_signal
+    assert "MT5_TrackedPositionCount--" in ml_signal
 
 
 def test_position_tracker_ticket_uses_ulong() -> None:

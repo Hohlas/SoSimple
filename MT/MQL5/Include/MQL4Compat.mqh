@@ -306,51 +306,55 @@ bool SelectPendingOrderByTicket_MQL4(ulong ticket) {
    return false;
 }
 
+bool OrderSelectByTicket_MQL4(ulong ticket, int pool) {
+   g_selectedOrder.ticket = 0;
+   if (pool == MODE_TRADES) {
+      if (PositionSelectByTicket(ticket)) {
+         g_selectedOrder.ticket    = ticket;
+         g_selectedOrder.openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+         g_selectedOrder.stopLoss  = PositionGetDouble(POSITION_SL);
+         g_selectedOrder.takeProfit= PositionGetDouble(POSITION_TP);
+         g_selectedOrder.lots      = PositionGetDouble(POSITION_VOLUME);
+         g_selectedOrder.magic     = PositionGetInteger(POSITION_MAGIC);
+         g_selectedOrder.symbol    = PositionGetString(POSITION_SYMBOL);
+         g_selectedOrder.openTime  = (datetime)PositionGetInteger(POSITION_TIME);
+         g_selectedOrder.expiration= 0;
+         g_selectedOrder.profit    = PositionGetDouble(POSITION_PROFIT);
+         g_selectedOrder.swap      = PositionGetDouble(POSITION_SWAP);
+         g_selectedOrder.commission= 0;
+         g_selectedOrder.comment   = PositionGetString(POSITION_COMMENT);
+         g_selectedOrder.isHistory = false;
+         g_selectedOrder.type      = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) ? OP_BUY : OP_SELL;
+         return true;
+      }
+      return SelectPendingOrderByTicket_MQL4(ticket);
+   }
+   if (!HistorySelect(0, TimeCurrent())) return false;
+   long dealEntry = HistoryDealGetInteger(ticket, DEAL_ENTRY);
+   if (dealEntry != DEAL_ENTRY_OUT && dealEntry != DEAL_ENTRY_INOUT) return false;
+   g_selectedOrder.ticket    = ticket;
+   g_selectedOrder.openPrice = HistoryDealGetDouble(ticket, DEAL_PRICE);
+   g_selectedOrder.stopLoss  = 0;
+   g_selectedOrder.takeProfit= 0;
+   g_selectedOrder.lots      = HistoryDealGetDouble(ticket, DEAL_VOLUME);
+   g_selectedOrder.magic     = HistoryDealGetInteger(ticket, DEAL_MAGIC);
+   g_selectedOrder.symbol    = HistoryDealGetString(ticket, DEAL_SYMBOL);
+   g_selectedOrder.openTime  = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
+   g_selectedOrder.closeTime = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
+   g_selectedOrder.profit    = HistoryDealGetDouble(ticket, DEAL_PROFIT);
+   g_selectedOrder.swap      = HistoryDealGetDouble(ticket, DEAL_SWAP);
+   g_selectedOrder.commission= HistoryDealGetDouble(ticket, DEAL_COMMISSION);
+   g_selectedOrder.comment   = HistoryDealGetString(ticket, DEAL_COMMENT);
+   g_selectedOrder.isHistory = true;
+   g_selectedOrder.type      = (HistoryDealGetInteger(ticket, DEAL_TYPE) == DEAL_TYPE_BUY) ? OP_BUY : OP_SELL;
+   return true;
+}
+
 bool OrderSelect_MQL4(int index, int selectMode, int pool=MODE_TRADES) {
    g_selectedOrder.ticket = 0;
 
    if (selectMode == SELECT_BY_TICKET) {
-      ulong ticket = (ulong)index;
-      if (pool == MODE_TRADES) {
-         if (PositionSelectByTicket(ticket)) {
-            g_selectedOrder.ticket    = ticket;
-            g_selectedOrder.openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
-            g_selectedOrder.stopLoss  = PositionGetDouble(POSITION_SL);
-            g_selectedOrder.takeProfit= PositionGetDouble(POSITION_TP);
-            g_selectedOrder.lots      = PositionGetDouble(POSITION_VOLUME);
-            g_selectedOrder.magic     = PositionGetInteger(POSITION_MAGIC);
-            g_selectedOrder.symbol    = PositionGetString(POSITION_SYMBOL);
-            g_selectedOrder.openTime  = (datetime)PositionGetInteger(POSITION_TIME);
-            g_selectedOrder.expiration= 0;
-            g_selectedOrder.profit    = PositionGetDouble(POSITION_PROFIT);
-            g_selectedOrder.swap      = PositionGetDouble(POSITION_SWAP);
-            g_selectedOrder.commission= 0;
-            g_selectedOrder.comment   = PositionGetString(POSITION_COMMENT);
-            g_selectedOrder.isHistory = false;
-            g_selectedOrder.type      = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) ? OP_BUY : OP_SELL;
-            return true;
-         }
-         return SelectPendingOrderByTicket_MQL4(ticket);
-      }
-      if (!HistorySelect(0, TimeCurrent())) return false;
-      long dealEntry = HistoryDealGetInteger(ticket, DEAL_ENTRY);
-      if (dealEntry != DEAL_ENTRY_OUT && dealEntry != DEAL_ENTRY_INOUT) return false;
-      g_selectedOrder.ticket    = ticket;
-      g_selectedOrder.openPrice = HistoryDealGetDouble(ticket, DEAL_PRICE);
-      g_selectedOrder.stopLoss  = 0;
-      g_selectedOrder.takeProfit= 0;
-      g_selectedOrder.lots      = HistoryDealGetDouble(ticket, DEAL_VOLUME);
-      g_selectedOrder.magic     = HistoryDealGetInteger(ticket, DEAL_MAGIC);
-      g_selectedOrder.symbol    = HistoryDealGetString(ticket, DEAL_SYMBOL);
-      g_selectedOrder.openTime  = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
-      g_selectedOrder.closeTime = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
-      g_selectedOrder.profit    = HistoryDealGetDouble(ticket, DEAL_PROFIT);
-      g_selectedOrder.swap      = HistoryDealGetDouble(ticket, DEAL_SWAP);
-      g_selectedOrder.commission= HistoryDealGetDouble(ticket, DEAL_COMMISSION);
-      g_selectedOrder.comment   = HistoryDealGetString(ticket, DEAL_COMMENT);
-      g_selectedOrder.isHistory = true;
-      g_selectedOrder.type      = (HistoryDealGetInteger(ticket, DEAL_TYPE) == DEAL_TYPE_BUY) ? OP_BUY : OP_SELL;
-      return true;
+      return OrderSelectByTicket_MQL4((ulong)index, pool);
    }
 
    if (pool == MODE_TRADES) {
@@ -415,6 +419,14 @@ bool OrderSelect_MQL4(int index, int selectMode, int pool=MODE_TRADES) {
       }
       return false;
    }
+}
+
+// ulong-ticket overload: callers holding a real MT5 ticket (ulong) must not
+// narrow it to int at the call site (would keep `possible loss of data`).
+// Index-based selection modes stay int-only.
+bool OrderSelect_MQL4(ulong ticket, int selectMode, int pool=MODE_TRADES) {
+   if (selectMode != SELECT_BY_TICKET) return false;
+   return OrderSelectByTicket_MQL4(ticket, pool);
 }
 
 // Order property access (MQL4-style)

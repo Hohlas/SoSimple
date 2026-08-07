@@ -70,10 +70,19 @@ bool     MT5_EventFilePrepared = false;
 int      MT5_LastPlacedIdx = -1;
 int      MT5_LastPlacedMagic = 0;
 datetime MT5_LastPlacedExpiry = 0;
-ulong    MT5_TrackedTicket = 0;
-int      MT5_TrackedMagic = 0;
-int      MT5_TrackedIdx = -1;
-bool     MT5_TrackedOpenLogged = false;
+struct MT5_TRACKED_POSITION {
+   ulong ticket;
+   int magic;
+   int idx;
+   bool open_logged;
+   bool close_logged;
+};
+
+MT5_TRACKED_POSITION MT5_TrackedPositions[];
+int MT5_TrackedPositionCount = 0;
+
+// Sentinel «верхней границы окна нет» для MT5_FindFilledTicketForSignal.
+const datetime MT5_NO_HI_BOUND = D'2100.01.01 00:00';
 
 // position id -> signal index map (linkage is done in Python via OPEN rows;
 // this map keeps the association available on the MQL side as well)
@@ -91,6 +100,38 @@ void MT5_RegisterPosition(ulong position_id, int idx) {
    MT5_PosMapIds[MT5_PosMapCount] = position_id;
    MT5_PosMapIdx[MT5_PosMapCount] = idx;
    MT5_PosMapCount++;
+}
+
+int MT5_FindTrackedIndexByTicket(ulong ticket) {
+   for (int i = 0; i < MT5_TrackedPositionCount; i++) {
+      if (MT5_TrackedPositions[i].ticket == ticket) return i;
+   }
+   return -1;
+}
+
+void MT5_AddTrackedPosition(ulong ticket, int magic, int idx) {
+   if (ticket == 0 || idx < 0) return;
+   int existing = MT5_FindTrackedIndexByTicket(ticket);
+   if (existing >= 0) {
+      // A4 guard: refuse to rebind an already-tracked ticket to a different
+      // signal index; that would corrupt timing/logging.
+      if (MT5_TrackedPositions[existing].idx != idx) {
+         Print("WARN: MT5_AddTrackedPosition ticket=", ticket,
+               " already tracked with idx=", MT5_TrackedPositions[existing].idx,
+               " refusing rebinding to new idx=", idx);
+         return;
+      }
+      MT5_TrackedPositions[existing].magic = magic;
+      return;
+   }
+   ArrayResize(MT5_TrackedPositions, MT5_TrackedPositionCount + 1);
+   MT5_TrackedPositions[MT5_TrackedPositionCount].ticket = ticket;
+   MT5_TrackedPositions[MT5_TrackedPositionCount].magic = magic;
+   MT5_TrackedPositions[MT5_TrackedPositionCount].idx = idx;
+   MT5_TrackedPositions[MT5_TrackedPositionCount].open_logged = false;
+   MT5_TrackedPositions[MT5_TrackedPositionCount].close_logged = false;
+   MT5_TrackedPositionCount++;
+   MT5_RegisterPosition(ticket, idx);
 }
 
 string MT5_TimeText(datetime value) {
@@ -123,6 +164,41 @@ ulong MT5_FindActiveTicket(int magic, int typ1, int typ2) {
       if (typ == typ1 || typ == typ2) return (ulong)OrderTicket();
    }
    return 0;
+}
+
+// Audit V3: with several same-magic same-side fills open at once, index order
+// is not guaranteed to match decision order. Restrict the candidate to the
+// window [MT5_DecisionTimes[idx], next decision time or MT5_NO_HI_BOUND) and
+// log ambiguities instead of silently trusting the binding.
+ulong MT5_FindFilledTicketForSignal(int magic, int idx) {
+   if (idx < 0 || idx >= MT5_EntrySignalCount) return 0;
+   bool want_buy = (MT5_Sides[idx] == "BUY" || MT5_Sides[idx] == "LONG" || MT5_Sides[idx] == "1");
+   datetime lo = MT5_DecisionTimes[idx];
+   datetime hi = (idx + 1 < MT5_EntrySignalCount && MT5_DecisionTimes[idx + 1] > lo)
+                   ? MT5_DecisionTimes[idx + 1]
+                   : MT5_NO_HI_BOUND;
+   int ambiguous = 0;
+   ulong first_ticket = 0;
+   for (int i = 0; i < OrdersTotal(); i++) {
+      if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES) != true) continue;
+      if (OrderMagicNumber() != magic) continue;
+      int typ = OrderType();
+      if (want_buy && typ != OP_BUY) continue;
+      if (!want_buy && typ != OP_SELL) continue;
+      ulong ticket = (ulong)OrderTicket();
+      if (MT5_FindTrackedIndexByTicket(ticket) >= 0) continue;
+      datetime ot = OrderOpenTime();
+      if (ot < lo) continue;
+      if (hi < MT5_NO_HI_BOUND && ot >= hi) continue;
+      if (first_ticket == 0) { first_ticket = ticket; continue; }
+      ambiguous++;
+   }
+   if (ambiguous > 0)
+      Print("WARN: MT5_FindFilledTicketForSignal idx=", idx,
+            " magic=", magic, " ambiguous_fills_in_window=", ambiguous,
+            " using first_ticket=", first_ticket,
+            " (signal->ticket binding NOT provably unique; report must disclose)");
+   return first_ticket;
 }
 
 int MT5_FindEntrySignal(datetime barTime) {
@@ -182,7 +258,7 @@ void MT5_LogTimingViolation(datetime feature_time,
       0,
       "",
       -1,
-      MT5_TrackedMagic,
+      MT5_LastPlacedMagic,
       Symbol(),
       entry_type
    );
@@ -305,8 +381,8 @@ void MT5_ML_LogEvent(
    double spread_value = Ask - Bid;
    double spread_atr = (atr_value > 0.0 ? spread_value / atr_value : 0.0);
    double slippage_points = (Point > 0.0 ? MathAbs(fill_price - requested_price) / Point : 0.0);
-   int open_positions = MT5_OpenPositionsForMagic(MT5_TrackedMagic);
-   int event_magic = (magic != 0 ? magic : MT5_TrackedMagic);
+   int event_magic = magic;
+   int open_positions = MT5_OpenPositionsForMagic(event_magic);
    string event_symbol = (symbol_name != "" ? symbol_name : Symbol());
 
    FileWrite(handle,
@@ -404,10 +480,62 @@ void MT5_LogSignalEvent(string event_name, int idx, ulong ticket, string comment
       0,
       "",
       idx,
-      MT5_TrackedMagic,
+      MT5_LastPlacedMagic,
       Symbol(),
       MT5_EntryTypes[idx]
    );
+}
+
+void MT5_LogLifecycleForTicket(int tracked_i, int magic, int &ml_close_order_type) {
+   ulong ticket = MT5_TrackedPositions[tracked_i].ticket;
+   int idx = MT5_TrackedPositions[tracked_i].idx;
+   if (idx < 0 || idx >= MT5_EntrySignalCount) return;
+
+   // A2: pass ticket directly (ulong overload of OrderSelect in MQL4Compat);
+   // (int)ticket would keep `possible loss of data` warnings.
+   if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES) == true) {
+      int typ = OrderType();
+      if (typ != OP_BUY && typ != OP_SELL) return;
+      int bars_since_fill = (int)MathMax(0, SHIFT(OrderOpenTime()) - bar);
+      if (!MT5_TrackedPositions[tracked_i].open_logged) {
+         MT5_ML_LogEvent("OPEN", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], MT5_DecisionTimes[idx], OrderOpenTime(), MT5_RuleIds[idx], MT5_TimeText(MT5_EntryTimes[idx]), ticket, MT5_Sides[idx], MT5_LimitPrices[idx], OrderOpenPrice(), OrderOpenPrice(), 0.0, OrderStopLoss(), "", 0.0, bars_since_fill, MT5_Atrs[idx], OrderOpenTime(), 0, 0.0, 0.0, 0.0, 0.0, 0, "tester fill observed", 0, "", 0, "", idx, magic, Symbol(), MT5_EntryTypes[idx]);
+         MT5_TrackedPositions[tracked_i].open_logged = true;
+      }
+      double unrealized_r = 0.0;
+      double favorable_r = 0.0;
+      double adverse_r = 0.0;
+      bool features_ready = MT5_CalculateOpenPositionFeatures(typ, OrderOpenPrice(), OrderStopLoss(), bars_since_fill, unrealized_r, favorable_r, adverse_r);
+      int ml_exit_decision = 0;
+      double ml_exit_score = 0.0;
+      if (MT5_BlockBarsSinceFill0Exit && bars_since_fill <= 0) {
+         ml_exit_decision = 0;
+      } else if (features_ready) {
+         ml_exit_score = DiagnosticMlExitScore(bars_since_fill, unrealized_r, favorable_r, adverse_r);
+         ml_exit_decision = (ml_exit_score >= 1.0 ? 1 : 0);
+      }
+      string eval_comment = (features_ready ? "diagnostic eval only" : "diagnostic eval skipped: post-fill features not ready");
+      MT5_ML_LogEvent("ML_EVAL", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], MT5_DecisionTimes[idx], TimeCurrent(), MT5_RuleIds[idx], MT5_TimeText(MT5_EntryTimes[idx]), ticket, MT5_Sides[idx], MT5_LimitPrices[idx], OrderOpenPrice(), OrderOpenPrice(), 0.0, OrderStopLoss(), "", OrderProfit(), bars_since_fill, MT5_Atrs[idx], OrderOpenTime(), 0, unrealized_r, favorable_r, adverse_r, ml_exit_score, ml_exit_decision, eval_comment, 0, "", 0, "", idx, magic, Symbol(), MT5_EntryTypes[idx]);
+      if (ml_exit_decision == 1 && ml_close_order_type < 0) {
+         double close_price = (typ == OP_BUY ? Bid : Ask);
+         MT5_ML_LogEvent("ML_CLOSE", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], MT5_DecisionTimes[idx], TimeCurrent(), MT5_RuleIds[idx], MT5_TimeText(MT5_EntryTimes[idx]), ticket, MT5_Sides[idx], MT5_LimitPrices[idx], OrderOpenPrice(), OrderOpenPrice(), close_price, OrderStopLoss(), "ML_CLOSE", OrderProfit(), bars_since_fill, MT5_Atrs[idx], OrderOpenTime(), TimeCurrent(), unrealized_r, favorable_r, adverse_r, ml_exit_score, ml_exit_decision, "diagnostic ml exit requested", 0, "", 0, "", idx, magic, Symbol(), MT5_EntryTypes[idx]);
+         ml_close_order_type = typ;
+      }
+      return;
+   }
+
+   if (!MT5_TrackedPositions[tracked_i].close_logged && OrderSelect(ticket, SELECT_BY_TICKET, MODE_HISTORY) == true) {
+      int bars_since_fill = (int)MathMax(0, SHIFT(OrderOpenTime()) - SHIFT(OrderCloseTime()));
+      MT5_ML_LogEvent("CLOSE", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], MT5_DecisionTimes[idx], OrderCloseTime(), MT5_RuleIds[idx], MT5_TimeText(MT5_EntryTimes[idx]), ticket, MT5_Sides[idx], MT5_LimitPrices[idx], OrderOpenPrice(), OrderOpenPrice(), OrderOpenPrice(), OrderStopLoss(), "broker_history_limited", OrderProfit(), bars_since_fill, MT5_Atrs[idx], OrderOpenTime(), OrderCloseTime(), 0.0, 0.0, 0.0, 0.0, 0, "history price/reason is limited in Task 4", 0, "", 0, "", idx, magic, Symbol(), MT5_EntryTypes[idx]);
+      MT5_TrackedPositions[tracked_i].close_logged = true;
+      // A5 cleanup: compact the closed entry out of the active array
+      // (swap-remove) so the lifecycle loop stops iterating dead tickets.
+      int last = MT5_TrackedPositionCount - 1;
+      if (tracked_i != last) {
+         MT5_TrackedPositions[tracked_i] = MT5_TrackedPositions[last];
+      }
+      MT5_TrackedPositionCount--;
+      ArrayResize(MT5_TrackedPositions, MT5_TrackedPositionCount);
+   }
 }
 
 string MT5_DealReasonText(long reason) {
@@ -583,16 +711,11 @@ void MT5_LogLifecycleForCurrentState(int magic, int &ml_close_order_type) {
    ml_close_order_type = -1;
 
    if (MT5_LastPlacedIdx >= 0 && MT5_LastPlacedMagic == magic) {
+      ulong filled_ticket = MT5_FindFilledTicketForSignal(magic, MT5_LastPlacedIdx);
       ulong buy_pending = MT5_FindActiveTicket(magic, OP_BUYLIMIT, OP_BUYSTOP);
       ulong sell_pending = MT5_FindActiveTicket(magic, OP_SELLLIMIT, OP_SELLSTOP);
-      ulong buy_market = MT5_FindActiveTicket(magic, OP_BUY, OP_BUY);
-      ulong sell_market = MT5_FindActiveTicket(magic, OP_SELL, OP_SELL);
-      if (buy_market > 0 || sell_market > 0) {
-         MT5_TrackedTicket = (buy_market > 0 ? buy_market : sell_market);
-         MT5_TrackedMagic = magic;
-         MT5_TrackedIdx = MT5_LastPlacedIdx;
-         MT5_TrackedOpenLogged = false;
-         MT5_RegisterPosition(MT5_TrackedTicket, MT5_TrackedIdx);
+      if (filled_ticket > 0) {
+         MT5_AddTrackedPosition(filled_ticket, magic, MT5_LastPlacedIdx);
          MT5_LastPlacedIdx = -1;
       } else if (buy_pending == 0 && sell_pending == 0 && MT5_LastPlacedExpiry > 0 && TimeCurrent() > MT5_LastPlacedExpiry) {
          MT5_LogSignalEvent("ORDER_EXPIRED", MT5_LastPlacedIdx, 0, "pending order not active after max_fill_lag_bars");
@@ -603,47 +726,13 @@ void MT5_LogLifecycleForCurrentState(int magic, int &ml_close_order_type) {
       }
    }
 
-   if (MT5_TrackedTicket > 0 && OrderSelect((int)MT5_TrackedTicket, SELECT_BY_TICKET, MODE_TRADES) == true) {
-      int typ = OrderType();
-      if (typ == OP_BUY || typ == OP_SELL) {
-         int idx = MT5_TrackedIdx;
-         int bars_since_fill = (int)MathMax(0, SHIFT(OrderOpenTime()) - bar);
-         if (!MT5_TrackedOpenLogged) {
-            MT5_ML_LogEvent("OPEN", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], MT5_DecisionTimes[idx], OrderOpenTime(), MT5_RuleIds[idx], MT5_TimeText(MT5_EntryTimes[idx]), MT5_TrackedTicket, MT5_Sides[idx], MT5_LimitPrices[idx], OrderOpenPrice(), OrderOpenPrice(), 0.0, OrderStopLoss(), "", 0.0, bars_since_fill, MT5_Atrs[idx], OrderOpenTime(), 0, 0.0, 0.0, 0.0, 0.0, 0, "tester fill observed", 0, "", 0, "", idx, magic, Symbol(), MT5_EntryTypes[idx]);
-            MT5_TrackedOpenLogged = true;
-         }
-         double unrealized_r = 0.0;
-         double favorable_r = 0.0;
-         double adverse_r = 0.0;
-         bool features_ready = MT5_CalculateOpenPositionFeatures(typ, OrderOpenPrice(), OrderStopLoss(), bars_since_fill, unrealized_r, favorable_r, adverse_r);
-         int ml_exit_decision = 0;
-         double ml_exit_score = 0.0;
-         if (MT5_BlockBarsSinceFill0Exit && bars_since_fill <= 0) {
-            ml_exit_decision = 0;
-         } else if (features_ready) {
-            ml_exit_score = DiagnosticMlExitScore(bars_since_fill, unrealized_r, favorable_r, adverse_r);
-            ml_exit_decision = (ml_exit_score >= 1.0 ? 1 : 0);
-         }
-         string eval_comment = (features_ready ? "diagnostic eval only" : "diagnostic eval skipped: post-fill features not ready");
-         MT5_ML_LogEvent("ML_EVAL", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], MT5_DecisionTimes[idx], TimeCurrent(), MT5_RuleIds[idx], MT5_TimeText(MT5_EntryTimes[idx]), MT5_TrackedTicket, MT5_Sides[idx], MT5_LimitPrices[idx], OrderOpenPrice(), OrderOpenPrice(), 0.0, OrderStopLoss(), "", OrderProfit(), bars_since_fill, MT5_Atrs[idx], OrderOpenTime(), 0, unrealized_r, favorable_r, adverse_r, ml_exit_score, ml_exit_decision, eval_comment, 0, "", 0, "", idx, magic, Symbol(), MT5_EntryTypes[idx]);
-         if (ml_exit_decision == 1) {
-            double close_price = (typ == OP_BUY ? Bid : Ask);
-            MT5_ML_LogEvent("ML_CLOSE", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], MT5_DecisionTimes[idx], TimeCurrent(), MT5_RuleIds[idx], MT5_TimeText(MT5_EntryTimes[idx]), MT5_TrackedTicket, MT5_Sides[idx], MT5_LimitPrices[idx], OrderOpenPrice(), OrderOpenPrice(), close_price, OrderStopLoss(), "ML_CLOSE", OrderProfit(), bars_since_fill, MT5_Atrs[idx], OrderOpenTime(), TimeCurrent(), unrealized_r, favorable_r, adverse_r, ml_exit_score, ml_exit_decision, "diagnostic ml exit requested", 0, "", 0, "", idx, magic, Symbol(), MT5_EntryTypes[idx]);
-            ml_close_order_type = typ;
-         }
-      }
-      return;
-   }
-
-   if (MT5_TrackedTicket > 0 && OrderSelect((int)MT5_TrackedTicket, SELECT_BY_TICKET, MODE_HISTORY) == true) {
-      int idx = MT5_TrackedIdx;
-      if (idx >= 0 && idx < MT5_EntrySignalCount) {
-         int bars_since_fill = (int)MathMax(0, SHIFT(OrderOpenTime()) - SHIFT(OrderCloseTime()));
-         MT5_ML_LogEvent("CLOSE", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], MT5_DecisionTimes[idx], OrderCloseTime(), MT5_RuleIds[idx], MT5_TimeText(MT5_EntryTimes[idx]), MT5_TrackedTicket, MT5_Sides[idx], MT5_LimitPrices[idx], OrderOpenPrice(), OrderOpenPrice(), OrderOpenPrice(), OrderStopLoss(), "broker_history_limited", OrderProfit(), bars_since_fill, MT5_Atrs[idx], OrderOpenTime(), OrderCloseTime(), 0.0, 0.0, 0.0, 0.0, 0, "history price/reason is limited in Task 4", 0, "", 0, "", idx, magic, Symbol(), MT5_EntryTypes[idx]);
-      }
-      MT5_TrackedTicket = 0;
-      MT5_TrackedIdx = -1;
-      MT5_TrackedOpenLogged = false;
+   for (int i = 0; i < MT5_TrackedPositionCount; i++) {
+      if (MT5_TrackedPositions[i].magic != magic) continue;
+      int before = MT5_TrackedPositionCount;
+      MT5_LogLifecycleForTicket(i, magic, ml_close_order_type);
+      // A5: if MT5_LogLifecycleForTicket swap-removed slot i, re-inspect the
+      // same index so the moved entry is not skipped.
+      if (MT5_TrackedPositionCount < before) i--;
    }
 }
 
@@ -761,7 +850,6 @@ void EXPERT::ML_TRADE() {
          MT5_DiagSignalsLoaded = true;
          MT5_ENTRY_INIT();
       }
-      MT5_TrackedMagic = Mgc;
       int mt5_close_order_type = -1;
       MT5_LogLifecycleForCurrentState(Mgc, mt5_close_order_type);
       if (mt5_close_order_type == OP_BUY) {
