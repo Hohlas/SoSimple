@@ -136,3 +136,107 @@ def test_diagnostics_load_counts_invalid_timestamp_rows(tmp_path: Path) -> None:
     assert summary["checked_rows"] == 1
     assert summary["invalid_timestamp_rows"] == 1
     assert summary["violations_by_rule"]["invalid_timestamp"] == 1
+
+
+def test_main_accepts_force_rerun_flag() -> None:
+    from ML.baseline import run_mt5_batch
+
+    parser = run_mt5_batch.build_arg_parser()
+    args = parser.parse_args(["--phase", "tester", "--max-positions", "1", "--force-rerun"])
+
+    assert args.phase == "tester"
+    assert args.max_positions == 1
+    assert args.force_rerun is True
+
+
+def test_smoke_only_flag_is_recognised() -> None:
+    """Audit V1: `--phase tester` runs the full batch; the lightweight gate in
+    Task 6 needs a smoke-only path. `--smoke-only` must parse to True and (when
+    wired in main()) must stop after smoke instead of entering run_batch."""
+    from ML.baseline import run_mt5_batch
+
+    parser = run_mt5_batch.build_arg_parser()
+    args = parser.parse_args(["--phase", "tester", "--max-positions", "2", "--smoke-only"])
+
+    assert args.smoke_only is True
+
+
+def test_run_batch_force_rerun_overrides_skip_when_unexplained_zero(
+    monkeypatch, tmp_path
+) -> None:
+    """Behavioral contract: when force_rerun=True and metrics.json already exists
+    with UNEXPLAINED=0, run_batch must NOT skip and must invoke run_tester.
+
+    Audit item 4: backcompat was wrongly proved by 32/32 SKIP. force_rerun must
+    make the skip-path inert.
+    """
+    from ML.baseline import run_mt5_batch
+    import json
+
+    run_id = "candidate_skip"
+    batch_dir = tmp_path / "batch"
+    tester_files = tmp_path / "tester_files"
+    out_dir = batch_dir / run_id
+    out_dir.mkdir(parents=True)
+    tester_files.mkdir()
+
+    # Pre-existing metrics claiming success -> normally causes SKIP.
+    metrics_with_zero = {"reconciliation": {"class_counts": {"UNEXPLAINED": 0}}}
+    (out_dir / "metrics.json").write_text(json.dumps(metrics_with_zero), encoding="utf-8")
+    # events.csv must exist for the skip guard; content doesn't matter for force_rerun.
+    (out_dir / "events.csv").write_text("event\nINIT\n", encoding="utf-8")
+    (out_dir / "entry_signals.csv").write_text("time\n2023.01.02 09:00\n", encoding="utf-8")
+
+    calls = {"run_tester": 0}
+
+    def fake_run_tester(ini_path):
+        calls["run_tester"] += 1
+        # Simulate tester producing an events file.
+        events_src = tester_files / f"mt5_trade_events_{run_id}.csv"
+        events_src.write_text("event\nINIT\n", encoding="utf-8")
+        return True
+
+    monkeypatch.setattr(run_mt5_batch, "BATCH_DIR", batch_dir)
+    monkeypatch.setattr(run_mt5_batch, "TESTER_FILES", tester_files)
+    monkeypatch.setattr(run_mt5_batch, "TERMINAL_FILES", tmp_path / "terminal")
+    monkeypatch.setattr(run_mt5_batch, "make_run_id", lambda candidate: run_id)
+    monkeypatch.setattr(run_mt5_batch, "create_set_file", lambda run_id, *, max_positions=1: tmp_path / "settings.set")
+    monkeypatch.setattr(run_mt5_batch, "create_ini_file", lambda run_id, set_name: tmp_path / "tester.ini")
+    monkeypatch.setattr(run_mt5_batch, "wait_for_liveupdate_clear", lambda: True)
+    monkeypatch.setattr(run_mt5_batch, "copy_entry_signal_file", lambda src: None)
+    monkeypatch.setattr(run_mt5_batch, "run_tester", fake_run_tester)
+    # parse_events returns a minimal metrics dict so run_batch records n_done.
+    monkeypatch.setattr(run_mt5_batch, "parse_events", lambda run_id, events_dst: {"reconciliation": {"class_counts": {"UNEXPLAINED": 0, "CLOSED_TX": 1}}})
+
+    run_mt5_batch.run_batch([{"profile": "candidate"}], force_rerun=True)
+
+    assert calls["run_tester"] == 1, "force_rerun=True must override SKIP and invoke run_tester"
+
+
+def test_run_batch_skips_when_unexplained_zero_and_no_force_rerun(
+    monkeypatch, tmp_path
+) -> None:
+    """Inverse: without force_rerun, existing metrics.json with UNEXPLAINED=0
+    must still SKIP (backcompat regression guard)."""
+    from ML.baseline import run_mt5_batch
+    import json
+
+    run_id = "candidate_skip_normally"
+    batch_dir = tmp_path / "batch"
+    out_dir = batch_dir / run_id
+    out_dir.mkdir(parents=True)
+
+    (out_dir / "metrics.json").write_text(
+        json.dumps({"reconciliation": {"class_counts": {"UNEXPLAINED": 0}}}),
+        encoding="utf-8",
+    )
+    (out_dir / "events.csv").write_text("event\nINIT\n", encoding="utf-8")
+
+    calls = {"run_tester": 0}
+    monkeypatch.setattr(run_mt5_batch, "BATCH_DIR", batch_dir)
+    monkeypatch.setattr(run_mt5_batch, "make_run_id", lambda candidate: run_id)
+    monkeypatch.setattr(run_mt5_batch, "run_tester", lambda ini_path: calls.__setitem__("run_tester", calls["run_tester"] + 1) or True)
+
+    run_mt5_batch.run_batch([{"profile": "candidate"}], force_rerun=False)
+
+    assert calls["run_tester"] == 0, "force_rerun=False with UNEXPLAINED=0 must SKIP"
