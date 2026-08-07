@@ -27,6 +27,13 @@ MT5 diagnostic timing contract continues as `DIAGNOSTIC_ONLY`.
 - Default mode remains `latency_bars=0`; positive latency is diagnostic-only export mode and must not enter winner selection.
 - MT5 LiveUpdate startup interception is now handled in `run_mt5_batch.py`: the runner detects `LiveUpdate start ... /config:<ini>`, waits for update completion, settles briefly, then retries the same tester `.ini`.
 
+MT5 multi-position + per-expert plans are **deferred** (execution postponed until "дойдут руки"):
+
+- `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md` — multi-position lifecycle tracking. **Не исполнен в коде** (коммит `54b4089` содержит только документ).
+- `docs/superpowers/plans/2026-08-03-mt5-per-expert-ml-tracker.md` — per-expert `rule_id` filter + multi-expert smoke. **Не исполнен**; зависит от closeout-плана.
+- Order management refactor (`POSITION[]` array) уже исполнен (отчёт `docs/reports/2026-08-02-mt5-multi-position-probe.md`, вердикт `DIAGNOSTIC_ONLY — BLOCKED на диагностическом слое`).
+- Ограничение зафиксировано в `docs/methodology/13b-mt5-execution-parity.md` → секция «Ограничения прототипа». Single-expert диагностические прогоны работают корректно.
+
 ## Current Diagnostic Facts
 
 - 32/32 regenerated `entry_signals.json` files contain `timing_contract` and `latency_bars=0`.

@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-08-07] — MT5 multi-position + per-expert plans deferred
+- **report**: (нет отдельного отчёта — плановая пометка в методологию)
+- **topics**: `mt5`, `multi-position`, `per-expert`, `deferred`, `methodology-note`
+- **summary**: В `docs/methodology/13b-mt5-execution-parity.md` → секция «Ограничения прототипа» добавлена пометка: multi-position lifecycle tracking и per-expert multi-tester режимы реализованы не до конца и отложены. Single-expert диагностические прогоны работают корректно.
+- **artifacts**: `docs/methodology/13b-mt5-execution-parity.md`, `CONTEXT_HANDOFF.md`
+- **decision**: Планы `2026-08-03-mt5-multi-position-closeout.md` и `2026-08-03-mt5-per-expert-ml-tracker.md` отложены без изменения статуса старых вердиктов (`DIAGNOSTIC_ONLY` сохранён). Очередность при возобновлении: сначала closeout-план, затем per-expert (per-expert зависит от closeout).
+- **notes**: Multi-position **order management** уже исполнен (отчёт `docs/reports/2026-08-02-mt5-multi-position-probe.md`, вердикт `DIAGNOSTIC_ONLY — BLOCKED на диагностическом слое`) — не путать с closeout-планом, который относится к lifecycle tracking и не исполнен в коде.
+
 ## [2026-08-02] — MT5 Multi-Position Probe (DIAGNOSTIC_ONLY — BLOCKED)
 - **report**: `docs/reports/2026-08-02-mt5-multi-position-probe.md`
 - **topics**: `multi-position`, `MQL5-refactoring`, `Pos[]-array`, `backcompat`, `diagnostic-executor-blocker`
