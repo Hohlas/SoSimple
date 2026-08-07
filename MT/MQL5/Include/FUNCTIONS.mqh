@@ -115,7 +115,7 @@ class ORD_TYPE{
 //| массив позиций, фильтруемый по Mgc в ORDER_CHECK().         |
 //+-------------------------------------------------------------+
 #define MAX_MULTIPOS 64
-struct POSITION_TRACKER { int ticket; PRICE data; bool active; };
+struct POSITION_TRACKER { ulong ticket; PRICE data; bool active; };
 
 //+-------------------------------------------------------------+
 //| родительский класс с общими функциями                       |
@@ -159,7 +159,7 @@ class EXPERT_PARENT_CLASS { // общие функции во всех посл�
          Pos[PosCount] = p;
          PosCount++;
       }
-      void RemovePositionByTicket(int ticket) {
+      void RemovePositionByTicket(ulong ticket) {
          for (int i=0; i<PosCount; i++) {
             if (Pos[i].ticket == ticket && Pos[i].active) {
                Pos[i].active = false;
@@ -168,16 +168,37 @@ class EXPERT_PARENT_CLASS { // общие функции во всех посл�
             }
          }
       }
-      int FindPosIndexByTicket(int ticket) {
+      int FindPosIndexByTicket(ulong ticket) {
          for (int i=0; i<PosCount; i++)
             if (Pos[i].ticket == ticket && Pos[i].active) return i;
          return -1;
       }
-      int CountActiveByType(char typ) {
+      // Counts ACTIVE MARKET positions of `position_type` only.
+      // Pending orders (LIMIT/STOP in Pos[].data.Typ) are intentionally NOT counted:
+      // MT5 PositionSelectByTicket selects positions, not pending orders, so a
+      // pending ticket would always fail the select below and skip (audit V2).
+      // Same contract as the existing INPUT.mqh:18-32 side filter that also ignores
+      // pending (Pos[i].data.Typ != MARKET -> continue). Multi-pos gate is therefore
+      // per MARKET side; pending semantics are tracked separately in the diagnostic
+      // logger (Task 4 Step 5), not in the placement gate.
+      int CountActiveBySide(int position_type) {
          int n = 0;
-         for (int i=0; i<PosCount; i++)
-            if (Pos[i].active && Pos[i].data.Typ == typ) n++;
+         for (int i=0; i<PosCount; i++) {
+            if (!Pos[i].active || Pos[i].data.Typ == NONE) continue;
+            if (Pos[i].data.Typ != MARKET) continue;
+            if (!PositionSelectByTicket(Pos[i].ticket)) continue;
+            ENUM_POSITION_TYPE pt = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+            if ((int)pt == position_type) n++;
+         }
          return n;
+      }
+      bool CanPlaceBuyOrder() {
+         if (MT5_MaxPositions == 1) return (BUY.Val == 0);
+         return (CountActiveBySide((int)POSITION_TYPE_BUY) < MT5_MaxPositions);
+      }
+      bool CanPlaceSellOrder() {
+         if (MT5_MaxPositions == 1) return (SEL.Val == 0);
+         return (CountActiveBySide((int)POSITION_TYPE_SELL) < MT5_MaxPositions);
       }
       
       void EXPERT_PARENT_CLASS(){

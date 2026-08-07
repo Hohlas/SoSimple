@@ -10,14 +10,9 @@ void EXPERT::INPUT(){
       if (SEL.Val)   set.SEL.Sig=NONE; // открыт ордер (STOP, LIMIT или MARKET)
       if (BUY.Val)   set.BUY.Sig=NONE; // сбрасываем паттерн   
    }
-   set.BUY.Val=0; set.BUY.Stp=0; set.BUY.Prf=0; // сбрасываем     
+   set.BUY.Val=0; set.BUY.Stp=0; set.BUY.Prf=0; // сбрасываем
    set.SEL.Val=0; set.SEL.Stp=0; set.SEL.Prf=0; // значения приказов
-   // UP/DN: при =1 — legacy single-pos gate (BUY.Typ!=MARKET). При >1 —
-   // разрешаем вход, если BUY-позиций меньше MaxPositions. Соответственно
-   // считаем активные позиции на каждую сторону.
-   int BuyPosCnt = CountActiveByType(MARKET);  // здесь грубая оценка: includes both sides for MARKET,
-                                               // уточняется ниже через PositionSelectByTicket.
-   // Уточним сторону для каждой активной позиции:
+   // Считаем активные позиции по стороне.
    int BuyActiveCnt = 0, SelActiveCnt = 0;
    for (int i = 0; i < PosCount; i++) {
        if (!Pos[i].active || Pos[i].data.Typ != MARKET) continue;

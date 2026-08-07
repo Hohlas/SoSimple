@@ -19,7 +19,7 @@ void EXPERT_PARENT_CLASS::SET_BUY(){
    if (set.BUY.Val-set.BUY.Stp <= StopLevel)                   {X("Stop="  +S5(set.BUY.Stp,Sym)+" too close to set.BUY="+S5(set.BUY.Val,Sym), set.BUY.Val, bar, clrRed); repeat=0;}  // слишком близкий/неправильный стоп
    if (set.BUY.Prf-set.BUY.Val <= StopLevel && set.BUY.Prf>0)  {X("Profit="+S5(set.BUY.Prf,Sym)+" too close to set.BUY="+S5(set.BUY.Val,Sym), set.BUY.Val, bar, clrRed); repeat=0;}  // слишком близкий/неправильный тейк
    WAITING(Mgc,"Terminal",20); // ждем 20сек освобождения терминала
-   while (repeat>0 && BUY.Val==0){ 
+   while (repeat>0 && CanPlaceBuyOrder()){ 
       if (Real){Print("SET_BUY(): ",Sym," set.BUY.Val=",S5(set.BUY.Val,Sym),"/",S5(set.BUY.Stp,Sym),"/",S5(set.BUY.Prf,Sym)," Lot=",Lot," Mgc=",Mgc," set.BUY.Exp=",set.BUY.Exp," ASK/BID/StopLevel=",S5(ASK,Sym),"/",S5(BID,Sym),"/",S5(StopLevel,Sym));
          MARKET_UPDATE(Sym);
          TradeRisk=CHECK_RISK(Lot, set.BUY.Val-set.BUY.Stp, Sym); 
@@ -43,7 +43,7 @@ void EXPERT_PARENT_CLASS::SET_SEL(){
    if (set.SEL.Stp-set.SEL.Val <= StopLevel) {X("Stop="  +S5(set.SEL.Stp,Sym)+" too close to set.SEL="+S5(set.SEL.Val,Sym), set.SEL.Val, bar, clrRed); repeat=0;}  // слишком близкий/неправильный стоп
    if (set.SEL.Val-set.SEL.Prf <= StopLevel) {X("Profit="+S5(set.SEL.Prf,Sym)+" too close to set.SEL="+S5(set.SEL.Val,Sym), set.SEL.Val, bar, clrRed); repeat=0;}  // слишком близкий/неправильный тейк
    WAITING(Mgc,"Terminal",20); // ждем 20сек освобождения терминала
-   while (repeat>0 &&  SEL.Val==0){
+   while (repeat>0 && CanPlaceSellOrder()){
       if (Real){ Print("SET_SEL(): ",Sym," set.SEL.Val=",S5(set.SEL.Val,Sym),"/",S5(set.SEL.Stp,Sym),"/",S5(set.SEL.Prf,Sym)," Lot=",Lot," Mgc=",Mgc," set.BUY.Exp=",set.SEL.Exp," ASK/BID/StopLevel=",S5(ASK,Sym),"/",S5(BID,Sym),"/",S5(StopLevel,Sym));
          MARKET_UPDATE(Sym);
          TradeRisk=CHECK_RISK(Lot, set.SEL.Stp-set.SEL.Val, Sym);
