@@ -422,7 +422,7 @@ def parse_events(run_id: str, events_csv: Path) -> dict | None:
     return None
 
 
-def run_smoke_test(candidates: list[dict], *, max_positions: int = 1) -> bool:
+def run_smoke_test(candidates: list[dict], *, max_positions: int = 1, force_rerun: bool = False) -> bool:
     smoke_dir = BATCH_DIR / "_smoke"
     smoke_dir.mkdir(parents=True, exist_ok=True)
 
@@ -464,7 +464,7 @@ def run_smoke_test(candidates: list[dict], *, max_positions: int = 1) -> bool:
     return unexplained == 0
 
 
-def run_batch(candidates: list[dict], *, max_positions: int = 1) -> None:
+def run_batch(candidates: list[dict], *, max_positions: int = 1, force_rerun: bool = False) -> None:
     n_total = len(candidates)
     n_done = 0
     n_skipped = 0
@@ -476,14 +476,22 @@ def run_batch(candidates: list[dict], *, max_positions: int = 1) -> None:
         metrics_json = out_dir / "metrics.json"
         events_csv = out_dir / "events.csv"
 
-        if metrics_json.exists() and events_csv.exists():
-            meta = json.loads(metrics_json.read_text(encoding="utf-8"))
-            recon = meta.get("reconciliation", {})
-            unexpl = recon.get("class_counts", {}).get("UNEXPLAINED", -1)
-            if unexpl == 0:
-                n_skipped += 1
-                print(f"[{i}/{n_total}] SKIP {run_id} (metrics exist, UNEXPLAINED=0)")
-                continue
+        if force_rerun:
+            # Audit item 4: backcompat was wrongly proved via 32/32 SKIP. Delete
+            # ONLY per-run generated artifacts; never touch the source
+            # entry_signals.csv so the tester still reads the same inputs.
+            for stale_path in (events_csv, metrics_json):
+                if stale_path.exists():
+                    stale_path.unlink()
+        else:
+            if metrics_json.exists() and events_csv.exists():
+                meta = json.loads(metrics_json.read_text(encoding="utf-8"))
+                recon = meta.get("reconciliation", {})
+                unexpl = recon.get("class_counts", {}).get("UNEXPLAINED", -1)
+                if unexpl == 0:
+                    n_skipped += 1
+                    print(f"[{i}/{n_total}] SKIP {run_id} (metrics exist, UNEXPLAINED=0)")
+                    continue
 
         entry_csv = out_dir / "entry_signals.csv"
         if not entry_csv.exists():
@@ -766,7 +774,7 @@ def aggregate_batch(candidates: list[dict]) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def main() -> None:
+def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="MT5 batch selection pipeline")
     parser.add_argument("--phase", choices=["signals", "tester", "aggregate", "all"], default="all")
     parser.add_argument(
@@ -776,6 +784,22 @@ def main() -> None:
         help="MT5 multi-position cap passed to the expert's InpMT5_MaxPositions input "
         "(1 = single-position canonical, >1 = multi-pos diagnostic probe).",
     )
+    parser.add_argument(
+        "--force-rerun",
+        action="store_true",
+        help="Ignore existing metrics/events for tester runs and regenerate artifacts.",
+    )
+    parser.add_argument(
+        "--smoke-only",
+        action="store_true",
+        help="Run only the smoke test (compile + _smoke candidate), then exit. "
+        "Does NOT run the full 32-candidate batch.",
+    )
+    return parser
+
+
+def main() -> None:
+    parser = build_arg_parser()
     args = parser.parse_args()
 
     candidates = load_candidates()
@@ -798,13 +822,16 @@ def main() -> None:
             sys.exit(1)
 
         print("\n--- SMOKE TEST ---")
-        if not run_smoke_test(candidates, max_positions=args.max_positions):
+        if not run_smoke_test(candidates, max_positions=args.max_positions, force_rerun=args.force_rerun):
             print("ABORT: smoke test failed")
             sys.exit(1)
         print("Smoke test PASSED.\n")
 
-        print("--- FULL BATCH ---")
-        run_batch(candidates, max_positions=args.max_positions)
+        if args.smoke_only:
+            print("--smoke-only: skipping FULL BATCH.")
+        else:
+            print("--- FULL BATCH ---")
+            run_batch(candidates, max_positions=args.max_positions, force_rerun=args.force_rerun)
 
     if args.phase in ("aggregate", "all"):
         aggregate_batch(candidates)
