@@ -14,6 +14,7 @@
 
 - **lifecycle_status:** `research_hypothesis`
 - **origin_bias:** direct user request after fill-rate probe showed 99.2% of OPEN_FAILED is single-position policy blocking
+- **research_priority:** medium — needed to determine whether single-position policy is a real execution constraint, but all results remain DIAGNOSTIC_ONLY
 - **roadmap_track:** deviation from ACTIVE track ("entry mechanics / trade-count") — explicitly recorded and accepted by user. ACTIVE roadmap track ("Accept single-position policy as design constraint") applies only to planning the *trade-count probe*, not this refactoring plan. This plan supersedes that constraint for MQL5 execution step only — it does **not** change the trade-count probe planning track which remains ACTIVE and unmodified.
 - **current_search_budget:** 0 new model/search configurations; 1 MQL5 refactoring + 2 batch runs (maxpos=2, maxpos=16), N=32 saved candidates reused
 - **cumulative_search_budget:** inherited from 2026-07-31 batch and 2026-08-01 diagnostics
@@ -427,21 +428,24 @@ InpMT5_ExportNero=false||false||0||true||N
 ./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --candidates=1 --max-positions=1
 ```
 
-Identical event counts find produced as current production run (102 trades, same events).
+Expected: event-level comparison against a pinned baseline artifact (produced by a fresh --force-rerun batch in the 2026-08-03 closeout), or explicitly mark backcompat as smoke-only.
 
 - [ ] **Step 6: Run batch with max_positions=2 and max_positions=16**
 
 ```bash
-./.venv/bin/python -m ML.baseline.tester --phase tester --max-positions=2 --batch 32
-./.venv/bin/pythonスス... root … --max-positions=16 ...
+./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --max-positions=2 --force-rerun
+./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --max-positions=16 --force-rerun
 ```
+
+(`--force-rerun` was added by the 2026-08-03 closeout, Task 5, so candidates are
+rerun instead of being SKIPped on existing metrics; rerun to overwrite SKIP.)
 
 Collect all events. Aggregate per-mode into (separate) batch_summary.json.Message.
 
 - [ ] **Step 7: Aggregate**
 
 ```bash
-./.venv/bin/python -m ML.baseline.mt5_exec_diagnostic --phase multi-pos-comparison ...
+./.venv/bin/python -m ML.baseline.run_mt5_batch --phase aggregate
 ```
 
 Generate per-candidate comparison univox summary.

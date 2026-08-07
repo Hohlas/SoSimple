@@ -7,6 +7,8 @@
 - **lifecycle_status:** `research_hypothesis`
 - **origin_bias:** direct user request after fill-rate probe showed 99.2% of OPEN_FAILED
   is single-position policy blocking
+- **research_priority:** medium — needed to determine whether single-position policy is a real
+  execution constraint, but all results remain DIAGNOSTIC_ONLY
 - **roadmap_track:** deviation from ACTIVE track ("entry mechanics / trade-count") — explicitly
   recorded and accepted by user. ACTIVE roadmap track ("Accept single-position policy as
   design constraint") remains in force for the *trade-count probe planning track*; this plan
@@ -23,8 +25,8 @@
   model-quality proof
 - **`InpMT5_MaxPositions=1` canonical guarantee:** at default, fill-rate probe verdict
   ("single-position policy blocks 99.2% of OPEN_FAILED") retains full force. Smoke test
-  with `--max-positions=1` produced `positions=3, UNEXPLAINED=0`, identical to the previous
-  baseline run.
+  with `--max-positions=1` produced `positions=3, UNEXPLAINED=0`, which matches the previous
+  smoke counters available in this report (event-level comparison was not run).
 
 ## Context
 
@@ -52,10 +54,10 @@ InpMT5_MaxPositions` (default `=1` — канонический single-position 
 | Task | Файлы | Статус |
 |------|-------|--------|
 | 1 — Data structure foundation | `FUNCTIONS.mqh` (struct `POSITION_TRACKER`, `MAX_MULTIPOS=64`, helpers, `BUY/SEL` помечены DEPRECATED, оставлены для transition) | PASS, 0 errors 0 warnings |
-| 2 — ORDER_CHECK / MODIFY | `ORDERS.mqh` (new `ORDER_CHECK` populates `Pos[]` + backcompat shim mirrors singleton `BUY/SEL`; `MODIFY` ищет ticket через `FindPosIndexByTicket`, fallback на legacy singleton при `MT5_MaxPositions==1`) | PASS, 0 errors 2 warnings (pre-existing `ulong→int` `OrderTicket()`) |
-| 3 — OUTPUT (CLOSE/TRAIL/OUTPUT/IMPULSE/POC) | `OUTPUT.mqh`: новые helpers `CloseBuySide`/`CloseSellSide` (multi-pos итерация по `Pos[]`); `CLOSE_BUY/SEL` форвардят на `*Side` при `MT5_MaxPositions>1` и сохраняют legacy path иначе; `TRAILING_STOP` и `OUTPUT()` имеют multi-pos path; `IMPULSE_UP/DN` / `POC_CLOSE_TO_*` оставлены без изменений (вызываются только в `iSignal != 3`, который сам по себе legacy branch). Forward declarations добавлены в `MAIN.mqh`. | PASS, 0 errors 2 warnings |
-| 4 — COUNT / TIMER | `COUNT.mqh`: `COUNT()` multi-pos обновляет per-position Min/Max; `TIMER()` multi-pos помечает `Pos[i].data.Val=0` для позиций, превысивших `Tper`. `FINE_TIME()` использует `CLOSE_BUY/SEL`, которые уже форвардят на `*Side`. | PASS, 0 errors 2 warnings |
-| 5 — Gate removal | `INPUT.mqh` (строки 5-6 + 9-10 обёрнуты `if (MT5_MaxPositions==1)`; multi-pos path считает `BuyActiveCnt`/`SelActiveCnt` через `PositionSelectByTicket`), `lib_ML_Signal.mqh` (строки 779, 859-868, 924-928, 945-949: single-pos gate обёрнут; multi-pos path реализует gate `same-dir count >= MaxPositions` → `OPEN_FAILED: max_positions_reached`; reversal close в multi-pos закрывает earliest opposite position по `Pos[].data.T`, не все позиции), `lib_ML_Signal_TB.mqh` (симметричные изменения для строк 151-181; `ibt.txt` заменён на `lib_ML_Signal_TB.mqh`), `ERRORs.mqh` (`Str9`/`Str11` в multi-pos summarise `Pos[]`, сохраняя legacy singleton для `=1`). | PASS, 0 errors 2 warnings |
+| 2 — ORDER_CHECK / MODIFY | `ORDERS.mqh` (new `ORDER_CHECK` populates `Pos[]` + backcompat shim mirrors singleton `BUY/SEL`; `MODIFY` ищет ticket через `FindPosIndexByTicket`, fallback на legacy singleton при `MT5_MaxPositions==1`) | PASS_WITH_WARNINGS (0 errors, 2 warnings: pre-existing `ulong→int` `OrderTicket()`) |
+| 3 — OUTPUT (CLOSE/TRAIL/OUTPUT/IMPULSE/POC) | `OUTPUT.mqh`: новые helpers `CloseBuySide`/`CloseSellSide` (multi-pos итерация по `Pos[]`); `CLOSE_BUY/SEL` форвардят на `*Side` при `MT5_MaxPositions>1` и сохраняют legacy path иначе; `TRAILING_STOP` и `OUTPUT()` имеют multi-pos path; `IMPULSE_UP/DN` / `POC_CLOSE_TO_*` оставлены без изменений (вызываются только в `iSignal != 3`, который сам по себе legacy branch). Forward declarations добавлены в `MAIN.mqh`. | PASS_WITH_WARNINGS (0 errors, 2 warnings) |
+| 4 — COUNT / TIMER | `COUNT.mqh`: `COUNT()` multi-pos обновляет per-position Min/Max; `TIMER()` multi-pos помечает `Pos[i].data.Val=0` для позиций, превысивших `Tper`. `FINE_TIME()` использует `CLOSE_BUY/SEL`, которые уже форвардят на `*Side`. | PASS_WITH_WARNINGS (0 errors, 2 warnings) |
+| 5 — Gate removal | `INPUT.mqh` (строки 5-6 + 9-10 обёрнуты `if (MT5_MaxPositions==1)`; multi-pos path считает `BuyActiveCnt`/`SelActiveCnt` через `PositionSelectByTicket`), `lib_ML_Signal.mqh` (строки 779, 859-868, 924-928, 945-949: single-pos gate обёрнут; multi-pos path реализует gate `same-dir count >= MaxPositions` → `OPEN_FAILED: max_positions_reached`; reversal close в multi-pos закрывает earliest opposite position по `Pos[].data.T`, не все позиции), `lib_ML_Signal_TB.mqh` (симметричные изменения для строк 151-181; `ibt.txt` заменён на `lib_ML_Signal_TB.mqh`), `ERRORs.mqh` (`Str9`/`Str11` в multi-pos summarise `Pos[]`, сохраняя legacy singleton для `=1`). | PASS_WITH_WARNINGS (0 errors, 2 warnings) |
 | 6 Step 1-5 — Pipeline integration + smoke | `$o$imple.mq5`: `input int InpMT5_MaxPositions=1;`, runtime `int MT5_MaxPositions=1;` (заявлен в Task 3), `SyncInputs()` копирует `InpMT5_MaxPositions` → `MT5_MaxPositions`. `run_mt5_batch.py`: `create_set_file(run_id, *, max_positions=1)` добавляет строку `InpMT5_MaxPositions={value}||false||0||true||N`; CLI `--max-positions` (int, default 1); `run_smoke_test`/`run_batch` принимают `*, max_positions=1` и пробрасывают в `create_set_file`; `main()` передает `args.max_positions`. Smoke run: `--max-positions=1 phase tester` → **`SMOKE RESULT: positions=3, UNEXPLAINED=0`, Smoke test PASSED**. | PASS |
 | 6 Step 6-7 — Batch max=2 / max=16 + aggregate | **НА ЗАВЕРШЕНИИ — заблокировано** на диагностическом слое (см. Limitations). | BLOCKED |
 | 7 — Report + project state sync | Этот отчёт + CHANGELOG + CONTEXT_HANDOFF + roadmap (см. ниже). | PASS |
@@ -127,8 +129,10 @@ Batch complete: 0 done, 32 skipped, 0 failed.
 
 Все 32 кандидата SKIPed (метрики уже существуют от прошлых прогонов), smoke сλα
 max=1 возвращает ровно 3 позиции с UNEXPLAINED=0 — это эквивалентно предыдущему
-baseline. **Canonical guarantee (Var Contract: default `=1` воспроизводит
-single-position поведение) подтверждена.**
+baseline по счётчикам smoke. **Canonical guarantee (Var Contract: default `=1`
+воспроизводит single-position поведение) partially checked by smoke; full
+event-level backcompat remains open until closeout.** (32/32 SKIP не является
+доказательством backcompat — см. closeout 2026-08-03, `--force-rerun`.)
 
 ### Multi-pos batch (Task 6 Step 6) — BLOCKED
 
@@ -155,20 +159,21 @@ SELL_LIMIT, заполненный в 11:59) появляются повторн
 SELL), и логирует новое OPEN с decision_time нового сигнала, но
 execution_time старого тикета 37 — что нарушает contract.
 
-Это **архитектурное ограничение** диагностического слоя executor-а, а не баг
-рефакторинга плана. План явно не предусматривал переработку
+Это **blocking gap in multi-position lifecycle coverage**: диагностический слой
+executor-а не поддерживал несколько tracked tickets, что блокировало multi-pos
+прогон. План явно не предусматривал переработку
 `MT5_LogLifecycleForCurrentState` под multi-pos; но и не мог продолжить с одним
-трекером в новом режиме.
+трекером в новом режиме. Закрыто в closeout 2026-08-03 (multi-ticket tracker).
 
 ## Nested-split disclosure
 
 - **Backcompat (`max=1`)** — single-position canonical проход: smoke confirms
-  identical `positions=3, UNEXPLAINED=0` vs previous baseline; 32 candidate
-  metrics untouched (SKIPPED paths). **PASS**.
+  matching smoke counters (`positions=3, UNEXPLAINED=0`) vs previous baseline; 32 candidate
+  metrics untouched (SKIPPED paths). **PASS** (smoke-only; event-level comparison not run).
 - **Multi-pos (`max=2`, `max=16`)** — проба не завершена: smoke run валится на
   timing-contract check из-за single-ticket ограничений
   `MT5_LogLifecycleForCurrentState`. Рефакторинг MQL5 сам по себе выполнен и
-  компилируется (0 errors), но диагностический логгер не поддерживает несколько
+  компилируется (PASS_WITH_WARNINGS: 0 errors, 2 warnings), но диагностический логгер не поддерживает несколько
   одновременных tracked tickets. **BLOCKED**.
 
 ## Forbidden interpretations
