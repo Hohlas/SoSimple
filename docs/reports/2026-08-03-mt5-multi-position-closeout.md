@@ -47,7 +47,7 @@ Scope: только `iSignal == 3` (`ML_TRADE`, `MT5_DiagnosticExecutor=true`).
 | 4 | «код теста в тексте Task 1 Step 1 содержит синтаксическую ошибку Python» (regex) | PASS | закоммиченный тест содержит корректные regex (`tests/test_mt5_mql5_multiposition_contract.py`, коммит `4b7eddd`); текст плана обновлён в `1351e48` |
 | 5 | «sentinel `DATETIME_MAX` не определён в дереве MT» | PASS | введена локальная константа `const datetime MT5_NO_HI_BOUND = D'2100.01.01 00:00';` (`lib_ML_Signal.mqh`) |
 | 6 | «усиление A5 фактически не проверяет компакцию» (ветка `or "close_logged"`) | PASS | assertion ужесточён до `assert "MT5_TrackedPositionCount--" in ml_signal` (коммит `278ab99`) |
-| 7 | «Task 8 Step 2: строка для замены цитируется неточно» («not a bug refactoring plan» vs фактическая русская формулировка) | PASS | использована точная цитата `docs/reports/2026-08-02-mt5-multi-position-probe.md:158`; заменено на «blocking gap in multi-position lifecycle coverage» (коммит `e9f0089`) |
+| 7 | «Task 8 Step 2: строка для замены цитируется неточно» («not a bug refactoring plan» vs фактическая русская формулировка) | PASS | использована точная цитата `docs/reports/2026-08-02-mt5-multi-position-probe.md:158` на момент коммита `1351e48` (версия аудита closeout-плана); заменено на «blocking gap in multi-position lifecycle coverage» (коммит `e9f0089`) |
 | 8 | «мелкий сдвиг номеров строк `INPUT.mqh`» (16-27, а не 18-32) | CLOSED/NOTED | документационное замечание; кодовых изменений не требует |
 | 9 | «где физически искать `ambiguous_fills_in_window`» | PASS | путь зафиксирован: `/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/Tester/logs/<дата>.log` и `.../Tester/Agent-127.0.0.1-3000/logs/<дата>.log`; grep по обоим журналам → 0 совпадений |
 | 10 | «воспроизводимость ссылок на `docs/superpowers/audit.md`» | PASS | в данном отчёте каждая строка таблицы содержит цитату, а в Related Materials — SHA коммитов с версиями audit.md |
@@ -86,8 +86,7 @@ U2/U4/U5, V1-V3, A2/A4/A5/A6/A8/A10/A13/A14, закрыты самой реал�
   `docs/reports/2026-08-02-mt5-multi-position-probe.md` — исправление битых
   команд и overclaims (коммит `e9f0089`).
 
-Дополнения этапа Full Batch 32×2 (2026-08-07, **не закоммичены** — решение о
-коммите остаётся за пользователем):
+Дополнения этапа Full Batch 32×2 (2026-08-07, закоммичены в `c8dc941`):
 
 - `MT/MQL5/Include/lib_ML_Signal.mqh` — три регрессионных фикса:
   (1) `MT5_LogLifecycleForTicket`/`MT5_LogLifecycleForCurrentState` возвращают
@@ -140,7 +139,26 @@ iconv -f UTF-16LE -t UTF-8 /tmp/sosimple_mt5_compile_closeout.log | tail -n 2
 Паритет max=1 vs эталон 2026-07-31 проверялся pandas-скриптом по парам
 `multipos_pilot/reference/<run_id>/events.csv` и `multipos_pilot/max1/<run_id>/events.csv`:
 сравнение множеств `(ticket, execution_time)` всех TX_CLOSE и суммы `profit`;
-результат 32/32 точных совпадений.
+результат 32/32 точных совпадений. Команда воспроизведения:
+
+```bash
+./.venv/bin/python -c "
+import pandas as pd, pathlib, sys
+ref_dir = pathlib.Path('ML/reports/mt5_execution_loop/multipos_pilot/reference')
+max1_dir = pathlib.Path('ML/reports/mt5_execution_loop/multipos_pilot/max1')
+matches = 0
+for ref_run in sorted(ref_dir.iterdir()):
+    if not ref_run.is_dir(): continue
+    max1_run = max1_dir / ref_run.name
+    ref_ev = pd.read_csv(ref_run / 'events.csv', sep=';')
+    max1_ev = pd.read_csv(max1_run / 'events.csv', sep=';')
+    ref_tx = set(zip(ref_ev[ref_ev.event=='TX_CLOSE'].ticket, ref_ev[ref_ev.event=='TX_CLOSE'].execution_time))
+    max1_tx = set(zip(max1_ev[max1_ev.event=='TX_CLOSE'].ticket, max1_ev[max1_ev.event=='TX_CLOSE'].execution_time))
+    if ref_tx == max1_tx: matches += 1
+    else: print(f'MISMATCH {ref_run.name}', file=sys.stderr)
+print(f'{matches}/32 parity matches')
+"
+```
 
 Проверки timing/binding/reconciliation выполнялись inline-скриптами pandas по
 `ML/reports/mt5_execution_loop/batch/_smoke/events.csv` (sep=`;`) и сохранённым
@@ -191,7 +209,9 @@ single-position) и `max=64` (диагностическая мультипоз�
 регрессии рефакторинга (см. Changed Files): ML-закрытия не исполнялись,
 окно привязки fill обрывалось по времени следующего сигнала, legacy-закрытия
 (таймер удержания и др.) игнорировались при `max=1`. Промежуточные прогоны
-пилота: 30 → 51 → 89 → 102 сделки.
+пилота: 30 → 51 → 89 → 102 сделки — каждый прогон добавлял кандидаты или
+применял следующий фикс, поэтому число сделок росло; финальное число 102
+соответствует полному паритету 32/32.
 
 ### Воронка исполнения, агрегат по 32 кандидатам
 
@@ -245,12 +265,33 @@ single-position) и `max=64` (диагностическая мультипоз�
   артефакты; `batch_summary.json` не пересобирался (фаза aggregate не
   запускалась, `--only`-прогоны агрегацию пропускают).
 
+## Conclusions
+
+Closeout закрыл 10/10 пунктов аудита `docs/superpowers/audit.md` (версия
+`1351e48`). Backcompat max=1 доказан event-level паритетом 32/32 кандидатов
+с эталоном 2026-07-31 (TX_CLOSE-множества идентичны, прибыль совпадает до
+цента). Multi-pos механика доказана smoke max=2/16 (полный lifecycle, 0
+timing/binding нарушений) и full batch max=64 (32/32 `UNEXPLAINED=0`, все
+позиции закрыты). Вердикт этапа: `DIAGNOSTIC_ONLY`.
+
+Открытые вопросы: (1) `iSignal == 5` (`ML_TRADE_TB`) вне покрытия closeout —
+риск требует оценки приоритета переноса фиксов (см. Limitations); (2)
+`InpMT5_MaxPositions` не является жёстким лимитом — фактический лимит зависит
+от частоты сигналов и скорости fill (см. Limitations); (3) multi-tester
+(per-expert magic) не реализован — план `2026-08-03-mt5-per-expert-ml-tracker.md`.
+
 ## Limitations
 
 - Multi-pos проверяется только через `iSignal == 3` (`ML_TRADE`,
   `MT5_DiagnosticExecutor=true`). `iSignal == 5` (`ML_TRADE_TB` в
   `lib_ML_Signal_TB.mqh`) вне покрытия; отдельный план
-  `2026-08-03-mt5-per-expert-ml-tracker.md`.
+  `2026-08-03-mt5-per-expert-ml-tracker.md`. Риск: если `ML_TRADE_TB`
+  используется в production-прогонах, его multi-pos механика может содержать
+  те же дефекты, что и `ML_TRADE` до closeout (ML-закрытия не исполнялись,
+  окно привязки fill обрывалось, legacy-закрытия игнорировались). Текущий
+  статус: `iSignal == 5` не используется в диагностических прогонам closeout
+  (все 32 кандидата — `iSignal == 3`), поэтому срочность переноса фиксов
+  требует уточнения у пользователя.
 - `set.BUY`/`set.SEL` (`INPUT.mqh:13-14`) остаются singleton pending-очередью:
   один planned order на бар, несколько однонаправленных позиций возникают только
   через серию баров. Мультипозиция доказана фактически: в smoke max=2
@@ -300,16 +341,18 @@ single-position) и `max=64` (диагностическая мультипоз�
 
 ## Next Step
 
-1. Решить судьбу незакоммиченных фиксов этапа Full Batch 32×2
-   (три регрессионных фикса `lib_ML_Signal.mqh`, `MODIFY()`-гейт в
-   `ORDERS.mqh`, флаг `--only` раннера) — без них `max=1` паритет
-   не воспроизводится.
-2. При необходимости — полный батч 32 кандидатов для max=2 и max=16
+1. Коммит `c8dc941` содержит все три фикса этапа Full Batch 32×2; паритет
+   max=1 воспроизводится на HEAD.
+2. Обновить `docs/methodology/13b-mt5-execution-parity.md` (строки 145-153):
+   per-ticket lifecycle реализован в closeout 2026-08-03 (multi-ticket tracker,
+   swap-remove, per-ticket OPEN/ML_EVAL/ML_CLOSE/CLOSE); осталось multi-tester
+   (per-expert magic) — план `2026-08-03-mt5-per-expert-ml-tracker.md`.
+3. При необходимости — полный батч 32 кандидатов для max=2 и max=16
    (`--phase tester --max-positions=N --force-rerun` + `--phase aggregate`);
    решение принимается отдельно с учётом стоимости.
-3. Затем — план `2026-08-03-mt5-per-expert-ml-tracker.md` (зависит от этого
+4. Затем — план `2026-08-03-mt5-per-expert-ml-tracker.md` (зависит от этого
    closeout и теперь разблокирован).
-4. ACTIVE-трек roadmap не меняется: «MT5 entry mechanics / trade-count frozen
+5. ACTIVE-трек roadmap не меняется: «MT5 entry mechanics / trade-count frozen
    probe» остаётся направлением.
 
 ## Related Materials

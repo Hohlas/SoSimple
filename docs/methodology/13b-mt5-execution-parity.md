@@ -142,15 +142,10 @@ TX_CLOSE
 - Сопровождение работает на H1-баре, а не через `OnTradeTransaction`; если
   pending-order открылся и закрылся внутри одного H1-бара, полный lifecycle
   может не восстановиться.
-- **Multi-position + multi-tester реализованы не до конца**: одновременная
-  работа двух и более экспертов с разными magic в одном прогоне невозможна,
-  а lifecycle-логи нескольких одновременных позиций не разделяются.
-  Существующая single-expert схема корректна для одного тестера. Полная
-  реализация описана в планах
-  `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md`
-  и `docs/superpowers/plans/2026-08-03-mt5-per-expert-ml-tracker.md`
-  (per-expert план требует, чтобы closeout-план был исполнен первым).
-  Исполнение отложено — пока хватает single-expert диагностических прогонов.
+- **Multi-tester (per-expert magic) остаётся
+  не реализованным** — одновременная работа двух и более экспертов с разными
+  magic в одном прогоне невозможна. План:
+  `docs/superpowers/plans/2026-08-03-mt5-per-expert-ml-tracker.md`
 
 ### Компиляция
 
