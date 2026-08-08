@@ -1,13 +1,13 @@
 # MT5 Multi-Position Closeout — 2026-08-03
 
-> **Stage level:** `research_hypothesis` · **Allowed verdict:** `DIAGNOSTIC_ONLY` · **Result:** `PASS` (smoke-level; full batch `NOT_RUN`)
+> **Stage level:** `research_hypothesis` · **Allowed verdict:** `DIAGNOSTIC_ONLY` · **Result:** `PASS` (smoke + full batch 32×2; см. «Full Batch 32×2»)
 
 ## Research-first disclosure
 
 - lifecycle_status: research_hypothesis
 - origin_bias: follow-up to audit `docs/superpowers/audit.md`
 - research_priority: medium — needed to determine whether single-position policy is a real execution constraint, but all results remain DIAGNOSTIC_ONLY
-- current_search_budget: 0 model/search configurations; MQL5 execution refactor closeout; 3 smoke tester runs (max=1, max=2, max=16) listed below
+- current_search_budget: 0 model/search configurations; MQL5 execution refactor closeout; 3 smoke tester runs (max=1, max=2, max=16); full batch 32 кандидата × 2 режима (max=1, max=64) от 2026-08-07
 - cumulative_search_budget: inherited from 2026-07-31 batch, 2026-08-01 diagnostics, 2026-08-02 multi-position refactor
 - next_probe_freeze: no ML winner selection; next execution probe must use fixed max_positions values and saved candidates only
 - allowed_max_verdict: DIAGNOSTIC_ONLY
@@ -86,6 +86,23 @@ U2/U4/U5, V1-V3, A2/A4/A5/A6/A8/A10/A13/A14, закрыты самой реал�
   `docs/reports/2026-08-02-mt5-multi-position-probe.md` — исправление битых
   команд и overclaims (коммит `e9f0089`).
 
+Дополнения этапа Full Batch 32×2 (2026-08-07, **не закоммичены** — решение о
+коммите остаётся за пользователем):
+
+- `MT/MQL5/Include/lib_ML_Signal.mqh` — три регрессионных фикса:
+  (1) `MT5_LogLifecycleForTicket`/`MT5_LogLifecycleForCurrentState` возвращают
+  тип и тикет позиции, выбранной ML-выходом, и `ML_TRADE` исполняет закрытие
+  через legacy-семантику (`BUY.Val=0`/`SEL.Val=0` + сброс `Pos[].data.Val`);
+  (2) верхняя граница окна привязки fill в `MT5_FindFilledTicketForSignal` —
+  expiry размещённого ордера (`MT5_LastPlacedExpiry`), а не время следующего
+  сигнала; (3) legacy-закрытия при `max=1` больше не игнорируются.
+- `MT/MQL5/Include/ORDERS.mqh` — в `MODIFY()` при `MT5_MaxPositions==1`
+  close/modify-запросы читаются из legacy BUY/SEL, а не из пересобираемого
+  каждый бар `Pos[]` (иначе запросы отбрасывались).
+- `ML/baseline/run_mt5_batch.py` — флаг `--only RUN_ID` (диагностический
+  прогон одного кандидата; агрегация пропускается для защиты
+  `batch_summary.json`).
+
 ## Verification
 
 Все команды выполнялись из `/home/hohla/git/SoSimple`.
@@ -111,12 +128,19 @@ iconv -f UTF-16LE -t UTF-8 /tmp/sosimple_mt5_compile_closeout.log | tail -n 2
 ./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --max-positions=2 --force-rerun --smoke-only
 ./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --max-positions=16 --force-rerun --smoke-only
 # → все три: Smoke test PASSED, UNEXPLAINED=0, без "--- FULL BATCH ---"
-./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --max-positions=2 --force-rerun
-./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --max-positions=16 --force-rerun
-# → NOT_RUN: осознанное решение по стоимости (32 тестерных прогона на каждое
-#   значение max); smoke-закрытие достаточно для DIAGNOSTIC_ONLY, batch-сравнение
-#   остаётся UNKNOWN.
+./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --max-positions=1 --force-rerun
+./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --max-positions=64 --force-rerun
+# → 2026-08-07: оба батча 32/32 done, 0 failed, UNEXPLAINED=0 во всех 64
+#   прогонах (с промежуточными перезапусками из-за LiveUpdate, см.
+#   «Full Batch 32×2 → Инциденты запуска»).
+./.venv/bin/python -m pytest tests/test_mt5_mql5_multiposition_contract.py tests/test_mt5_batch_runtime_contract.py -q
+# → 15 passed (после добавления --only и регрессионных фиксов).
 ```
+
+Паритет max=1 vs эталон 2026-07-31 проверялся pandas-скриптом по парам
+`multipos_pilot/reference/<run_id>/events.csv` и `multipos_pilot/max1/<run_id>/events.csv`:
+сравнение множеств `(ticket, execution_time)` всех TX_CLOSE и суммы `profit`;
+результат 32/32 точных совпадений.
 
 Проверки timing/binding/reconciliation выполнялись inline-скриптами pandas по
 `ML/reports/mt5_execution_loop/batch/_smoke/events.csv` (sep=`;`) и сохранённым
@@ -149,7 +173,77 @@ iconv -f UTF-16LE -t UTF-8 /tmp/sosimple_mt5_compile_closeout.log | tail -n 2
   давала CLOSE-строку с `execution_time` раньше `decision_time` (1 нарушение).
   Исправлено поиском по `DEAL_POSITION_ID` (коммит `9b2c835`); повторные прогоны
   всех трёх max — чистые.
-- Full batch: `NOT_RUN`; сравнение batch-артефактов между max-режимами — `UNKNOWN`.
+- Full batch: выполнен 2026-08-07, см. раздел «Full Batch 32×2» ниже.
+
+## Full Batch 32×2 (2026-08-07)
+
+Полный батч 32 кандидатов прогнан в двух режимах: `max=1` (канонический
+single-position) и `max=64` (диагностическая мультипозиция; лимит выбран
+пользователем). Эталон — артефакты батча 2026-07-31
+(`ML/reports/mt5_execution_loop/multipos_pilot/reference/`), сохранённые до
+перезаписи. Все 64 прогона: `UNEXPLAINED=0`.
+
+### Паритет режима 1 с эталоном
+
+32/32 кандидата: TX_CLOSE-множества идентичны эталону по тикетам и временам,
+прибыль совпадает до цента. Рефакторинг не изменил поведение канонического
+режима. Перед достижением паритета на пилоте были найдены и исправлены три
+регрессии рефакторинга (см. Changed Files): ML-закрытия не исполнялись,
+окно привязки fill обрывалось по времени следующего сигнала, legacy-закрытия
+(таймер удержания и др.) игнорировались при `max=1`. Промежуточные прогоны
+пилота: 30 → 51 → 89 → 102 сделки.
+
+### Воронка исполнения, агрегат по 32 кандидатам
+
+| Показатель | max=1 | max=64 |
+|---|---|---|
+| ORDER_PLACED | 2 601 | 25 103 |
+| TX_OPEN / TX_CLOSE | 2 508 / 2 508 | 23 932 / 23 932 |
+| не исполнено (expired/failed) | 93 (3.6%) | 1 171 (4.7%) |
+| Суммарная прибыль (без свопа/комиссии) | −10 209.5 | −114 622.9 |
+| PF | 0.910 | 0.895 |
+| Win rate | 39.0% | 43.3% |
+| Прибыль BUY / SELL | +1 035.3 / −11 244.8 | +21 145.8 / −135 768.7 |
+| UNEXPLAINED | 0 | 0 |
+
+- Все открытые позиции в обоих режимах закрыты (TX_OPEN == TX_CLOSE у всех
+  32 кандидатов). Источники закрытий max=64: `EXPERT` 16 881 (70.5%),
+  `SL` 7 051 (29.5%).
+- Timing-контракт (`decision_time <= execution_time`): 112 865 проверенных
+  строк max=64, нарушений 0.
+- Максимум одновременных позиций: 17
+  (`simple_combined_extra_trees_small_12h_thr0.2`) — лимит 64 ни разу не
+  достигнут; размещение упирается в частоту сигналов (один planned order на
+  бар), а не в гейт.
+- Мультипозиция исполняет ~9.6× больше размещений, чем канонический режим
+  (25 103 против 2 601): single-position гейт действительно был главным
+  ограничителем числа позиций, что подтверждает исходную мотивацию работы.
+- Убыток в обоих режимах сосредоточен в SELL-позициях; у всех 32 кандидатов
+  кроме одного (`time_plus_atr_extra_trees_small_12h_thr0.05`, +660.4) режим
+  max=64 дал отрицательный итог. Это наблюдение о механике исполнения
+  DIAGNOSTIC_ONLY периода 2021.01–2021.06 (полный батч-период), не оценка
+  качества моделей.
+
+### Инциденты запуска
+
+- LiveUpdate терминала дважды скачивал payload build 6096 и прерывал батч
+  (кандидаты 4/32 и 12/32). Payload вынесен в `/tmp/mt5_liveupdate_backup/`,
+  каталог `liveupdate/` переведён в read-only (`chmod 555`) — по прежней
+  практике проекта (`docs/reports/2026-07-30-mt5-single-rule-diagnostic-run.md`).
+- Skip-гейт раннера пропускал кандидатов по наличию метрик с `UNEXPLAINED=0`,
+  не различая режим; ложные пропуски устранены повторным запуском с
+  `--force-rerun` / точечным удалением метрик чужого режима. Данные не
+  потеряны: артефакты каждого режима сохранялись сразу после прогона.
+
+### Артефакты
+
+- `ML/reports/mt5_execution_loop/multipos_pilot/reference/<run_id>/` — эталоны
+  2026-07-31 (32 кандидата).
+- `ML/reports/mt5_execution_loop/multipos_pilot/max1/<run_id>/`,
+  `.../max64/<run_id>/` — `metrics.json` + `events.csv` обоих режимов.
+- `ML/reports/mt5_execution_loop/batch/<run_id>/` — восстановлены эталонные
+  артефакты; `batch_summary.json` не пересобирался (фаза aggregate не
+  запускалась, `--only`-прогоны агрегацию пропускают).
 
 ## Limitations
 
@@ -174,19 +268,27 @@ iconv -f UTF-16LE -t UTF-8 /tmp/sosimple_mt5_compile_closeout.log | tail -n 2
   (`docs/methodology/13b-mt5-execution-parity.md:138-141`); сверка с MT5 deals
   в этом closeout не выполнялась.
 - Smoke-период: Model=2, 2021.01.04–2021.03.31, один кандидат
-  (`simple_combined_extra_trees_small_3h_thr0.05`); полный батч 32 кандидатов
-  для max=2/max=16 не запускался (`NOT_RUN`).
+  (`simple_combined_extra_trees_small_3h_thr0.05`). Полный батч 32 кандидатов
+  выполнен 2026-08-07 для `max=1` и `max=64` (полный период батча);
+  для `max=2`/`max=16` по-прежнему только smoke.
+- Число входящих ML-сигналов (`entry_signals.csv`) сохранено только для
+  пилотного кандидата, поэтому доля «сигнал → размещение» (затенение
+  дублей на одном баре) количественно оценена только для него
+  (954/1080 размещено); для остальных 32 используется косвенный показатель
+  ORDER_PLACED.
 - Статические MQL5-тесты — текстовые guards, не замена тестеру; тестерные smoke
   выполнены и приведены выше.
 
 ## Split Disclosure
 
-- **Backcompat (`max=1`)**: smoke PASS с `--force-rerun` (SKIP-гейт отключён;
-  32/32 SKIP больше не принимается как доказательство). Формулировка — smoke-only,
-  event-level сравнение не выполнялось.
+- **Backcompat (`max=1`)**: полный батч 32 кандидатов 2026-08-07 — event-level
+  паритет с эталоном 2026-07-31: 32/32 точных совпадений TX_CLOSE
+  (тикеты/времена/прибыль).
 - **Multi-pos smoke (`max=2`, `max=16`)**: PASS — lifecycle полный,
   timing/binding нарушения отсутствуют.
-- **Multi-pos full batch**: `NOT_RUN` → `UNKNOWN`.
+- **Multi-pos full batch (`max=64`)**: выполнен 2026-08-07, 32/32
+  `UNEXPLAINED=0`, все позиции закрыты; интерпретация только DIAGNOSTIC_ONLY.
+- **Multi-pos full batch (`max=2`, `max=16`)**: `NOT_RUN` → `UNKNOWN`.
 - Вердикт этапа: `DIAGNOSTIC_ONLY`.
 
 ## Forbidden Interpretations
@@ -198,13 +300,17 @@ iconv -f UTF-16LE -t UTF-8 /tmp/sosimple_mt5_compile_closeout.log | tail -n 2
 
 ## Next Step
 
-1. При необходимости — полный батч 32 кандидатов для max=2 и max=16
+1. Решить судьбу незакоммиченных фиксов этапа Full Batch 32×2
+   (три регрессионных фикса `lib_ML_Signal.mqh`, `MODIFY()`-гейт в
+   `ORDERS.mqh`, флаг `--only` раннера) — без них `max=1` паритет
+   не воспроизводится.
+2. При необходимости — полный батч 32 кандидатов для max=2 и max=16
    (`--phase tester --max-positions=N --force-rerun` + `--phase aggregate`);
    решение принимается отдельно с учётом стоимости.
-2. Затем — план `2026-08-03-mt5-per-expert-ml-tracker.md` (зависит от этого
+3. Затем — план `2026-08-03-mt5-per-expert-ml-tracker.md` (зависит от этого
    closeout и теперь разблокирован).
-3. ACTIVE-трек roadmap не меняется: «MT5 entry mechanics / trade-count frozen
-   probe» остаётся направлением (закрытие выполнено только на smoke-уровне).
+4. ACTIVE-трек roadmap не меняется: «MT5 entry mechanics / trade-count frozen
+   probe» остаётся направлением.
 
 ## Related Materials
 
@@ -221,4 +327,7 @@ iconv -f UTF-16LE -t UTF-8 /tmp/sosimple_mt5_compile_closeout.log | tail -n 2
   `e9f0089` (Task 8 docs)
 - Артефакты: `/tmp/sosimple_mt5_compile_closeout.log`,
   `ML/reports/mt5_execution_loop/batch/_smoke/events.csv`,
-  `ML/reports/mt5_execution_loop/batch/_smoke/metrics.json`
+  `ML/reports/mt5_execution_loop/batch/_smoke/metrics.json`,
+  `ML/reports/mt5_execution_loop/multipos_pilot/{reference,max1,max64}/`
+  (этап Full Batch 32×2), `/tmp/mt5_liveupdate_backup/` (вынесенный payload
+  LiveUpdate build 6096)

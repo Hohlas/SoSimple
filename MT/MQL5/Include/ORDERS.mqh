@@ -73,8 +73,12 @@ void EXPERT_PARENT_CLASS::MODIFY(){   // Закрытие/модификация
          int Order=OrderType();
          bool make=true;
          uchar repeat=3;
-         // Найти entry в Pos[] по тикету (если нет — multi-pos не имеет инструкции для этого ордера)
-         int posIdx = FindPosIndexByTicket(OrderTicket());
+         // Найти entry в Pos[] по тикету (если нет — multi-pos не имеет инструкции для этого ордера).
+         // При MT5_MaxPositions==1 Pos[] НЕ используется: все close/modify-пути
+         // legacy-режима (CLOSE_BUY/CLOSE_SEL, TRAILING_STOP, ML-выход) пишут в
+         // BUY/SEL singleton, а ORDER_CHECK() каждый бар перезаполняет Pos[].data
+         // ценой открытия — чтение Pos[] здесь тихо отбрасывало бы эти запросы.
+         int posIdx = (MT5_MaxPositions == 1 ? -1 : FindPosIndexByTicket(OrderTicket()));
          // Флаг «закрыть этот ордер»: в multi-pos — Pos[i].data.Val==0; в legacy — BUY.Val==0/SEL.Val==0
          bool shouldClose = false;
          if (posIdx >= 0) {

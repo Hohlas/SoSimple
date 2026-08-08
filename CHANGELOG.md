@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-08-07] — MT5 Full Batch 32×2: max=1 паритет и мультипозиция max=64 (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-08-03-mt5-multi-position-closeout.md` (раздел «Full Batch 32×2»)
+- **topics**: `mt5`, `multi-position`, `backcompat-parity`, `full-batch`, `diagnostic`
+- **summary**: Батч 31.07 (32 кандидата) прогнан заново в двух режимах. Режим max=1: event-level паритет с эталоном 32/32 (тикеты/времена/прибыль TX_CLOSE совпадают). Режим max=64: 25 103 размещения, 23 932 открытия и все закрыты (`UNEXPLAINED=0`), источников закрытия EXPERT 16 881 / SL 7 051, максимум 17 одновременных позиций, timing-контракт на 112 865 строках без нарушений. По пути исправлены три регрессии рефакторинга (ML-закрытия, окно привязки fill, legacy-закрытия при max=1) и добавлен флаг `--only` в раннер.
+- **artifacts**: `ML/reports/mt5_execution_loop/multipos_pilot/{reference,max1,max64}/`, `MT/MQL5/Include/lib_ML_Signal.mqh`, `MT/MQL5/Include/ORDERS.mqh`, `ML/baseline/run_mt5_batch.py`
+- **decision**: single-position гейт подтверждён главным ограничителем числа позиций (max=64 исполняет ~9.6× больше размещений). Вердикт `DIAGNOSTIC_ONLY`: итоги max=64 (агрегат −114 622.9, PF 0.895, убыток в SELL) — наблюдение о механике исполнения, не оценка моделей; winner не выбирается. Фиксы не закоммичены — решение за пользователем.
+- **notes**: LiveUpdate build 6096 дважды прерывал батч; payload вынесен в `/tmp/mt5_liveupdate_backup/`, каталог `liveupdate/` в read-only. Skip-гейт раннера не различает режим — ложные пропуски устранены перезапусками.
+
 ## [2026-08-03] — MT5 Multi-Position Closeout (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-08-03-mt5-multi-position-closeout.md`
 - **topics**: `mt5`, `multi-position`, `lifecycle-tracker`, `closeout`, `audit-fixes`

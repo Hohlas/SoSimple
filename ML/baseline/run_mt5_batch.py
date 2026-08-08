@@ -795,6 +795,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Run only the smoke test (compile + _smoke candidate), then exit. "
         "Does NOT run the full 32-candidate batch.",
     )
+    parser.add_argument(
+        "--only",
+        metavar="RUN_ID",
+        help="Restrict tester/signal phases to a single candidate run_id "
+        "(diagnostic pilot). Aggregation is skipped to protect batch_summary.json.",
+    )
     return parser
 
 
@@ -804,6 +810,13 @@ def main() -> None:
 
     candidates = load_candidates()
     print(f"Loaded {len(candidates)} candidates.")
+
+    if args.only:
+        candidates = [c for c in candidates if make_run_id(c) == args.only]
+        if not candidates:
+            print(f"ERROR: --only run_id not found: {args.only}")
+            sys.exit(1)
+        print(f"--only: restricted to {args.only}")
 
     if args.phase in ("signals", "all"):
         eq_scores = load_eq_scores()
@@ -834,7 +847,10 @@ def main() -> None:
             run_batch(candidates, max_positions=args.max_positions, force_rerun=args.force_rerun)
 
     if args.phase in ("aggregate", "all"):
-        aggregate_batch(candidates)
+        if args.only:
+            print("--only: skipping aggregation to protect batch_summary.json.")
+        else:
+            aggregate_batch(candidates)
 
 
 if __name__ == "__main__":
