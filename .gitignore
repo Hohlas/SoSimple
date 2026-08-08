@@ -296,7 +296,10 @@ MT/MQL5/Include/Trade/
 MT/MQL5/Include/WinAPI/                          
 MT/MQL5/Include/StdLibErr.mqh                                                                   
 MT/MQL5/Include/stdlib.mqh                                                                      
-MT/MQL5/Include/stderror.mqh        
+MT/MQL5/Include/stderror.mqh      
+
+# конфигурации тестера MT5
+MT/MQL5/Profiles/Tester/*.set
 
 
 # файлы тестера стратегий MT4
@@ -332,7 +335,7 @@ statistics/*.old_32k
 .knowledge-rag-data/
 DATA/raw_features_for_direction.pkl
 ML/reports/entry_path_v1_live_safe/runtime/
-ML/reports/mt5_execution_loop/batch/*/metrics.json
+ML/reports/mt5_execution_loop/*/metrics.json
 !ML/reports/mt5_execution_loop/batch/_smoke/metrics.json
 MT/MQL4/Experts/$o$imple.ex4
 MT/MQL4/mql5.index
