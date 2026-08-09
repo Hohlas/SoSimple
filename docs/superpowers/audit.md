@@ -1,191 +1,203 @@
-# Аудит: docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md
+# Аудит: docs/reports/2026-08-01-mt5-saved-batch-fill-rate-probe.md
 
-**Дата аудита**: 2026-08-08
-**Аудитор**: Qoder
-**Объект**: отчёт этапа MT5 Diagnostic Timing Contract
+> Дата аудита: 2026-08-08
+> Аудитор: Qoder
+> Метод: фактическая верификация по артефактам, коду, тестам, методологии и перекрёстным ссылкам
 
 ---
 
 ## Резюме
 
-Отчёт достоверен. Все ключевые фактические утверждения подтверждены сверкой с кодом, тестами, артефактами и методологией. Критических и важных проблем не обнаружено. Обнаружены 3 замечания уровня «улучшение» и 2 вопроса.
-
----
-
-## Проверенные утверждения (все подтверждены)
-
-### Timing contract в коде
-
-| Утверждение отчёта | Подтверждение |
-|---|---|
-| Python schema проверяет `feature_time <= time < feature_available_time <= decision_time` | `mt5_signal_schema.py:180-184`: `_validate_strict_timing_chain` с `strict_pairs={("time", "feature_available_time")}` |
-| Event schema проверяет `feature_time <= signal_time < feature_available_time <= decision_time <= execution_time` | `mt5_signal_schema.py:228-238`: аналогичный вызов для 5 колонок с `strict_pairs={("signal_time", "feature_available_time")}` |
-| MQL5 reader матчится только по `time` | `lib_ML_Signal.mqh:207-212`: `MT5_FindEntrySignal` использует только `MT5_EntryTimes[i] == barTime`, без OR с `decision_time` |
-| MQL5 отклоняет неверные строки через `TIMING_VIOLATION` | `lib_ML_Signal.mqh:664-678`: `MT5_IsEntryTimingValid` + `MT5_LogTimingViolation` + `continue` |
-| Entry source bridge формирует H1 timing | `prepare_mt5_entry_source.py:89-92`: `feature_time=signal_dt`, `feature_available_time=signal_dt+1h`, `decision_time=feature_available_time+latency_bars*h`, `match_time=decision_time-1h` |
-| Export metadata пишет `timing_contract`, `latency_bars` и включает их в `run_config_hash` | `export_mt5_entry_signals.py:153-184`: `run_config` содержит оба ключа, `run_config_hash` вычисляется из полного `run_config` |
-| `TIMING_VIOLATION` добавлен в `MT5_EVENT_NAMES` | `mt5_signal_schema.py:196` |
-
-### Числовые данные в отчёте
-
-| Утверждение | Фактическое значение | Источник |
-|---|---|---|
-| `batch_summary.json`: `n_candidates=32` | 32 | `batch_summary.json` |
-| `n_valid=32` | 32 | `batch_summary.json` |
-| `n_eligible=11` | 11 | `batch_summary.json` |
-| `n_diagnostic_only=16` | 16 | `batch_summary.json` |
-| `status=DIAGNOSTIC_ONLY` | DIAGNOSTIC_ONLY | `batch_summary.json` |
-| `verdict=BATCH_NO_WINNER` | BATCH_NO_WINNER | `batch_summary.json` |
-| `batch_runs.total_rows=54078` | 54078 | `event_anomaly_summary.json` |
-| `batch_runs.timing_contract.checked_rows=49030` | 49030 | `event_anomaly_summary.json` |
-| `batch_runs.timing_contract.violation_rows=0` | 0 | `event_anomaly_summary.json` |
-| `batch_runs.timing_contract.timing_violation_event_count=0` | 0 | `event_anomaly_summary.json` |
-| `reference_runs.timing_contract.checked_rows=22510` | 22510 | `event_anomaly_summary.json` |
-| `reference_runs.timing_contract.violation_rows=22510` | 22510 | `event_anomaly_summary.json` |
-| 32/32 `entry_signals.json` включают `timing_contract` и `latency_bars=0` | 32/32 подтверждено | Прямая проверка `entry_signals.json` |
-| 32/32 кандидатских директорий содержат `events.csv` | 32 подтверждено | Прямая проверка `batch/*/events.csv` |
-| `validation: 2021-01-04..2022-12-02` | `{'from': '2021-01-04', 'to': '2022-12-02'}` | `batch_summary.json` |
-
-### Методология 13b синхронизирована
-
-| Требование | Статус |
-|---|---|
-| Единый ключ матчинга `time` (не OR) | Подтверждено: `13b-mt5-execution-parity.md:35` — «Строка выбирается только по колонке `time`» |
-| Timing contract for signal CSV | Подтверждено: `13b-mt5-execution-parity.md:79` — `feature_time <= time < feature_available_time <= decision_time` |
-| Timing contract for event rows | Подтверждено: `13b-mt5-execution-parity.md:85` — `feature_time <= signal_time < feature_available_time <= decision_time <= execution_time` |
-| `TIMING_VIOLATION` в списке событий | Подтверждено: `13b-mt5-execution-parity.md:111` |
-
-### LiveUpdate mitigation
-
-| Утверждение | Подтверждение |
-|---|---|
-| Копирование в terminal и tester Files | `run_mt5_batch.py:400-403`: `copy_entry_signal_file` копирует в `TERMINAL_FILES` и `TESTER_FILES` |
-| Отказ при LiveUpdate redirect | `run_mt5_batch.py:362-366`: проверка `"LiveUpdate\tstart" in line` |
-| Retry после LiveUpdate | `run_mt5_batch.py:385-396`: цикл retry с `wait_for_liveupdate_clear()` |
-| Тесты на LiveUpdate behavior | `test_mt5_batch_runtime_contract.py:22-77`: тесты reject/retry |
-
-### Pre-existing failure
-
-| Утверждение | Подтверждение |
-|---|---|
-| `test_tester_ini_selects_telemetry_backtest_row` fails | Запуск `pytest` подтвердил: `1 failed in 0.02s` |
-| Причина: `BackTest=0` vs ожидаемое `BackTest=2` | Не менялся этим этапом |
+Числовые утверждения отчёта полностью подтверждены артефактами — все 12 JSON-значений, все 8 CSV-метрик и все 5 Spearman-корреляций совпадают. Все тесты проходят (24 passed). Все перекрёстные ссылки валидны. Однако отчёт имеет структурные пробелы относительно методологии (отсутствуют Verification section, artifact hashes, side-specific breakdown, yearly decomposition) и содержит некорректный текст (опечатки, смешение языков, мусорные символы).
 
 ---
 
 ## Замечания
 
-### 1. Улучшение: количество тестов в Verification неактуально
+### 1. Spearman-корреляции и residual вычислены вне кода
+
+- **Важность**: важно
+- **Место**: строки 85-96 отчёта; `ML/baseline/mt5_execution_diagnostics.py`
+- **Суть**: Отчёт заявляет Spearman rank correlations (5 пар) и residual (`active_signal_rows - ORDER_PLACED - OPEN_FAILED` = 1874, 12.53%) как результаты анализа. Однако в `ML/baseline/mt5_execution_diagnostics.py` нет ни `scipy`, ни `spearmanr`, ни кода для вычисления residual. Функция `build_fill_rate_diagnostics` агрегирует суммы (`total_active_signal_rows`, `total_open_failed`), но не выполняет вычитание и не считает корреляции. Эти вычисления были сделаны внешним способом (вручную или отдельным скриптом), но не задокументированы и не воспроизводимы из кода.
+- **Доказательство**: `grep -n "spearman\|scipy\|residual" ML/baseline/mt5_execution_diagnostics.py` — нет результатов. Функция `build_fill_rate_diagnostics` (строка ~785) возвращает агрегаты, но не корреляции.
+- **Почему важно**: Методология `16-reporting-audit.md` требует воспроизводимость. Читатель не может повторить вычисление Spearman или residual, выполнив только команды из отчёта. Команда `--phase fill-rate` генерирует JSON без корреляций и CSV без residual-колонки.
+- **Рекомендация**: Либо добавить вычисление Spearman и residual в `build_fill_rate_diagnostics` (с тестами), либо явно указать в отчёте, что корреляции вычислены ad-hoc (например, pandas `.corr(method='spearman')` в интерактивной сессии), и привести команду/скрипт.
+
+---
+
+### 2. Отсутствует раздел Verification
+
+- **Важность**: важно
+- **Место**: отчёт целиком; методология `16-reporting-audit.md` строка 24
+- **Суть**: Методология 16 требует выделенный раздел `Verification` с командой и результатом тестов. Отчёт содержит команду `pytest` (строка 57), но не имеет отдельного раздела с выводом. Сравнение с предыдущим отчётом (`2026-08-01-mt5-execution-hygiene-postbatch.md`): тот имеет раздел `Verification` с командой и результатом `53 passed in 0.47s`.
+- **Доказательство**: `docs/methodology/16-reporting-audit.md` строка 24: "Verification: команды и ожидаемые результаты". В отчёте нет заголовка `## Verification`.
+- **Почему важно**: Нарушение структуры отчёта, затрудняет верификацию следующим агентом.
+- **Рекомендация**: Добавить раздел `## Verification` с командой и результатом: `24 passed in 0.37s`.
+
+---
+
+### 3. Отсутствуют хеши артефактов
+
+- **Важность**: важно
+- **Место**: отчёт, раздел `Structured Artifact Cross-Check`; методология `16-reporting-audit.md` строка 31
+- **Суть**: Методология 16 требует "hashes" для артефактов. Отчёт не содержит SHA256-хеши для `fill_rate_diagnostics.json` и `fill_rate_candidates.csv`. Предыдущий отчёт (`2026-08-01-mt5-execution-hygiene-postbatch.md`) содержит раздел `Artifact Hashes` с 10 хешами.
+- **Доказательство**: `docs/methodology/16-reporting-audit.md` строка 31: "Указать команды, версии, paths, hashes". В отчёте нет раздела с хешами.
+- **Почему важно**: Без хешей невозможна верификация неизменности артефактов.
+- **Рекомендация**: Добавить раздел `## Artifact Hashes` с хешами обоих файлов. Фактические хеши:
+  - `fill_rate_diagnostics.json`: `f97ba0d5662f1ab01fffea38cc3b460bf7b9fcba5d7121b1945a8492a24cd40e`
+  - `fill_rate_candidates.csv`: `7583bd611dc613647ff5ce26f6eb50e9086cdd3e6ebaf795b737417553a5c59f`
+
+---
+
+### 4. Нет BUY/SELL side-specific breakdown
+
+- **Важность**: важно
+- **Место**: раздел `Results`; методология `11-robustness.md` строка 51
+- **Суть**: Методология 11 требует: "Side-specific failure не скрывается balance metric." Отчёт заявляет применение `11-robustness.md` (строка 37), но не содержит никакого разделения по сторонам (BUY vs SELL). CSV `fill_rate_candidates.csv` содержит колонки `buy_signal_rows` и `sell_signal_rows`, но в отчёте они не использованы.
+- **Доказательство**: `docs/methodology/11-robustness.md` строка 51. `fill_rate_candidates.csv` содержит колонки `buy_signal_rows`, `sell_signal_rows` (подтверждено чтением файла). Отчёт не содержит таблиц или чисел с разделением по BUY/SELL.
+- **Почему важно**: Без side-specific анализа невозможно исключить, что низкий fill rate — артефакт одной стороны (например, SELL в bull market). Это может исказить вывод о position-policy dominance.
+- **Рекомендация**: Добавить таблицу side-specific fill rate: для BUY и SELL отдельно — active_signal_rows, trades, fill_rate, position_or_pending_order_exists %. Если данные недоступны из events.csv по сторонам, зафиксировать это в Limitations.
+
+---
+
+### 5. Отсутствует continuation_budget
 
 - **Важность**: улучшение
-- **Место**: раздел Verification, строка «Results: targeted final subset passed (`55 passed`)»
-- **Суть**: Отчёт утверждает 55 пройденных тестов для 4 файлов, но текущий запуск тех же 4 файлов даёт 62 passed.
-- **Доказательство**: `pytest tests/test_mt5_signal_executor_schema.py tests/test_parse_mt5_execution_report.py tests/test_mt5_execution_diagnostics.py tests/test_mt5_batch_runtime_contract.py -q` → `62 passed in 0.47s`
-- **Почему важно**: Последующий коммит `ed2fd9c` (MT5 per-expert ML tracker) добавил тесты в эти файлы. Отчёт был точен на момент написания, но число 55 теперь не воспроизводится.
-- **Рекомендация**: Можно добавить сноску «число тестов может отличаться в последующих коммитах» или зафиксировать хеш коммита, на котором проводилась проверка.
+- **Место**: раздел `research-first disclosure`, строки 13-22; методология `00-research-management.md` строки 59-60
+- **Суть**: Методология 00 требует поле `continuation_budget` — сколько новых probe-партий разрешено до пересмотра ветки. Research-first disclosure содержит 7 из 8 обязательных полей, но не включает `continuation_budget`.
+- **Доказательство**: `docs/methodology/00-research-management.md` строки 59-60: "continuation_budget: сколько новых probe-партий разрешено до пересмотра ветки". Поле отсутствует в строках 13-22 отчёта.
+- **Почему важно**: Следующий агент не знает лимит диагностических итераций.
+- **Рекомендация**: Добавить строку: `continuation_budget: 0 новых probe-партий; текущая диагностика — последняя перед пересмотром ветки` (или иное значение).
 
-### 2. Улучшение: источник `checked_signal_files=32, bad_files=0` не трассируется из артефактов
+---
 
-- **Важность**: улучшение
-- **Место**: раздел Results, строка «signal timing check: `checked_signal_files=32`, `bad_files=0`»
-- **Суть**: Этот результат не присутствует в `event_anomaly_summary.json` или `batch_summary.json`. Он логически следует из того, что `run_mt5_batch --phase signals` успешно завершается для всех 32 кандидатов (экспорт вызывает `validate_mt5_signal_frame`, и любая ошибка прервала бы пайплайн), но прямой артефакт отсутствует.
-- **Доказательство**: Поиск по `ML/reports/mt5_execution_loop/` не содержит поля `checked_signal_files` или `bad_files`.
-- **Почему важно**: Для воспроизводимости аудита каждый числовой результат должен иметь прямой источник.
-- **Рекомендация**: Либо ссылаться на stdout `run_mt5_batch --phase signals`, либо добавить явную проверку в `run_mt5_batch.py`, которая записывает результат валидации сигналов в артефакт.
-
-### 3. Улучшение: неясность вокруг 5 кандидатов (32 - 11 - 16 = 5)
+### 6. Отсутствует yearly decomposition
 
 - **Важность**: улучшение
-- **Место**: раздел Results, `batch_summary.json` числа
-- **Суть**: `n_candidates=32`, `n_eligible=11`, `n_diagnostic_only=16`. Разница `32 - 11 - 16 = 5` не объяснена. Это кандидаты, которые не прошли eligibility gates и не помечены как diagnostic-only.
-- **Доказательство**: `batch_summary.json` содержит только агрегированные числа без покандидатного объяснения.
-- **Почему важно**: Читатель отчёта не может понять, почему 5 кандидатов выпали из обеих категорий.
-- **Рекомендация**: Добавить одно предложение в Results или Limitations, объясняющее эти 5 кандидатов (например, «5 кандидатов не прошли gate по bootstrap p-value или profit concentration»).
+- **Место**: раздел `Results`; методология `A5-post-mortem-diagnostics.md` строка 78
+- **Суть**: A5 строка 78: "Обязательно повторить декомпозицию по годам." Отчёт не содержит разложения ни по годам, ни по периодам. Per-candidate данные в `fill_rate_candidates.csv` не включают `pf_by_year` или `effective_profit_years`.
+- **Доказательство**: `docs/methodology/A5-post-mortem-diagnostics.md` строка 78. Отчёт не содержит yearly breakdown.
+- **Почему важно**: Без yearly decomposition невозможно оценить, устойчив ли вывод о position-policy dominance на всех периодах или только на отдельных годах.
+- **Рекомендация**: Если данные доступны в per-run `metrics.json` — добавить yearly fill-rate таблицу. Если нет — зафиксировать в Limitations как gap для следующего probe.
 
-### 4. Вопрос: `latency_bars>0` и сигналный timing contract
+---
+
+### 7. Отсутствует explicit Multiple Testing Context section
+
+- **Важность**: улучшение
+- **Место**: структура отчёта; методология `16-reporting-audit.md` строка 22
+- **Суть**: Методология 16 требует отдельный раздел `Multiple Testing Context`. Данные есть в research-first disclosure (строки 18-19: `current_search_budget`, `cumulative_search_budget`), но нет выделенного раздела.
+- **Доказательство**: `docs/methodology/16-reporting-audit.md` строка 22 перечисляет "Multiple Testing Context" как обязательный отдельный раздел.
+- **Почему важно**: Усложняет быструю проверку бюджета тестирования следующим агентом.
+- **Рекомендация**: Вынести `current_search_budget` и `cumulative_search_budget` в отдельный раздел `## Multiple Testing Context`.
+
+---
+
+### 8. Некорректный текст: опечатки и мусорные символы
+
+- **Важность**: важно
+- **Место**: строки 112, 120, 122, 140, 143
+- **Суть**: Несколько строк содержат смешение русского и английского, опечатки и мусор:
+  - Строка 112: "определён однимёнтий-позитион-полиси" — транслитерация-мусор вместо "single-position policy"
+  - Строка 120: "ОРДЕР_ПЛЭЙСД, ОПЕН_ФЭЙЛД. ОПДЭР_ЭКСПАЙРД, ОПНД или КЛОЗЭ" — транслитерация русских букв вместо имён событий
+  - Строка 122: "дублирующие сигналы одинакового времени (several active signals per bar)" — смешение языков
+  - Строка 140: "Выбрать следующую диагностик:" — обрезанное слово ("диагностику"?)
+  - Строка 143: "провзод neighаbie кандидат-сигнал linkage + по-сигнальная exit quality аудит из событияй .csv" — мусор ("провзод", "neighаbie", "событий .csv")
+- **Доказательство**: Чтение строк 112, 120, 122, 140, 143 отчёта.
+- **Почему важно**: Затрудняет понимание, снижает качество документа. Строки 120 и 143 практически нечитаемы.
+- **Рекомендация**: Переписать проблемные строки. Примеры исправлений:
+  - Строка 112: "определён single-position policy советника"
+  - Строка 120: "ORDER_PLACED, OPEN_FAILED, ORDER_EXPIRED, OPEN или CLOSE"
+  - Строка 140: "Выбрать следующую диагностику:"
+  - Строка 143: "row-level candidate-signal linkage + по-сигнальный exit quality аудит из events.csv"
+
+---
+
+### 9. "5 FAIL" label не трассируется к артефакту
 
 - **Важность**: вопрос
-- **Место**: раздел What Was Done, описание H1 timing
-- **Суть**: Формула `time=decision_time-1h` при `latency_bars>0` даёт `time > feature_available_time`, что нарушает контракт `time < feature_available_time`. Это корректно защищено валидацией (`validate_mt5_signal_frame` отвергнет такой фрейм), но отчёт не упоминает, что контракт signal CSV справедлив только при `latency_bars=0`.
-- **Доказательство**: `prepare_mt5_entry_source.py:89-92` при `latency_bars=2`: `time=12:00`, `feature_available_time=11:00` → `12:00 < 11:00` ложно. Тест `test_prepare_mt5_entry_source_latency_bars_shifts_match_time_to_decision_minus_one_bar` проверяет значения, но не вызывает `validate_mt5_signal_frame`.
-- **Почему важно**: Если кто-то попытается экспортировать сигналы с `latency_bars>0` через полный пайплайн, экспорт упадёт с `ValueError`. Это защитный механизм, но он не описан в отчёте.
-- **Рекомендация**: Добавить в Limitations предложение: «Контракт `feature_time <= time < feature_available_time <= decision_time` справедлив при `latency_bars=0`; при `latency_bars>0` экспорт будет отклонён валидатором, что является защитным механизмом.»
-
-### 5. Вопрос: `docs/schemas/mt5_signal_executor_schema.md` упомянут в плане, но не создан
-
-- **Важность**: вопрос
-- **Место**: `docs/superpowers/plans/2026-08-01-mt5-diagnostic-timing-contract.md` (Task 6)
-- **Суть**: План содержит условную инструкцию: «If `docs/schemas/mt5_signal_executor_schema.md` was not created, run...». Файл не существует. Отчёт не упоминает его в Changed Files, что согласовано.
-- **Доказательство**: `test -f docs/schemas/mt5_signal_executor_schema.md` → MISSING
-- **Почему важно**: План предполагал возможность создания этого файла. Его отсутствие не является ошибкой отчёта, но создаёт неполноту в документации схемы.
-- **Рекомендация**: Решить, нужен ли отдельный файл схемы для signal/event CSV, или достаточно `mt5_signal_schema.py` как executable source of truth. Если нужен — создать в отдельном этапе.
+- **Место**: строка 80
+- **Суть**: Отчёт заявляет `fill_rate_by_status.diagnostic_only.count: 21 (16 DIAGNOSTIC_ONLY + 5 FAIL)`. Число 21 подтверждено (`n_diagnostic_only=16`, вычитание `32 - 11 = 21`). Однако label "5 FAIL" не присутствует ни в одном артефакте — это вывод по вычитанию (32 - 11 eligible - 16 diagnostic_only = 5). Ни `batch_summary.json`, ни `fill_rate_diagnostics.json` не содержат поля `status=FAIL` для этих 5 кандидатов.
+- **Доказательство**: `batch_summary.json` содержит `table` (32 строки) и `winners_ranked` (11 строк), но не имеет поля `status` с значением `FAIL`. `fill_rate_diagnostics.json` содержит `n_diagnostic_only=16`, но не `n_fail=5`.
+- **Почему важно**: Читатель может интерпретировать "FAIL" как статус из артефакта, тогда как это вычисленное значение.
+- **Рекомендация**: Уточнить формулировку: "21 = 32 - 11 eligible; из них 16 имеют статус DIAGNOSTIC_ONLY, 5 — не прошли gates (вычислено как 21 - 16)".
 
 ---
 
-## Проверка корректности кода
+### 10. Отсутствует explicit holdout non-selection confirmation
 
-### Алгоритмическая корректность timing computation
-
-Для `latency_bars=0`, `signal_time = T`:
-- `feature_time = T`
-- `feature_available_time = T + 1h`
-- `decision_time = T + 1h`
-- `time = T + 1h - 1h = T`
-
-Контракт: `T <= T < T+1h <= T+1h` → выполнено.
-
-Для `latency_bars=2`, `signal_time = T`:
-- `feature_time = T`
-- `feature_available_time = T + 1h`
-- `decision_time = T + 3h`
-- `time = T + 2h`
-
-Контракт: `T <= T+2h < T+1h` → **нарушено** (защищено валидатором).
-
-Контрольный пример из теста `test_prepare_mt5_entry_source_from_entry_quality_scores_contract`:
-- Вход: `signal_time = "2023.01.02 10:00"`, `side = "SELL"`
-- Ожидаемый выход: `time = "2023.01.02 10:00"`, `feature_available_time = "2023.01.02 11:00"`, `decision_time = "2023.01.02 11:00"`
-- Фактический выход: совпадает ✓
-
-### MQL5 timing validation
-
-`MT5_IsEntryTimingValid` (`lib_ML_Signal.mqh:214-218`):
-```c
-return (feature_time <= entry_time &&
-        entry_time < feature_available_time &&
-        feature_available_time <= decision_time);
-```
-Соответствует контракту `feature_time <= time < feature_available_time <= decision_time`. ✓
-
-### Edge cases
-
-- Пустой DataFrame: `_validate_strict_timing_chain` проверяет `if frame.empty: return` (`mt5_signal_schema.py:147`). ✓
-- Строки без `signal_time`: `summarize_timing_contract` имеет отдельный legacy-путь (`mt5_execution_diagnostics.py:332-337`). ✓
-- `TX_OPEN`/`TX_CLOSE` с пустыми timing-полями: исключены из проверки через `TIMING_CHECK_EVENT_NAMES` и `_nonempty_timestamp_mask`. ✓
-- Невалидные timestamp: `summarize_timing_contract` считает их отдельно (`invalid_timestamp_rows`). ✓
+- **Важность**: улучшение
+- **Место**: раздел `Split Disclosure`, строка 129
+- **Суть**: Split Disclosure говорит "`locked_test` was not opened", но не подтверждает явно, что holdout не использовался для selection. Методология 16 строка 93 требует явное подтверждение.
+- **Доказательство**: `docs/methodology/16-reporting-audit.md` строка 93: "Явное подтверждение, что holdout/locked_test не использовался для selection, threshold, feature, entry, exit, stop, spread, cost, или PnL convention."
+- **Почему важно**: Формальное требование методологии.
+- **Рекомендация**: Расширить Split Disclosure: "locked_test was not opened; holdout was not used for any selection, threshold, or convention decision."
 
 ---
 
-## Согласованность артефактов
+## Подтверждённые факты (без замечаний)
 
-| Артефакт | Статус |
-|---|---|
-| `ML/reports/mt5_execution_loop/batch/batch_summary.json` | Существует, числа совпадают |
-| `ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json` | Существует, числа совпадают |
-| `docs/superpowers/specs/2026-08-01-mt5-diagnostic-timing-contract-design.md` | Существует |
-| `docs/superpowers/plans/2026-08-01-mt5-diagnostic-timing-contract.md` | Существует |
-| `docs/methodology/13b-mt5-execution-parity.md` | Синхронизирован |
-| `docs/ML/mt5_execution_loop.md` | Синхронизирован |
-| `docs/methodology/03-feature-contract-leakage.md` | Существует |
-| `docs/methodology/16-reporting-audit.md` | Существует |
-| `docs/reports/2026-07-31-mt5-batch-selection.md` | Существует |
-| `docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md` | Существует |
-| `docs/schemas/mt5_signal_executor_schema.md` | **Отсутствует** (опциональный, см. вопрос 5) |
+### Числовые утверждения — все 25 пунктов верифицированы
+
+| Утверждение | Источник | Статус |
+|---|---|---|
+| candidate_count: 32 | `fill_rate_diagnostics.json` | PASS |
+| verdict: BATCH_NO_WINNER | `fill_rate_diagnostics.json` | PASS |
+| n_eligible: 11, n_diagnostic_only: 16 | `fill_rate_diagnostics.json` | PASS |
+| total_active_signal_rows: 28808 | `fill_rate_diagnostics.json` | PASS |
+| total_trades: 2508 | `fill_rate_diagnostics.json` | PASS |
+| total_open_failed: 22767 | `fill_rate_diagnostics.json` | PASS |
+| total_order_expired: 67 | `fill_rate_diagnostics.json` | PASS |
+| eligible_top.count: 11 | `fill_rate_diagnostics.json` | PASS |
+| eligible_top.median: 0.0943 | `fill_rate_diagnostics.json` (0.09430...) | PASS |
+| low_fill_rate_count_lt_0_20: 11 | `fill_rate_diagnostics.json` | PASS |
+| diagnostic_only.count: 21 | `fill_rate_diagnostics.json` | PASS |
+| CSV: 32 строки, `;`-разделитель | `fill_rate_candidates.csv` | PASS |
+| 11 eligible, все fill_rate < 0.20 | `fill_rate_candidates.csv` (max=0.1326) | PASS |
+| position_or_pending_order_exists = 99.19% | 11522/11616 из CSV | PASS |
+| Residual = 1874 (12.53%) | 1874/14954 из CSV | PASS |
+| pending_order_not_found = 94 (0.81%) | 94/11616 из CSV | PASS |
+| ORDER_EXPIRED = 31 | CSV | PASS |
+| Spearman fill_rate <-> trades_count: 0.2275 | Независимое вычисление из CSV | PASS |
+| Spearman fill_rate <-> profit_factor: -0.4575 | Независимое вычисление из CSV | PASS |
+| Spearman fill_rate <-> open_failed_count: -0.6364 | Независимое вычисление из CSV | PASS |
+| Spearman trades_count <-> open_failed_count: 0.5694 | Независимое вычисление из CSV | PASS |
+| Spearman trades_count <-> order_expired: 0.6469 | Независимое вычисление из CSV | PASS |
+
+### Код и тесты
+
+- `ML/baseline/mt5_execution_diagnostics.py` содержит все 4 заявленные функции (`count_event_names`, `_numeric_summary`, `summarize_candidate_fill_rate`, `build_fill_rate_diagnostics`) и CLI-фазу `fill-rate`.
+- `tests/test_mt5_execution_diagnostics.py` содержит все 3 заявленных теста + 21 других (24 total). Все проходят.
+- `pytest` → `24 passed in 0.37s`.
+
+### Перекрёстные ссылки
+
+- Все 4 файла в `Related Materials` существуют.
+- План `docs/superpowers/plans/2026-08-01-mt5-saved-batch-fill-rate-probe.md` существует.
+- Все 4 файла в `Changed Files` существуют.
+- `docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md`: n_valid=32, n_eligible=11 — подтверждено.
+- `docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md`: PF 1.2323, BS_p05 0.887, fill rate 0.0944 — подтверждено.
+- CHANGELOG.md содержит запись `[2026-08-01]` для данного отчёта.
+- CONTEXT_HANDOFF.md консистентен с выводами отчёта.
+- `fill_rate_candidates.csv` покрыт `.gitignore` (глобальное правило `*.csv`).
+
+### Вердикт
+
+- `DIAGNOSTIC_ONLY` — корректен: нет нового winner, cost model incomplete, linkage UNKNOWN.
 
 ---
 
-## Итог
+## Итоговая таблица
 
-Отчёт качественно выполнен, фактологически точен и методологически корректен. Все изменения в коде соответствуют описанию. Timing contract реализован последовательно в Python, MQL5 и документации. LiveUpdate mitigation работает и покрыт тестами. DIAGNOSTIC_ONLY вердикт соблюдён, winner selection не проводился.
-
-Замечания не влияют на корректность выводов отчёта и относятся к уровню документальной полноты.
+| # | Важность | Суть | Статус |
+|---|---|---|---|
+| 1 | важно | Spearman-корреляции и residual вычислены вне кода, не воспроизводимы | требует исправления |
+| 2 | важно | Отсутствует раздел Verification | требует добавления |
+| 3 | важно | Отсутствуют хеши артефактов | требует добавления |
+| 4 | важно | Нет BUY/SELL side-specific breakdown (методология 11) | требует добавления или явного gap |
+| 5 | улучшение | Отсутствует continuation_budget | рекомендуется добавить |
+| 6 | улучшение | Отсутствует yearly decomposition (A5) | рекомендуется добавить или зафиксировать gap |
+| 7 | улучшение | Отсутствует explicit Multiple Testing Context section | рекомендуется вынести |
+| 8 | важно | Опечатки и мусорные символы в строках 112, 120, 122, 140, 143 | требует исправления |
+| 9 | вопрос | "5 FAIL" label не трассируется к артефакту | рекомендуется уточнить формулировку |
+| 10 | улучшение | Отсутствует explicit holdout non-selection confirmation | рекомендуется добавить |
