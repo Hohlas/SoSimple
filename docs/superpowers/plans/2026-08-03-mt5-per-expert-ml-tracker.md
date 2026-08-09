@@ -15,7 +15,7 @@
 
 - **Precondition (closeout-план исполнен)**: `MT5_TrackedTicket` singleton в `lib_ML_Signal.mqh` заменён на `MT5_TRACKED_POSITION` struct + `MT5_TrackedPositions[]` массив + `MT5_TrackedPositionCount`; все `(int)OrderTicket()`/`(int)ticket` касты удалены; `MT5_LogLifecycleForTicket` введён; `force_rerun` skip-override в `run_batch` работает. Перед стартом Tasks 1-N verifier Task P0 проверяет это состояние. Если closeout ещё не закоммичен, **plan BLOCKED** — исполнитель сначала завершает closeout, потом возвращается сюда.
 - **MT5 methodologist contract** (`docs/methodology/13b-mt5-execution-parity.md`):
-  - Compile gate: `0 errors, 0 warnings` (строки 161). Не считать exit-код `wine` verdict-ом.
+  - Compile gate: `0 errors, 0 warnings` (строка 165). Не считать exit-код `wine` verdict-ом (строки 168-170).
   - CSV contract для signal (строки 58) и event (строки 73) — не расширять new колонки без синхронизации Python+MQL5 schema testов (`tests/test_mt5_signal_executor_schema.py:18-24`).
   - Timing contract: `feature_time <= time < feature_available_time <= decision_time` (строки 76-86); `feature_time <= signal_time < feature_available_time <= decision_time <= execution_time` (строки 82-86).
   - Limit-only entries: `BUY_LIMIT`/`SELL_LIMIT` (строки 38-43). otro `entry_type` не допускается.
@@ -28,7 +28,7 @@
 - **Scope ограничение**: `iSignal==5` (`ML_TRADE_TB` в `lib_ML_Signal_TB.mqh`) — **out of scope**. Это отдельный signal lib с собственным CSV (`ml_signals_tb.csv`), не имеет `rule_id` колонки и не читает `mt5_entry_signals.csv`. Покрывается отдельным планом, если потребуется. Данный план работает только с `iSignal==3` (`ML_TRADE`, `MT5_DiagnosticExecutor=true`).
 - **#.csv contract**: `SERVICE.mqh:122-220` (`INPUT_FILE_READ`) читает `#.csv` в `EXP[]`. При `Real=true` в тестере (см. пользователя: «эмулирует live, перебирает все строки») все строки `#.csv` грузятся. `EXP[e].Mgc` — int, генерируется `MAGIC_GENERATOR()` (`SERVICE.mqh:95-100`) из входных параметров + Symbol + Period. План не меняет `#.csv` формат или `INPUT_FILE_READ`; он только прибавляет `\n` строку связи `rule_id ↔ Mgc`.
 - **rule_id ↔ magic binding**: `prepare_mt5_entry_source` (`prepare_mt5_entry_source.py:76`) подставляет `rule_id=run_id` по умолчанию; в `run_mt5_batch.py:142` `rule_id=run_id` где `run_id=make_run_id(cand)=f"{profile}_{model_key}_{horizon}h_thr{threshold_value}"` (строки 46-47). Этот `run_id` — **строка**, не magic. Поэтому мостом `rule_id ↔ Mgc` делаем явную конвенцию: при multi-expert генерации `rule_id=f"mt5_rule_{Mgc}"` (уникальное строковое представление int magic), и в `ML_TRADE` local `rule_id_filter = "mt5_rule_" + (string)Mgc` передаётся аргументом в `MT5_FindEntrySignal`. Сейчас magic в `#.csv` — 16-я колонка (`SERVICE.mqh:178`), читается в `EXP[e].Mgc` (int). Конвенция `rule_id == "mt5_rule_" + IntegerToString(Mgc)` детерминирована и тестируема. Для backcompat без multi-expert: `rule_id_filter = ""` означает «без фильтра» (текущее поведение, выбирает первое совпадение по time) — что сохраняет старые сигналы. **У-4**: global `MT5_RuleIdFilter` не вводится.
-- **Compile OS**: Wine + xvfb-run на Linux, `WINEPREFIX=/home/hohla/.mt5`. Конкретные пути — см. `docs/methodology/13b-mt5-execution-parity.md:146-166`.
+- **Compile OS**: Wine + xvfb-run на Linux, `WINEPREFIX=/home/hohla/.mt5`. Конкретные пути — см. `docs/methodology/13b-mt5-execution-parity.md:150-170`.
 - **Run environment**: `./.venv/bin/python` для всех Python вызовов (AGENTS.md).
 - **Запрет генерировать магические числа с extra prefix**: `MAGIC_GENERATOR` возвращает `MathAbs(int(MagicLong))` (`SERVICE.mqh:99`), int magic. Поэтому `"mt5_rule_" + (string)Mgc` — строка `mt5_rule_163856259` (например). Не использовать `run_id` (с `_`) как rule_id внутри MQL5, если `run_id` содержит запятые/недопустимые символы — MQL5 CSV reader их не поломает (читает по `;`), но проще держать одну конвенцию.
 
@@ -60,7 +60,7 @@ Expected: первая команда возвращает **0 строк** (sin
 
 If **все 4 grep checks прошли** → записать в `docs/reports/2026-08-03-mt5-per-expert-precondition.md` с одной строкой `precondition: OK` и SHA всех проверенных файлов; продолжить Task 1.
 
-If **хотя бы один check failed** → записать тот же файл с `precondition: FAILED` и списком незакрытых пунктов. **STOP**. Сообщить, что план BLOCKED на closeout. Незакрытые пункты указывать по фактическим заголовкам задач closeout-плана `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md` (Tasks 1-9): «Task 1: Static Contract Tests For Audit Findings», «Task 2: Fix POSITION ticket type and order placement gate», «Task 3: Fix side-specific close helpers and clean INPUT», «Task 4: Replace single-ticket diagnostic lifecycle with multi-ticket tracker», «Task 5: Add forced rerun support for reproducible backcompat checks», «Task 6: Compile gate and focused tester checks», «Task 7: Backcompat and multi-position evidence comparison», «Task 8: Correct old plan/report claims», «Task 9: Final closeout report and project state sync». Соответствие grep-check → задача: absence `MT5_TrackedTicket` / наличие struct+массива+`MT5_LogLifecycleForTicket` → Task 4; absence int-кастов ticket → Tasks 2-4; наличие `force_rerun` → Task 5. Не переходить к Task 1.
+If **хотя бы один check failed** → записать тот же файл с `precondition: FAILED` и списком незакрытых пунктов. **STOP**. Сообщить, что план BLOCKED на closeout. Незакрытые пункты указывать по фактическим заголовкам задач closeout-плана `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md` (Tasks 1-9): «Task 1: Static Contract Tests For Audit Findings», «Task 2: Fix POSITION ticket type and order placement gate», «Task 3: Fix side-specific close helpers and clean INPUT», «Task 4: Replace single-ticket diagnostic lifecycle with multi-ticket tracker», «Task 5: Add forced rerun support for reproducible backcompat checks», «Task 6: Compile gate and focused tester checks», «Task 7: Backcompat and multi-position evidence comparison», «Task 8: Correct old plan/report claims», «Task 9: Final closeout report and project state sync». **Внимание**: названия задач приведены по состоянию на коммит closeout-плана; исполнитель сверяет с актуальной версией closeout-плана перед использованием. Соответствие grep-check → задача: absence `MT5_TrackedTicket` / наличие struct+массива+`MT5_LogLifecycleForTicket` → Task 4; absence int-кастов ticket → Tasks 2-4; наличие `force_rerun` → Task 5. Не переходить к Task 1.
 
 - [ ] **Step 3: Commit precondition check**
 
@@ -199,6 +199,8 @@ def test_ml_trade_has_k3_fallback_when_first_find_returns_minus_one() -> None:
     если первый поиск с "mt5_rule_<Mgc>" вернул -1. Это backcompat для
     32 существующих CSV без колонки rule_id (pre-multi-expert era).
     Без этого теста миграция сломала бы legacy single-expert runs без new CSV.
+    Guard !MT5_HasRuleIds гарантирует, что fallback не применяется к новым
+    multi-rule CSV (защита per-expert изоляции).
     """
     text = _text(MQL_SIGNAL_LIB)
     match = re.search(
@@ -208,7 +210,7 @@ def test_ml_trade_has_k3_fallback_when_first_find_returns_minus_one() -> None:
     )
     assert match is not None
     body = match.group("body")
-    # Второй вызов MT5_FindEntrySignal с пустым фильтром ("") после if (mt5_idx < 0):
+    # Второй вызов MT5_FindEntrySignal с пустым фильтром ("") после if (mt5_idx < 0 && !MT5_HasRuleIds):
     # ищем паттерн `MT5_FindEntrySignal(Time[bar], "")` либо `MT5_FindEntrySignal(Time[bar],"")`
     fallback = re.search(
         r"MT5_FindEntrySignal\s*\([^)]*,\s*" + '""' + r"\s*\)",
@@ -216,7 +218,12 @@ def test_ml_trade_has_k3_fallback_when_first_find_returns_minus_one() -> None:
     )
     assert fallback is not None, (
         "К-3: ML_TRADE должен содержать повторный вызов MT5_FindEntrySignal(Time[bar], \"\") "
-        "после if (mt5_idx < 0) — backcompat для старых CSV без колонки rule_id."
+        "после if (mt5_idx < 0 && !MT5_HasRuleIds) — backcompat для старых CSV без колонки rule_id."
+    )
+    # Guard: fallback применяется только когда CSV legacy (без rule_id):
+    assert "MT5_HasRuleIds" in body, (
+        "К-3: ML_TRADE должен проверять MT5_HasRuleIds перед fallback — "
+        "без этого guard эксперт A может взять сигнал эксперта B в multi-rule CSV."
     )
 
 
@@ -392,7 +399,7 @@ git commit -m "feat: prepare_entry_quality_source type-guards rule_id as str"
 ## Task 3: Implement MQL5 per-expert rule_id filter в MT5_FindEntrySignal
 
 **Files:**
-- Modify: `MT/MQL5/Include/lib_ML_Signal.mqh:128-133` (`MT5_FindEntrySignal`), `MT/MQL5/Include/lib_ML_Signal.mqh:758-860` (`EXPERT::ML_TRADE`)
+- Modify: `MT/MQL5/Include/lib_ML_Signal.mqh:207` (`MT5_FindEntrySignal`), `MT/MQL5/Include/lib_ML_Signal.mqh:852-1175` (`EXPERT::ML_TRADE`)
 - Test: `tests/test_mt5_per_expert_ml_tracker_contract.py::test_mt5_find_entry_signal_*`, `::test_ml_trade_sets_rule_id_filter_from_magic_before_find`, `::test_ml_trade_backcompat_when_rule_id_filter_empty`
 
 **Interfaces:**
@@ -411,7 +418,7 @@ Expected: FAIL (regex на двух-аргументную сигнатуру н
 
 - [ ] **Step 2: Rewrite `MT5_FindEntrySignal` в lib_ML_Signal.mqh**
 
-В файле `MT/MQL5/Include/lib_ML_Signal.mqh`, заменить функцию (строки 128-133):
+В файле `MT/MQL5/Include/lib_ML_Signal.mqh`, заменить функцию (строка 207):
 
 Было:
 
@@ -441,7 +448,7 @@ int MT5_FindEntrySignal(datetime barTime, string rule_id_filter) {
 
 - [ ] **Step 3: Rewrite call site в `EXPERT::ML_TRADE` (К-3 fallback)**
 
-В файле `MT/MQL5/Include/lib_ML_Signal.mqh`, заменить вызов в `ML_TRADE` (строки 777-778):
+В файле `MT/MQL5/Include/lib_ML_Signal.mqh`, заменить вызов в `ML_TRADE` (строка 875):
 
 Было:
 
@@ -452,13 +459,18 @@ int MT5_FindEntrySignal(datetime barTime, string rule_id_filter) {
 
 Стало (К-3: fallback с пустым `rule_id_filter` — backcompat для 32 существующих CSV без колонки `rule_id`):
 
+Дополнительно ввести глобальный флаг `bool MT5_HasRuleIds = false;` (рядом с `MT5_RuleIds[]`, строка ~60). В `MT5_ENTRY_INIT` (строка 686) после заполнения `MT5_RuleIds[i]` добавить: `if (rule_id != "") MT5_HasRuleIds = true;`.
+
 ```cpp
       string mt5_rule_filter = "mt5_rule_" + (string)Mgc;
       int mt5_idx = MT5_FindEntrySignal(Time[bar], mt5_rule_filter);
       // К-3: fallback для backcompat — старые CSV (pre-2026-08-03 multi-rule миграции)
-      // не содержат колонку rule_id и MT5_RuleIds[] будет пустым/нулевым →
+      // не содержат колонку rule_id и MT5_HasRuleIds == false →
       // повторный поиск с пустым фильтром (выбирает первый match по barTime, как до миграции).
-      if (mt5_idx < 0) {
+      // ВАЖНО: fallback применяется ТОЛЬКО когда CSV legacy (без rule_id).
+      // Если MT5_HasRuleIds == true (новый multi-rule CSV), fallback не применяется —
+      // это предотвращает cross-expert isolation breach (эксперт A не берёт сигнал эксперта B).
+      if (mt5_idx < 0 && !MT5_HasRuleIds) {
          mt5_idx = MT5_FindEntrySignal(Time[bar], "");
       }
       if (mt5_idx < 0) return;
@@ -466,7 +478,7 @@ int MT5_FindEntrySignal(datetime barTime, string rule_id_filter) {
 
 Замечание: `Mgc` здесь — поле текущего эксперта (`EXP[CurExp].Mgc`), доступно в `EXPERT::ML_TRADE`. `(string)Mgc` конвертирует int magic в строковое десятичное представление, которое сравнивается с `MT5_RuleIds[i]` — массивом строк, заполненным `MT5_ENTRY_INIT` из 5-й колонки CSV (строки 524, 554).
 
-**К-3 backcompat стратегия**: если первый поиск с `"mt5_rule_<Mgc>"` возвращает `-1`, второй — с `""` — для тех же barTime берёт первую запись. Это preserves 32 исторических CSV без `rule_id` колонки (pre-multi-expert era). Консенсус: при multi-expert on CFG, но без multi-rule CSV (legacy signal) → fallback гарантирует, что existing single-expert запуски продолжают работать без перегенерации CSV.
+**К-3 backcompat стратегия**: если первый поиск с `"mt5_rule_<Mgc>"` возвращает `-1`, второй — с `""` — для тех же barTime берёт первую запись. Это preserves 32 исторических CSV без `rule_id` колонки (pre-multi-expert era). Guard `!MT5_HasRuleIds` гарантирует, что fallback НЕ срабатывает для новых multi-rule CSV — это защищает per-expert изоляцию: если эксперт A не имеет сигнала на данном barTime, он не возьмёт сигнал эксперта B.
 
 - [ ] **Step 4: Run static contract tests**
 
@@ -914,7 +926,7 @@ def test_run_mt5_batch_main_has_multi_expert_cli_flag() -> None:
     from ML.baseline import run_mt5_batch
     import inspect
 
-    source = inspect.getsource(run_mt5_batch.parse_args) if hasattr(run_mt5_batch, "parse_args") else ""
+    source = inspect.getsource(run_mt5_batch.build_arg_parser) if hasattr(run_mt5_batch, "build_arg_parser") else ""
     assert "--multi-expert" in source or "--multi-expert" in inspect.getsource(run_mt5_batch.main)
 ```
 
@@ -1205,11 +1217,11 @@ def test_mt5_lifecycle_state_uses_per_magic_lookup() -> None:
     """
     text = _text(MQL_SIGNAL_LIB)
     match = re.search(
-        r"void\s+MT5_LogLifecycleForCurrentState\s*\(\s*int\s+magic\s*,\s*int\s+&ml_close_order_type\s*\)\s*\{(?P<body>.*?)\n\}",
+        r"void\s+MT5_LogLifecycleForCurrentState\s*\(\s*int\s+magic\s*,\s*int\s+&ml_close_order_type\s*,\s*ulong\s+&ml_close_ticket\s*\)\s*\{(?P<body>.*?)\n\}",
         text,
         flags=re.S,
     )
-    assert match is not None, "Сигнатура MT5_LogLifecycleForCurrentState(int magic, int &ml_close) сохранена."
+    assert match is not None, "Сигнатура MT5_LogLifecycleForCurrentState(int magic, int &ml_close, ulong &ml_close_ticket) сохранена."
     body = match.group("body")
     # У-2: тело функции содержит вызов MT5_PerExpertLastPlaced (не только сигнатура):
     assert "MT5_PerExpertLastPlaced" in body, (
@@ -1488,7 +1500,7 @@ void MT5_MarkPendingConsumed(int magic, int idx) {
 
 - [ ] **Step 5: Refactor `ML_TRADE` — убрать прямые singleton пишет, использовать per-expert lookup**
 
-В файле `MT/MQL5/Include/lib_ML_Signal.mqh`, в функции `EXPERT::ML_TRADE()` (строки 758-860), заменить блок «ORDER_PLACED path» (примерные строки 822-855, исполнитель сверяется с фактическим):
+В файле `MT/MQL5/Include/lib_ML_Signal.mqh`, в функции `EXPERT::ML_TRADE()` (строка 852), заменить блок «ORDER_PLACED path» (примерные строки 920-955, исполнитель сверяется с фактическим):
 
 Было (для BUY_LIMIT ветки, аналогично для SELL_LIMIT):
 
@@ -1544,34 +1556,46 @@ void MT5_MarkPendingConsumed(int magic, int idx) {
 
 - [ ] **Step 6: Refactor `MT5_LogLifecycleForCurrentState` — per-magic вместо singleton + К-2 mark consumed**
 
-В файле `MT/MQL5/Include/lib_ML_Signal.mqh`, изменить начало функции `MT5_LogLifecycleForCurrentState` (строки 582-604, executor сверяется с фактическим):
+В файле `MT/MQL5/Include/lib_ML_Signal.mqh`, изменить функцию `MT5_LogLifecycleForCurrentState` (строка 714, executor сверяется с фактическим):
 
-Было (примерная структура post-closeout):
+Было (post-closeout, текущее состояние):
 
 ```cpp
-void MT5_LogLifecycleForCurrentState(int magic, int &ml_close_order_type) {
+void MT5_LogLifecycleForCurrentState(int magic, int &ml_close_order_type, ulong &ml_close_ticket) {
    ml_close_order_type = -1;
+   ml_close_ticket = 0;
 
    if (MT5_LastPlacedIdx >= 0 && MT5_LastPlacedMagic == magic) {
+      ulong filled_ticket = MT5_FindFilledTicketForSignal(magic, MT5_LastPlacedIdx);
       ulong buy_pending = MT5_FindActiveTicket(magic, OP_BUYLIMIT, OP_BUYSTOP);
       ulong sell_pending = MT5_FindActiveTicket(magic, OP_SELLLIMIT, OP_SELLSTOP);
-      ulong buy_market = MT5_FindActiveTicket(magic, OP_BUY, OP_BUY);
-      ulong sell_market = MT5_FindActiveTicket(magic, OP_SELL, OP_SELL);
-      if (buy_market > 0 || sell_market > 0) {
-         MT5_TrackedTicket = (buy_market > 0 ? buy_market : sell_market);
-         // ... дальнейшая логика singleton.
+      if (filled_ticket > 0) {
+         MT5_AddTrackedPosition(filled_ticket, magic, MT5_LastPlacedIdx);
+         MT5_LastPlacedIdx = -1;
+      } else if (buy_pending == 0 && sell_pending == 0 && MT5_LastPlacedExpiry > 0 && TimeCurrent() > MT5_LastPlacedExpiry) {
+         MT5_LogSignalEvent("ORDER_EXPIRED", MT5_LastPlacedIdx, 0, "pending order not active after max_fill_lag_bars");
+         MT5_LastPlacedIdx = -1;
+      } else if (buy_pending == 0 && sell_pending == 0) {
+         MT5_LogSignalEvent("OPEN_FAILED", MT5_LastPlacedIdx, 0, "pending order was not found after ORDER_PLACED");
+         MT5_LastPlacedIdx = -1;
       }
-      // ... else-ветки ORDER_EXPIRED / OPEN_FAILED.
    }
-   // ... остальная логика (OPEN, ML_EVAL, ML_CLOSE, CLOSE) по singleton MT5_TrackedTicket.
+
+   for (int i = 0; i < MT5_TrackedPositionCount; i++) {
+      if (MT5_TrackedPositions[i].magic != magic) continue;
+      int before = MT5_TrackedPositionCount;
+      MT5_LogLifecycleForTicket(i, magic, ml_close_order_type, ml_close_ticket);
+      if (MT5_TrackedPositionCount < before) i--;
+   }
 }
 ```
 
 Стало (per-magic путь, backcompat singleton сохраняется через `MT5_PerExpertLastPlaced`):
 
 ```cpp
-void MT5_LogLifecycleForCurrentState(int magic, int &ml_close_order_type) {
+void MT5_LogLifecycleForCurrentState(int magic, int &ml_close_order_type, ulong &ml_close_ticket) {
    ml_close_order_type = -1;
+   ml_close_ticket = 0;
 
    // Per-expert path: проверяем pending-запись для этого magic.
    int mt5_last_idx = -1;
@@ -1612,7 +1636,9 @@ void MT5_LogLifecycleForCurrentState(int magic, int &ml_close_order_type) {
    for (int tp = 0; tp < MT5_TrackedPositionCount; tp++) {
       if (MT5_TrackedPositions[tp].magic != magic) continue;
       if (MT5_TrackedPositions[tp].ticket == 0) continue;  // К-2: skip pending slots (обработаны выше)
-      MT5_LogLifecycleForTicket(MT5_TrackedPositions[tp].ticket, MT5_TrackedPositions[tp].idx, magic, ml_close_order_type);
+      int before = MT5_TrackedPositionCount;
+      MT5_LogLifecycleForTicket(tp, magic, ml_close_order_type, ml_close_ticket);
+      if (MT5_TrackedPositionCount < before) tp--;
    }
 }
 ```
@@ -1903,13 +1929,13 @@ git commit -m "feat: per-rule reconciliation in parse_mt5_execution_report"
 ## Task 8: Compile gate и multi-expert smoke
 
 **Files:**
-- Run-only: `MT/MQL5/Experts/$o$imple.mq5`, `docs/methodology/13b-mt5-execution-parity.md:146-166`
+- Run-only: `MT/MQL5/Experts/$o$imple.mq5`, `docs/methodology/13b-mt5-execution-parity.md:150-170`
 
 **Interfaces:**
 - Consumes: все MQL5 правки из Tasks 3, 6 + Python правки из Tasks 4, 5, 7. Tester-конфиг из `run_mt5_batch.create_set_file`/`create_ini_file`.
 - Produces: свежий `.ex5` + compile-лог `/tmp/sosimple_mt5_per_expert_compile.log` + smoke-результат.
 
-**Методология**: `docs/methodology/13b-mt5-execution-parity.md:146-166` (компиляция), `161` (`0 errors, 0 warnings`), `164-166` (не считать exit-code wine verdict-ом).
+**Методология**: `docs/methodology/13b-mt5-execution-parity.md:150-170` (компиляция), `165` (`0 errors, 0 warnings`), `168-170` (не считать exit-code wine verdict-ом).
 
 - [ ] **Step 1: Полный pytest-набор для MQL5 + Python контрактов**
 
@@ -1950,7 +1976,7 @@ Run:
 iconv -f UTF-16LE -t UTF-8 /tmp/sosimple_mt5_per_expert_compile.log | tail -n 20
 ```
 
-Expected: строка `Result: 0 errors, 0 warnings` и обновлённый `MT/MQL5/Experts/$o$imple.ex5`. Не считать exit-код `wine` окончательным verdict-ом (13b:164-166).
+Expected: строка `Result: 0 errors, 0 warnings` и обновлённый `MT/MQL5/Experts/$o$imple.ex5`. Не считать exit-код `wine` окончательным verdict-ом (13b:168-170).
 
 - [ ] **Step 4b: Grep-проверка отсутствия регрессии кастов**
 
@@ -2081,7 +2107,7 @@ git commit -m "test: multi-expert smoke for per-rule ml-tracker (0 warnings, 0 u
 Заполняется executorом после прохождения Tasks 1-8. Точки для заполнения:
 - Какие задачи закрыты (по commit SHA).
 - Какие аудиторские замечания требовали fallback в Smoke.
-- Финальный compile result (paste из 13b:161).
+- Финальный compile result (paste из 13b:165).
 - Финальный smoke result (`UNEXPLAINED=0` для обоих rule_id?).
 
 ## Verification
@@ -2101,6 +2127,13 @@ git commit -m "test: multi-expert smoke for per-rule ml-tracker (0 warnings, 0 u
 - `n_rules_in_csv`: 2
 - `CLOSED_TX per rule`: {mt5_rule_<magic_A>: X, mt5_rule_<magic_B>: Y}
 - `overall UNEXPLAINED`: 0
+
+## Conclusions
+
+Исполнитель заполняет после smoke. Стандартные выводы:
+- Per-expert isolation подтверждён: каждый эксперт обрабатывает только строки своего `rule_id`.
+- K-3 fallback работает для legacy CSV (без `rule_id`), не применяется для новых multi-rule CSV.
+- Multi-position tracker корректно работает в per-expert режиме.
 
 ## Limitations
 
@@ -2208,7 +2241,7 @@ git commit -m "docs: close mt5 per-expert ml-tracker plan (DIAGNOSTIC_ONLY)"
 
 - Static contract tests pass: `tests/test_mt5_per_expert_ml_tracker_contract.py` (9+ tests).
 - Existing contract tests pass: `tests/test_mt5_signal_executor_schema.py`, `tests/test_mt5_batch_runtime_contract.py`, `tests/test_parse_mt5_execution_report.py`, `tests/test_mt5_execution_diagnostics.py`.
-- Compile log `/tmp/sosimple_mt5_per_expert_compile.log` показывает `Result: 0 errors, 0 warnings` (13b:161).
+- Compile log `/tmp/sosimple_mt5_per_expert_compile.log` показывает `Result: 0 errors, 0 warnings` (13b:165).
 - Grep checks подтверждают: `(int)OrderTicket()`/`(int)ticket`/`MT5_TrackedTicket` отсутствуют (closeout precondition сохранён).
 - Multi-expert smoke (`--phase smoke-multi-expert --max-positions 1`, магики из эталонного прогона `MAGIC_GENERATOR`, К-6): `per_rule_reconciliation` содержит оба `rule_id` (`mt5_rule_<magic_A>`, `mt5_rule_<magic_B>`), каждый с `CLOSED_TX >= 1` и общим `UNEXPLAINED == 0`, плюс положительный сигнал `metrics["order_counts"]["ORDER_PLACED"] >= 2` (защита от ложного PASS пустого прогона).
 - `parse_mt5_execution_report.py` возвращает `per_rule_reconciliation` key в metrics.json.
@@ -2255,7 +2288,7 @@ git commit -m "docs: close mt5 per-expert ml-tracker plan (DIAGNOSTIC_ONLY)"
 |---|---|---|---|
 | **Task P0** (precondition) | — (нет специализированного файла методологии для «plan precondition») | Grep-аудит `lib_ML_Signal.mqh` / `run_mt5_batch.py` на ключевые маркеры closeout | Все 4 grep checks passed; `docs/reports/2026-08-03-mt5-per-expert-precondition.md` создан с `precondition: OK` |
 | **Tasks 1, 2, 3, 4, 5, 6, 7** (implementation) | `13b-mt5-execution-parity.md` (CSV contract строки 58, 73; timing строки 76-86; limit-only строки 38-43) | Static contract tests через `rg` regex на MQL5 source + Python `pytest` | Все `test_mt5_per_expert_ml_tracker_contract.py` тесты PASS; backcompat `test_mt5_signal_executor_schema.py` / `test_mt5_batch_runtime_contract.py` PASS |
-| **Task 8** (compile + smoke) | `13b-mt5-execution-parity.md` (компиляция строки 146-166; тестер 167-200) | Compile log читается через `iconv`, проверяется `Result: 0 errors, 0 warnings`; smoke через `run_mt5_batch --phase tester --multi-expert` | `Result: 0 errors, 0 warnings`; smoke `UNEXPLAINED=0` для каждого `rule_id` в `per_rule_reconciliation` |
+| **Task 8** (compile + smoke) | `13b-mt5-execution-parity.md` (компиляция строки 150-170; тестер 172-215) | Compile log читается через `iconv`, проверяется `Result: 0 errors, 0 warnings`; smoke через `run_mt5_batch --phase tester --multi-expert` | `Result: 0 errors, 0 warnings`; smoke `UNEXPLAINED=0` для каждого `rule_id` в `per_rule_reconciliation` |
 | **Task 9** (отчёт) | `16-reporting-audit.md` (disclosure fields) | Контракт: отчёт содержит все обязательные поля disclosure; `allowed_max_verdict: DIAGNOSTIC_ONLY` | Отчёт создан, CHANGELOG и CONTEXT_HANDOFF обновлены; `git diff --check` чист |
 
 **Разделы методологии, для которых нет специализированного файла**:

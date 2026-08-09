@@ -1,276 +1,345 @@
-# Аудит отчёта `docs/reports/2026-08-03-mt5-multi-position-closeout.md`
+# Аудит плана `docs/superpowers/plans/2026-08-03-mt5-per-expert-ml-tracker.md`
 
 Дата аудита: 2026-08-08. Файл очищен и заполнен заново по запросу пользователя;
 прежнее содержимое не читалось.
 
-Метод: чтение файлов, rg-поиск, запуск pytest, сверка с git-историей,
-сверка с методикой. Все утверждения проверены по фактическому состоянию
-репозитория (ветка `mt5-execution-loop`, HEAD `e06a187`).
+Метод: чтение файлов, rg-поиск, сверка с git-состоянием, сверка сигнатур функций,
+проверка_cross-ссылок на методологию. Все утверждения проверены по фактическому
+состоянию репозитория (ветка `mt5-execution-loop`, HEAD `e06a187`).
 
 ---
 
 ## Статус: найдены замечания
 
-- 1 критичное
-- 4 важных
-- 3 улучшения
-- 2 вопроса
+- 2 критичных
+- 5 важных
+- 4 улучшения
+- 3 вопроса
 
 ---
 
 ## Критичное
 
-### 1. «Не закоммичены» — фактически все три фикса уже в git
+### 1. `MT5_LogLifecycleForCurrentState` — неверная сигнатура в Task 6
 
 - Важность: **критично**
-- Место: строки 89-104 («Дополнения этапа Full Batch 32×2 ... не закоммичены —
-  решение о коммите остаётся за пользователем») и строки 303-306 (Next Step п.1:
-  «решить судьбу незакоммиченных фиксов ... без них max=1 паритет не
-  воспроизводится»).
-- Суть: отчёт утверждает, что три регрессионных фикса (lib_ML_Signal.mqh,
-  MODIFY()-гейт в ORDERS.mqh, флаг `--only` в run_mt5_batch.py) не закоммичены.
-  Фактически все три присутствуют в коммите `c8dc941` (2026-08-08 08:47):
-  - `lib_ML_Signal.mqh`: +38 строк (ML-закрытия через legacy-семантику,
-    окно привязки fill по expiry ордера, legacy-закрытия при max=1);
-  - `ORDERS.mqh`: +8 строк (MODIFY() читает из legacy BUY/SEL при max=1);
-  - `run_mt5_batch.py`: +18 строк (флаг `--only RUN_ID`).
-  Рабочее дерево чистое (`git diff --stat HEAD` — пусто). После c8dc941
-  есть ещё три коммита (e06a187, 870f3bf, 652b6d2).
-- Доказательство: `git show c8dc941 --stat` (7 файлов, 185 insertions);
-  `git diff --stat HEAD` (пусто); `git log --oneline c8dc941..HEAD` (3 коммита).
-- Почему важно: Next Step п.1 предписывает действие («решить судьбу»), которое
-  уже неактуально. Читатель отчёта может принять неверное решение или
-  продублировать работу.
-- Исправление: удалить фразу «не закоммичены» из строк 89-104, заменить на
-  «закоммичены в `c8dc941`». Next Step п.1 заменить на «коммит `c8dc941`
-  содержит все три фикса; паритет max=1 воспроизводится на HEAD».
+- Место: Task 6 Step 6, строки плана 1552-1617 («Было» и «Стало»)
+- Суть: план показывает функцию с 2 параметрами:
+  `void MT5_LogLifecycleForCurrentState(int magic, int &ml_close_order_type)`.
+  Фактическая сигнатура (post-closeout, коммит `c8dc941`) имеет 3 параметра:
+  `void MT5_LogLifecycleForCurrentState(int magic, int &ml_close_order_type, ulong &ml_close_ticket)`.
+  Если исполнитель скопирует «Стало» дословно — компиляция не пройдёт:
+  вызывающий код `ML_TRADE` передаёт 3 аргумента
+  (`MT5_LogLifecycleForCurrentState(Mgc, mt5_close_order_type, mt5_close_ticket)`,
+  `lib_ML_Signal.mqh:862`), а новая версия функции примет только 2.
+  Аналогично, тест `test_mt5_lifecycle_state_uses_per_magic_lookup` (строка плана
+  1207-1208) использует regex с 2 параметрами — тест упадёт сразу,
+  т.к. regex не совпадёт с реальной сигнатурой.
+- Доказательство: `lib_ML_Signal.mqh:714` — реальная сигнатура с 3 параметрами;
+  `lib_ML_Signal.mqh:862` — вызов с 3 аргументами в `ML_TRADE`.
+- Почему важно: блок «Стало» — центральный код Task 6; исполнитель
+  получит compile error и потратит итерации на отладку.
+- Исправление: во всех вхождениях «Было»/«Стало» Task 6 добавить третий
+  параметр `ulong &ml_close_ticket`. Тест `test_mt5_lifecycle_state_uses_per_magic_lookup`
+  обновить на regex:
+  `r"void\s+MT5_LogLifecycleForCurrentState\s*\(\s*int\s+magic\s*,\s*int\s+&ml_close_order_type\s*,\s*ulong\s+&ml_close_ticket\s*\)\s*\{"`.
+
+### 2. `MT5_LogLifecycleForTicket` вызывается с неверным первым аргументом
+
+- Важность: **критично**
+- Место: Task 6 Step 6, строка плана 1615
+- Суть: план вызывает:
+  `MT5_LogLifecycleForTicket(MT5_TrackedPositions[tp].ticket, MT5_TrackedPositions[tp].idx, magic, ml_close_order_type)`.
+  Первый аргумент — `ulong ticket`. Но реальная сигнатура
+  (`lib_ML_Signal.mqh:492`): `void MT5_LogLifecycleForTicket(int tracked_i, int &ml_close_order_type, ulong &ml_close_ticket)`.
+  Первый параметр — `int tracked_i` (индекс в `MT5_TrackedPositions[]`), а не тикет.
+  Внутри функции: `ulong ticket = MT5_TrackedPositions[tracked_i].ticket;`
+  (`lib_ML_Signal.mqh:493`). Если передать ticket как tracked_i — обращение
+  по индексу = огромному числу → выход за границы массива → crash.
+  Дополнительно: функция имеет 4 параметра (tracked_i, magic, ml_close_order_type,
+  ml_close_ticket), а план передаёт 4 аргумента в другом порядке
+  (ticket, idx, magic, ml_close_order_type) — ни один не совпадает с ожидаемым.
+- Доказательство: `lib_ML_Signal.mqh:492-493` — сигнатура и первое использование
+  параметра.
+- Почему важно: crash в tester-прогоне; multi-expert smoke не пройдёт.
+- Исправление: заменить вызов на:
+  `MT5_LogLifecycleForTicket(tp, magic, ml_close_order_type, ml_close_ticket);`
+  где `tp` — индекс в `MT5_TrackedPositions[]`. Добавить `ml_close_ticket`
+  (4-й параметр), который Task 6 должен propagate-нуть из `ML_TRADE`.
 
 ---
 
 ## Важное
 
-### 2. Методология 13b не обновлена после closeout
+### 3. Строки функций в плане не совпадают с фактическими
 
 - Важность: **важно**
-- Место: `docs/methodology/13b-mt5-execution-parity.md:145-153`
-- Суть: методология утверждает «Multi-position + multi-tester реализованы
-  не до конца: ... lifecycle-логи нескольких одновременных позиций не
-  разделяются». Closeout доказал обратное: `MT5_LogLifecycleForTicket`
-  ведёт per-ticket lifecycle (OPEN/ML_EVAL/ML_CLOSE/CLOSE), swap-remove
-  компакция, привязка fill→signal с окном. 96 metrics.json (32 × 3 режима)
-  все показывают `UNEXPLAINED=0`. Методология не обновлена ни в одном
-  коммите closeout (последнее изменение — `a87f067`, до closeout).
-- Доказательство: `git log --oneline -- docs/methodology/13b-mt5-execution-parity.md`
-  → последний коммит `a87f067` (до closeout); `git show c8dc941 -- docs/methodology/`
-  → пусто.
-- Почему важно: будущий агент, читающий методологию, сделает вывод, что
-  multi-position lifecycle не работает, и может дублировать работу или
-  отклонить корректные результаты.
-- Исправление: обновить строки 145-153 в `13b-mt5-execution-parity.md`:
-  per-ticket lifecycle реализован в closeout 2026-08-03 (multi-ticket tracker,
-  swap-remove, per-ticket OPEN/ML_EVAL/ML_CLOSE/CLOSE); осталось
-  multi-tester (per-expert magic) — план `2026-08-03-mt5-per-expert-ml-tracker.md`.
+- Место: Task 3 (строки плана 395, 414, 444), Task 6 (строки плана 1183, 1369, 1547)
+- Суть: план указывает устаревшие диапазоны строк:
+  - `MT5_FindEntrySignal`: план говорит «строки 128-133», фактически — строка 207;
+  - `ML_TRADE`: план говорит «строки 758-860», фактически — 852-1175;
+  - `MT5_LogLifecycleForCurrentState`: план говорит «строки 582-648», фактически — 714;
+  - `MT5_LogLifecycleForTicket`: план говорит «строки 68-77» для глобальных
+    переменных, фактически — 70-72 (переменные), 89-93 (PosMap).
+  Исполнитель «сверяется с фактическим» (план это предусматривает), но
+  расхождение в ~200 строк повышает риск ошибки.
+- Доказательство: `rg -n "int MT5_FindEntrySignal" MT/MQL5/Include/lib_ML_Signal.mqh`
+  → 207; `rg -n "void EXPERT::ML_TRADE" MT/MQL5/Include/lib_ML_Signal.mqh` → 852.
+- Почему важно: исполнитель может редактировать не тот блок или пропустить
+  зависимости.
+- Исправление: обновить номера строк в плане до фактических.
 
-### 3. Отсутствует секция «Conclusions» — нарушение шаблона методологии 16
+### 4. Ссылки на методологию 13b — сдвиг на 2-5 строк
 
 - Важность: **важно**
-- Место: структура отчёта (после «Limitations» сразу «Split Disclosure»)
-- Суть: методология `16-reporting-audit.md` (строка 27) требует секцию
-  «Conclusions» между «Results» и «Limitations / Open Questions». В отчёте
-  эта секция отсутствует. Split Disclosure и Next Step частично покрывают
-  её функцию, но не заменяют: Conclusions должен явно резюмировать статус
-  этапа, что доказано, что не доказано, и какой вердикт.
-- Доказательство: `docs/methodology/16-reporting-audit.md:18-30` (список
-  обязательных секций); grep «Conclusions» в отчёте → 0 совпадений.
-- Почему важно: следующий агент не находит быстрого резюме статуса;
-  нарушение шаблона снижает воспроизводимость.
-- Исправление: добавить секцию «Conclusions» между «Results» и «Limitations»
-  с явным резюме: (1) closeout закрыл 10/10 пунктов аудита; (2) backcompat
-  max=1 доказан event-level паритетом 32/32; (3) multi-pos механика доказана
-  smoke max=2/16 и full batch max=64; (4) вердикт DIAGNOSTIC_ONLY; (5) что
-  остаётся открытым.
+- Место: Global Constraints (строки плана 18-21), Task 8 (строки плана 1906, 1912, 1936, 1953)
+- Суть: план ссылается на строки методологии `13b-mt5-execution-parity.md`,
+  но номера сдвинуты:
+  - План: «строки 146-166» (компиляция) → фактически 150-170;
+  - План: «строка 161» (0 errors, 0 warnings) → фактически 165;
+  - План: «строки 164-166» (wine exit code) → фактически 168-170.
+- Доказательство: `Read docs/methodology/13b-mt5-execution-parity.md:146-170`.
+- Почему важно: исполнитель будет читать не те строки; в Wine-окружении
+  это критично (неправильная интерпретация compile result).
+- Исправление: обновить номера строк ссылок на методологию.
 
-### 4. Скрипт проверки паритета max=1 не приведён и не воспроизводим
+### 5. «Было» в Task 6 Step 6 содержит уже удалённый `MT5_TrackedTicket`
 
 - Важность: **важно**
-- Место: строки 140-143 («Паритет max=1 vs эталон 2026-07-31 проверялся
-  pandas-скриптом ...»)
-- Суть: ключевой результат отчёта — event-level паритет 32/32 кандидатов
-  max=1 с эталоном 2026-07-31 — проверялся pandas-скриптом, который не
-  приведён в отчёте, не сохранён как файл и не ссылается на артефакт.
-  Методология 16 (строка 97): «Ключевые числа в отчёте сверены со
-  structured artifact. Если structured artifact отсутствует, отчёт обязан
-  содержать команду воспроизведения и hash входов».
-- Доказательство: `rg "pandas" ML/baseline/ tests/` не находит скрипт
-  паритета; отчёт не содержит ни кода, ни команды, ни hash.
-- Почему важно: без скрипта/команды результат не воспроизводим следующим
-  агентом; это центральное доказательство backcompat.
-- Исправление: сохранить скрипт как файл (например,
-  `ML/baseline/verify_max1_parity.py`) и привести команду запуска в отчёте;
-  либо добавить команду воспроизведения inline.
+- Место: Task 6 Step 6, строки плана 1561-1562
+- Суть: блок «Было» показывает код с `MT5_TrackedTicket = (buy_market > 0 ? buy_market : sell_market);`.
+  Переменная `MT5_TrackedTicket` была удалена closeout-планом (коммит `278ab99`):
+  `rg "MT5_TrackedTicket" MT/MQL5/Include/` возвращает пусто. Блок «Было»
+  описывает состояние ДО closeout, а не текущее post-closeout.
+- Доказательство: `rg -n "MT5_TrackedTicket" MT/MQL5/Include/` → пусто;
+  коммит `278ab99` удалил все singleton-переменные.
+- Почему важно: исполнитель не найдёт этот код в файле и потратит время
+  на поиск; может сделать неверный merge.
+- Исправление: переписать «Было» с актуальным post-closeout кодом
+  (per-ticket loop через `MT5_TrackedPositions[]`, без `MT5_TrackedTicket`).
 
-### 5. Audit item 7: цитата строки 158 probe-отчёта может не соответствовать версии
+### 6. K-3 fallback: ложный срабатывание при multi-expert без совпадения magic
 
 - Важность: **важно**
-- Место: строка 50 (audit item 7: «использована точная цитата
-  `docs/reports/2026-08-02-mt5-multi-position-probe.md:158`»)
-- Суть: отчёт утверждает, что audit item 7 использовал точную цитату из
-  строки 158 probe-отчёта. Текущая строка 158 (после коммита `e9f0089`,
-  который изменил probe-отчёт) содержит: ««первый» в списке OrdersTotal(),
-  оказывается снова на тикете 37 (original». Это не цитата, а обрывок
-  предложения. Фраза «blocking gap in multi-position lifecycle coverage»
-  (которая, по отчёту, была заменой) находится на строке 162, а не 158.
-  Аудит проводился на коммите `1351e48`, но probe-отчёт был изменён в
-  `e9f0089` — порядок коммитов требует проверки.
-- Доказательство: `git show e9f0089 -- docs/reports/2026-08-02-mt5-multi-position-probe.md`
-  показывает изменения строк 155-164; текущая строка 158 не содержит
-  самостоятельной цитаты.
-- Почему важно: ссылка на конкретную строку без указания версии коммита
-  может ввести в заблуждение; будущий читатель не найдёт цитату.
-- Исправление: указать SHA коммита probe-отчёта на момент аудита
-  (например, `git show 1351e48:docs/reports/2026-08-02-mt5-multi-position-probe.md | sed -n 158p`)
-  или дать развёрнутую цитату с контекстом.
+- Место: Task 3 Step 3, строки плана 453-469
+- Суть: K-3 fallback: если `MT5_FindEntrySignal(Time[bar], "mt5_rule_<Mgc>")`
+  возвращает -1, повторный вызов с `""` берёт первое совпадение по barTime.
+  Проблема: если CSV содержит `rule_id` колонку, но magic эксперта A не
+  имеет строки на данном barTime (а magic B имеет), fallback снимет фильтр
+  и эксперт A возьмёт сигнал эксперта B. Это нарушает per-expert изоляцию.
+  Сценарий: 2 эксперта, один CSV, на баре T только эксперт B имеет сигнал.
+  Эксперт A: первый поиск → -1 (нет строки с rule_id="mt5_rule_A"),
+  fallback → берёт строку эксперта B. Результат: эксперт A размещает
+  ордер по чужому сигналу.
+- Доказательство: код `MT5_FindEntrySignal` (план, строка 430-439):
+  при `rule_id_filter=""` условие `rule_id_filter != ""` ложно → фильтр
+  не применяется → первый match по time возвращается.
+- Почему важно: нарушение per-expert изоляции — два эксперта могут
+  разместить ордера по одному сигналу.
+- Исправление: в K-3 fallback проверять, содержит ли CSV вообще колонку
+  `rule_id` (например, `MT5_RuleIds[0] == ""` для всех → legacy CSV).
+  Если `MT5_RuleIds` содержит непустые значения → CSV новый, fallback
+  не применять. Альтернатива: добавить флаг `MT5_HasRuleIds` (bool),
+  устанавливаемый в `MT5_ENTRY_INIT` при первом непустом `rule_id`.
+
+### 7. Отчёт-шаблон (Task 9) не содержит секцию «Conclusions»
+
+- Важность: **важно**
+- Место: Task 9 Step 1, строки плана 2058-2139
+- Суть: шаблон отчёта содержит: Context, Implementation Summary,
+  Verification, Results, Limitations, Split Disclosure, Forbidden
+  Interpretations, Next Step, Related Materials. Методология 16
+  (`16-reporting-audit.md:18-30`) требует секцию «Conclusions» между
+  Results и Limitations. В шаблоне она отсутствует.
+- Доказательство: `docs/methodology/16-reporting-audit.md:26` — «Conclusions»
+  в списке обязательных секций; grep «Conclusions» в Task 9 → 0 совпадений.
+- Почему важно: отчёт не будет соответствовать методологии.
+- Исправление: добавить секцию «Conclusions» в шаблон между Results и
+  Limitations.
 
 ---
 
 ## Улучшения
 
-### 6. Структура отчёта отклоняется от шаблона методологии 16
+### 8. Regex для извлечения тела функции — слабый паттерн
 
 - Важность: **улучшение**
-- Место: вся структура отчёта
-- Суть: методология 16 задаёт шаблон: Context → Level → What Was Done →
-  Multiple Testing → Changed Files → Verification → Results → Conclusions →
-  Limitations → Split Disclosure → Next Step → Related Materials. Отчёт
-  использует «Audit Findings Addressed» вместо «What Was Done» и не содержит
-  «Multiple Testing Context» как отдельную секцию (research-first disclosure
-  частично покрывает, но не идентично).
-- Доказательство: сравнение `docs/methodology/16-reporting-audit.md:18-30`
-  и структуры отчёта.
-- Почему важно: отклонение от шаблона снижает единообразие отчётности.
-- Исправление: при следующем обновлении привести структуру в соответствие
-  с шаблоном; «Audit Findings Addressed» можно оставить как подраздел
-  «What Was Done».
+- Место: тесты в Task 1 (строки плана 127-129, 143-145, 157-159, 186-188),
+  Task 6 (строки плана 1207-1209, 1247-1249, 1306-1308, 1333-1335)
+- Суть: regex `r"void\s+FUNC\s*\([^)]*\)\s*\{(?P<body>.*?)\n\}"` с `re.S`
+  ищет первый `\n}` — это может быть закрывающая скобка внутреннего блока
+  (for/if/while), а не функции. Для `ML_TRADE` (~300 строк с множеством
+  вложенных блоков) regex остановится на первом `\n}` внутри функции,
+  не дойдя до реального конца. Тесты будут проверять только верхнюю часть
+  функции.
+- Доказательство: regex `.*?` ленивый + `\n}` матчится на первом же
+  переводе строки с `}` — это стандартное ограничение regex без
+  balanced-matching.
+- Почему важно: тесты могут дать ложный PASS — assertion проверяется
+  только в части тела до первого внутреннего `}`.
+- Исправление: использовать более надёжный парсер (подсчёт скобок) или
+  искать конкретные подстроки без извлечения тела через regex.
 
-### 7. Промежуточные прогоны пилота не пояснены
-
-- Важность: **улучшение**
-- Место: строка 194 («Промежуточные прогоны пилота: 30 → 51 → 89 → 102 сделки»)
-- Суть: число сделок растёт от прогона к прогону (30 → 51 → 89 → 102),
-  но неясно, почему: это разные кандидаты, разные исправления, или
-  накопительный эффект? Читатель не может оценить, является ли финальное
-  число 102 стабильным.
-- Доказательство: отчёт не содержит пояснения; контекст не восстанавливается
-  без дополнительных вопросов.
-- Почему важно: без контекста числовые данные не интерпретируемы.
-- Исправление: добавить пояснение: что за прогоны (какие кандидаты, какие
-  фикса), почему число сделок растёт, какое из чисел является финальным
-  паритетным.
-
-### 8. Не указан статус обновления методологии в Next Step
+### 9. Тест `test_run_mt5_batch_main_has_multi_expert_cli_flag` ссылается на `parse_args`
 
 - Важность: **улучшение**
-- Место: раздел «Next Step» (строки 301-313)
-- Суть: Next Step содержит 4 пункта, но ни один не упоминает обновление
-  методологии 13b (см. замечание 2). Это должно быть явным пунктом,
-  поскольку методология — канонический документ.
-- Доказательство: grep «methodology» в Next Step → 0 совпадений.
-- Почему важно: обновление методологии может быть упущено.
-- Исправление: добавить пункт 5: «Обновить `docs/methodology/13b-mt5-execution-parity.md`
-  (строки 145-153): per-ticket lifecycle реализован, multi-tester остаётся».
+- Место: Task 5 Step 1, строки плана 916-918
+- Суть: тест проверяет `inspect.getsource(run_mt5_batch.parse_args)`,
+  но функция называется `build_arg_parser` (`run_mt5_batch.py:777`).
+  Fallback через `hasattr` не упадёт, но первая ветка всегда пуста.
+  Тест полагается на fallback: `"--multi-expert" in inspect.getsource(run_mt5_batch.main)`.
+- Доказательство: `rg "def parse_args" ML/baseline/run_mt5_batch.py` → пусто;
+  `rg "def build_arg_parser" ML/baseline/run_mt5_batch.py` → 777.
+- Почему важно: тест работает, но первая проверка бессмысленна.
+- Исправление: заменить `parse_args` на `build_arg_parser`.
+
+### 10. `main_multi_expert` не передаёт `ml_close_ticket` в цепочке вызовов
+
+- Важность: **улучшение**
+- Место: Task 5 Step 3, строки плана 996-1095
+- Суть: функция `main_multi_expert` вызывает `materialize_candidate_score_frames`
+  и `export_mt5_entry_signals`, но не передаёт `ml_close_ticket` через цепочку
+  (это MQL5-параметр, не Python). Однако `export_mt5_entry_signals` принимает
+  `rule_metadata` и `run_id` — план их передаёт. Замечание: функция
+  `_runtime_ctx_or_empty()` (строка плана 1086-1094) импортирует `json`,
+  который не импортирован на уровне модуля `run_mt5_batch.py`.
+- Доказательство: `rg "^import json" ML/baseline/run_mt5_batch.py` — проверить;
+  если нет — `NameError` при вызове `_runtime_ctx_or_empty`.
+- Почему важно: `NameError` при первом вызове `_runtime_ctx_or_empty`.
+- Исправление: убедиться, что `import json` есть на уровне модуля, или
+  добавить его в начало `_runtime_ctx_or_empty`.
+
+### 11. Task P0 Step 2: список Tasks closeout-плана — жёстко закодирован
+
+- Важность: **улучшение**
+- Место: Task P0 Step 2, строки плана 63
+- Суть: шаг перечисляет 9 задач closeout-плана по названиям. Если
+  closeout-план был обновлён (а он обновлялся — коммит `c8dc941` добавил
+  Full Batch 32×2), названия могут не совпасть.
+- Доказательство: closeout-план `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md`
+  содержит Tasks 1-9, но нумерация и названия могли измениться.
+- Почему важно: исполнитель не найдёт задачу по названию.
+- Исправление: ссылаться на задачи по номерам, а не по названиям, или
+  добавить «сверить с актуальной версией closeout-плана».
 
 ---
 
 ## Вопросы
 
-### 9. Покрытие iSignal == 5 (ML_TRADE_TB)
+### 12. `MT5_PosMapIds[]` vs `MT5_TrackedPositions[]` — дублирование или нет?
 
 - Важность: **вопрос**
-- Место: строки 251-253 (Limitations)
-- Суть: `iSignal == 5` (`ML_TRADE_TB` в `lib_ML_Signal_TB.mqh`) вне
-  покрытия closeout. Отчёт упоминает отдельный план
-  `2026-08-03-mt5-per-expert-ml-tracker.md`, но не оценивает риски:
-  если `ML_TRADE_TB` используется в production, его multi-pos механика
-  может содержать те же дефекты, что и `ML_TRADE` до closeout.
-- Доказательство: `rg "iSignal.*5\|ML_TRADE_TB" MT/MQL5/` находит
-  `lib_ML_Signal_TB.mqh`; отчёт не содержит анализа.
-- Почему важно: непонятно, требуется ли срочный перенос фиксов на
-  `ML_TRADE_TB` или это допустимо отложить.
-- Рекомендуемое действие: уточнить, используется ли `iSignal == 5` в
-  текущих диагностических прогонов; если да — оценить приоритет.
+- Место: Task 6 Step 3, строки плана 1405-1412
+- Суть: план утверждает «две параллельные структуры» без дублирования:
+  `MT5_PosMapIds[]` для Python-linkage, `MT5_TrackedPositions[]` для
+  lifecycle. Но обе структуры хранят `ticket → idx` mapping. При fill
+  `MT5_AddTrackedPosition` добавляет в `MT5_TrackedPositions[]`, а
+  `MT5_RegisterPosition` — в `MT5_PosMapIds[]`. Если одна из таблиц
+  рассинхронизируется (например, swap-remove в `MT5_TrackedPositions[]`
+  при закрытии), Python-linkage через `MT5_PosMapIds[]` может указать
+  на неверный idx.
+- Доказательство: `lib_ML_Signal.mqh:89-93` — PosMap; `lib_ML_Signal.mqh:73-81` —
+  TrackedPositions. Swap-remove в `MT5_LogLifecycleForTicket` меняет индексы
+  в `MT5_TrackedPositions[]`, но не в `MT5_PosMapIds[]`.
+- Почему важно: рассинхронизация → неверный idx в Python reconciliation.
+- Рекомендуемое действие: проверить, что `MT5_PosMapIds[]` обновляется
+  при swap-remove, или объединить таблицы.
 
-### 10. Превышение лимита позиций (4 BUY при max=2) — план исправления
+### 13. `compile_expert()` — что делает?
 
 - Важность: **вопрос**
-- Место: строки 258-263 (Limitations)
-- Суть: гейт размещения считает только MARKET-позиции, поэтому pending
-  накапливаются и после fill число одновременных позиций превышает
-  `InpMT5_MaxPositions` (наблюдено: 4 BUY при max=2). Отчёт описывает
-  это как «задокументированный контракт гейта (audit V2), а не баг
-  closeout». Однако это означает, что `InpMT5_MaxPositions` не является
-  реальным лимитом — фактический лимит зависит от частоты сигналов и
-  скорости fill.
-- Доказательство: строки 258-263 отчёта; `CountActiveBySide` в
-  `FUNCTIONS.mqh:184` считает только MARKET.
-- Почему важно: если `InpMT5_MaxPositions` не является жёстким лимитом,
-  это может surprise будущего пользователя; также это влияет на
-  интерпретацию результатов multi-pos прогонов.
-- Рекомендуемое действие: зафиксировать в документации, что
-  `InpMT5_MaxPositions` — лимит на MARKET-позиции, а не на pending;
-  оценить, требуется ли учёт pending в гейте.
+- Место: Task 5 Step 3, строки плана 982, 1112
+- Суть: план вызывает `compile_expert()` в smoke-multi-expert и в
+  multi-expert branch. Функция существует (`run_mt5_batch.py:166`), но
+  план не описывает, что она проверяет и какие файлы компилирует.
+  Если `compile_expert` компилирует `$o$imple.mq5` — это тот же путь,
+  что и Task 8 Step 3. Двойная компиляция (в Step 5 и Step 8) —
+  потеря времени.
+- Доказательство: `run_mt5_batch.py:166` — `compile_expert` существует.
+- Почему важно: дублирование компиляции замедляет прогон.
+- Рекомендуемое действие: уточнить, нужна ли компиляция в Task 5 Step 3,
+  если Task 8 Step 3 уже компилирует.
+
+### 14. Multi-expert grouping: `batch_size=2` — почему именно 2?
+
+- Важность: **вопрос**
+- Место: Task 5 Step 3, строки плана 996, 1000-1003
+- Суть: `main_multi_expert` группирует candidates по `batch_size=2`
+  (по умолчанию). При 32 кандидатах это 16 батчей. Каждый батч —
+  отдельный tester-прогон с 2 экспертами. План не объясняет, почему
+  именно 2, а не N экспертов на прогон. MT5 tester поддерживает
+  несколько экспертов одновременно (ExpTotal из `#.csv`).
+- Доказательство: строка плана 996: `batch_size: int = 2`.
+- Почему важно: 16 прогонов × время tester = существенное время;
+  увеличение batch_size сократит число прогонов.
+- Рекомендуемое действие: документировать ограничение или сделать
+  batch_size настраиваемым через CLI.
 
 ---
 
 ## Подтверждённые факты (замечаний нет)
 
-Следующие утверждения отчёта проверены и подтверждены:
+Следующие утверждения плана проверены и подтверждены:
 
-- Все 10 пунктов Audit Findings Addressed содержат доказательства и
-  соответствуют фактическому состоянию кода.
-- Все 8 коммитов closeout (`4b7eddd`, `b1a714d`, `c9563fa`, `278ab99`,
-  `b2d9497`, `9b2c835`, `e9f0089`, `1351e48`) существуют и содержат
-  заявленные изменения.
-- Все структуры и функции MQL5 существуют: `MT5_TRACKED_POSITION`,
-  `MT5_TrackedPositions[]`, `MT5_FindTrackedIndexByTicket`,
-  `MT5_AddTrackedPosition`, `MT5_FindFilledTicketForSignal`,
-  `MT5_LogLifecycleForTicket`, `MT5_LogLifecycleForCurrentState`,
-  `OrderSelectByTicket_MQL4`, `ulong`-перегрузка `OrderSelect_MQL4`,
-  `CountActiveBySide`, `CanPlaceBuyOrder`/`CanPlaceSellOrder`.
-- Singleton-переменные (`MT5_TrackedMagic`, `MT5_TrackedTicket`,
-  `MT5_TrackedIdx`, `MT5_TrackedOpenLogged`) полностью удалены —
-  `rg`-поиск возвращает пусто.
-- `MT5_NO_HI_BOUND = D'2100.01.01 00:00'` и `MT5_LastPlacedExpiry`
-  существуют.
-- History-ветка `OrderSelect_MQL4` ищет по `DEAL_POSITION_ID`
-  (`MQL4Compat.mqh:343`).
-- `MODIFY()` имеет special handling для `MT5_MaxPositions==1`
-  (`ORDERS.mqh:77-93`).
-- `BuyPosCnt` и `CountActiveByType` удалены — `rg`-поиск возвращает пусто.
-- `(int)`-касты ticket удалены — `rg`-поиск возвращает только комментарий.
-- `build_arg_parser()`, `--force-rerun`, `--smoke-only`, `--only`
+- Precondition closeout-плана выполнен: `MT5_TrackedTicket` singleton удалён
+  (grep → пусто), `MT5_TRACKED_POSITION` struct + `MT5_TrackedPositions[]`
+  + `MT5_LogLifecycleForTicket` существуют, `(int)ticket` касты удалены,
+  `force_rerun` в `run_mt5_batch.py` присутствует.
+- `MT5_FindEntrySignal` принимает 1 аргумент (`datetime barTime`) — план
+  корректно описывает текущее состояние и необходимость изменения.
+- `MT5_RuleIds[]` существует (`lib_ML_Signal.mqh:60`), заполняется в
+  `MT5_ENTRY_INIT` (`lib_ML_Signal.mqh:686`).
+- `MT5_AddTrackedPosition(ulong ticket, int magic, int idx)` имеет guard
+  `ticket==0` (`lib_ML_Signal.mqh:113`) — план корректно описывает
+  необходимость нового `MT5_RegisterPendingSignal`.
+- `MT5_LastPlacedIdx/Magic/Expiry` существуют как глобальные переменные
+  (`lib_ML_Signal.mqh:70-72`) — план корректно описывает необходимость
+  per-expert lookup.
+- `Mgc` доступно в `ML_TRADE` как поле `EXPERT_PARENT_CLASS`
+  (`FUNCTIONS.mqh:145`).
+- `prepare_entry_quality_source` имеет параметр `rule_id: str` без type guard —
+  план корректно описывает необходимость guard (Task 2).
+- `make_run_id`, `VAL_FROM`/`VAL_TO`, `build_arg_parser`, `compile_expert`,
+  `materialize_candidate_score_frames`, `SOURCE_ARTIFACT_JSON`, `EQ_SCORES_CSV`
   существуют в `run_mt5_batch.py`.
-- Тесты: 44 passed (4 файла), 15 passed (2 файла) — совпадает с отчётом.
-- Артефакты: все 7 путей существуют; все 96 metrics.json показывают
-  `UNEXPLAINED=0`.
-- Компиляция: лог `/tmp/sosimple_mt5_compile_closeout.log` существует;
-  `git diff --check` возвращает пусто.
-- Research-first disclosure содержит все 8 полей методологии 16.
-- Forbidden Interpretations присутствуют и соответствуют методологии.
-- Split Disclosure корректно разделяет backcompat/multi-pos/full batch.
-- Ссылка на строки 138-141 методологии 13b (CLOSE-ограничения) верна.
-- Числовые данные воронки исполнения внутренне согласованы:
-  2508 + 93 = 2601 (max=1), 23932 + 1171 = 25103 (max=64);
-  93/2601 ≈ 3.6%, 1171/25103 ≈ 4.7%.
-- `set.BUY`/`set.SEL` действительно на строках 13-14 `INPUT.mqh`.
-- План closeout и per-expert план существуют.
+- `--multi-expert`, `main_multi_expert`, `run_smoke_test_multi_expert`
+  НЕ существуют — план корректно описывает необходимость (Tasks 5, 8).
+- `reconcile_positions` существует в `parse_mt5_execution_report.py:63`.
+- `reconcile_positions_per_rule` НЕ существует — план корректно описывает
+  необходимость (Task 7).
+- `main()` в `parse_mt5_execution_report.py` не принимает `argv` — план
+  корректно описывает необходимость изменения (Task 7 Step 5, К-7).
+- `export_mt5_entry_signals` существует с параметрами `rule_metadata`,
+  `run_id`, `label`.
+- `prepare_mt5_multi_expert_source.py` НЕ существует — план корректно
+  описывает необходимость (Task 4).
+- `test_mt5_find_entry_signal_uses_entry_time_only` существует
+  (`test_mt5_signal_executor_schema.py:349-356`) с regex на 1-аргументную
+  сигнатуру — план корректно предсказывает FAIL и адаптацию (Task 3 Step 6).
+- Методология 16: disclosure блок содержит ровно 8 полей, `roadmap_track`
+  НЕ входит в обязательные — план корректно описывает (строка плана 23).
+- `MAGIC_GENERATOR` (`SERVICE.mqh:95-100`), `INPUT_FILE_READ` (122-221),
+  `CHECKSUM` (251) — существуют; magic — 16-я колонка `#.csv` (строка 178).
+- EXP[] цикл на строке 162 `$o$imple.mq5` — подтверждено.
+- `InpMT5_DiagnosticExecutor` default = `false` (строка 75).
+- Event CSV header содержит `rule_id` колонку (`lib_ML_Signal.mqh:379`).
+- `MT5_ML_LogEvent` принимает и записывает `rule_id` (строки 332-398).
+- `tests/test_mt5_execution_diagnostics.py` и `tests/test_mt5_nero_parity.py`
+  существуют.
+- `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md`
+  существует (precondition).
+- `docs/superpowers/roadmap.md` существует.
 
 ---
 
 ## Итог
 
-Отчёт фактически точен по кодовым утверждениям и числовым данным.
-Критичное замечание одно: утверждение «не закоммичены» устарело — все
-фиксы уже в git (коммит `c8dc941`), и Next Step п.1 требует коррекции.
-Важные замечания: методология 13b не обновлена, отсутствует секция
-«Conclusions», скрипт паритета не воспроизводим, ссылка на строку 158
-probe-отчёта может не соответствовать версии.
+План структурно корректен: TDD-подход (failing tests → implementation → commit),
+backcompat-стратегия (K-3 fallback), per-expert изоляция через `rule_id`,
+диагностические ограничения (DIAGNOSTIC_ONLY). Однако содержит 2 критичных
+дефекта в центральном коде Task 6: неверная сигнатура `MT5_LogLifecycleForCurrentState`
+(2 вместо 3 параметров) и неверный вызов `MT5_LogLifecycleForTicket` (ticket
+вместо index). Без исправления этих дефектов исполнитель получит compile error
+и crash в tester. Дополнительно: 5 важных замечаний (устаревшие номера строк,
+сдвиг ссылок на методологию, K-3 fallback с ложным срабатыванием, отсутствие
+«Conclusions» в шаблоне отчёта, «Было» с удалённой переменной).
