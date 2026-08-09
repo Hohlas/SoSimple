@@ -15,6 +15,13 @@
 ```
 ---
 
+## [2026-08-09] — MT5 Per-Expert MQL5 Layer + Signal Timing Diagnostics (DIAGNOSTIC_ONLY, partial)
+- **topics**: `mt5`, `per-expert`, `rule_id`, `timing-diagnostics`, `audit-rework`
+- **summary**: Частичное исполнение плана `docs/superpowers/plans/2026-08-03-mt5-per-expert-ml-tracker.md`: MQL5-слой получил `rule_id`-обработку с fallback на legacy CSV без `rule_id`, per-magic lifecycle helpers и логирование; добавлен диагностический артефакт `signal_timing_check.json` (`checked_signal_files=32`, `bad_files=0`, `contract=feature_time <= time < feature_available_time <= decision_time`, `latency_bars=0`); `docs/superpowers/audit.md` пересмотрен. Python multi-rule generation, `--multi-expert` flag в `run_mt5_batch.py`, per-rule reconciliation и multi-expert smoke остаются открытыми.
+- **artifacts**: `MT/MQL5/Include/lib_ML_Signal.mqh`, `ML/baseline/run_mt5_batch.py` (helper `_json_safe`), `ML/reports/mt5_execution_loop/diagnostics/signal_timing_check.json`, `docs/superpowers/audit.md`
+- **decision**: `DIAGNOSTIC_ONLY`. Precondition-репорт `docs/reports/2026-08-03-mt5-per-expert-precondition.md` не создан; чекбоксы Tasks 1-9 в плане не отмечены. Запись `[2026-08-07]` о «multi-position + per-expert plans deferred» уточнена: per-expert больше не полностью отложен, MQL5-слой закоммичен.
+- **notes**: Файл `signal_timing_check.json` создан как артефакт; код генерации в Python-модулях не обнаружен (ручной/внешний источник). Новый winner не выбирается; `locked_test` не открыт.
+
 ## [2026-08-07] — MT5 Full Batch 32×2: max=1 паритет и мультипозиция max=64 (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-08-03-mt5-multi-position-closeout.md` (раздел «Full Batch 32×2»)
 - **topics**: `mt5`, `multi-position`, `backcompat-parity`, `full-batch`, `diagnostic`

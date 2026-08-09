@@ -16,8 +16,12 @@
 
 ### MT5 entry mechanics / trade-count frozen probe
 
-Status: plan pending. Fill-rate probe completed \u2014 fill rate is NOT the primary
-cause of BATCH_NO_WINNER.
+Status: entry-mechanics probe plan pending. Fill-rate probe completed — fill rate
+is NOT the primary cause of BATCH_NO_WINNER. Per-expert ML tracker plan
+(`docs/superpowers/plans/2026-08-03-mt5-per-expert-ml-tracker.md`) в частичном
+исполнении: MQL5 `rule_id`-обработка с legacy-fallback и per-magic lifecycle
+helpers закоммичены (2026-08-09, `ed2fd9c`), Python multi-rule generation,
+`--multi-expert` flag, per-rule reconciliation и multi-expert smoke открыты.
 
 Current facts:
 
@@ -27,20 +31,33 @@ Current facts:
 - 12.5% residual unexplained (saved artifacts lack per-signal linkage).
 - PF > 1.0 for all 11 eligible candidates; BS_p05 < 1.0 for all.
 - `locked_test` remains unopened.
+- Signal timing diagnostics layer добавлен (2026-08-09, `8c2d9ea`):
+  `ML/reports/mt5_execution_loop/diagnostics/signal_timing_check.json` —
+  `checked_signal_files=32, bad_files=0`, `contract=feature_time <= time <
+  feature_available_time <= decision_time`, `latency_bars=0`. Канонический
+  источник для цитирования timing-проверки.
+- Per-expert MQL5 layer committed (2026-08-09, `ed2fd9c`): `rule_id`
+  обработка в `MT5_FindEntrySignal` с fallback на legacy CSV без `rule_id`,
+  per-magic lifecycle helpers. Precondition-репорт
+  `docs/reports/2026-08-03-mt5-per-expert-precondition.md` не создан;
+  чекбоксы Tasks 1-9 в плане не отмечены.
 
 Next action:
 
-1. Create frozen probe plan targeting entry mechanics / trade-count
+1. Завершить per-expert ML tracker plan (Tasks 1-9): precondition report,
+   Python type guard, multi-rule signal generation, `--multi-expert` flag,
+   per-rule reconciliation, multi-expert smoke, финальная отчётность.
+2. Create frozen probe plan targeting entry mechanics / trade-count
    consolidation:
    - Accept single-position policy as design constraint.
    - Focus on why PF > 1.0 coexists with BS_p05 < 1.0.
    - Use only saved batch artifacts for planning.
    - No MT5 rerun for planning step.
-2. Allowed max verdict for any output: `DIAGNOSTIC_ONLY`.
-3. No threshold, model, profile, side, horizon, entry/exit rule, stop,
+3. Allowed max verdict for any output: `DIAGNOSTIC_ONLY`.
+4. No threshold, model, profile, side, horizon, entry/exit rule, stop,
    spread, cost or PnL convention may be selected from the sole output of
    this stage.
-4. Optionally — use row-level event linkage breakdown to resolve 12.5% residual.
+5. Optionally — use row-level event linkage breakdown to resolve 12.5% residual.
 
 ---
 

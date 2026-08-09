@@ -19,11 +19,13 @@
   `entry_signals.json`.
 - `ML/baseline/run_mt5_batch.py` регенерирует сигналы, запускает MT5 tester и
   собирает `batch_summary.json`; при перехвате запуска MT5 LiveUpdate ждёт
-  завершения обновления и повторяет тот же `.ini`.
+  завершения обновления и повторяет тот же `.ini`. Запись JSON идёт через
+  helper `_json_safe` (фильтрация NaN/Inf → `null`, рекурсивно по dict/list).
 - `ML/baseline/mt5_execution_diagnostics.py` строит read-only diagnostics по
   event logs.
 - `MT/MQL5/Include/lib_ML_Signal.mqh` читает signal CSV, проверяет timing guard
-  и пишет event log.
+  и пишет event log; MQL5-ветка поддерживает `rule_id`-обработку с fallback на
+  legacy CSV без `rule_id` (per-expert слой, 2026-08-09).
 
 ## Timing Contract
 
@@ -74,6 +76,10 @@ feature_time <= signal_time < feature_available_time <= decision_time <= executi
 - `ML/reports/mt5_execution_loop/batch/batch_summary.json`
 - `ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json`
 - `ML/reports/mt5_execution_loop/diagnostics/event_anomalies.csv`
+- `ML/reports/mt5_execution_loop/diagnostics/signal_timing_check.json` —
+  итог сверки timing-контракта по всем signal CSV батча: `checked_signal_files`,
+  `bad_files`, `contract`, `latency_bars`, список путей `files`. Канонический
+  источник для цитирования «32/32 signal CSV проверены без нарушений».
 
 ## Ограничения
 
