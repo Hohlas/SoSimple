@@ -1276,7 +1276,7 @@
       "trades_buy": 8,
       "trades_sell": 8,
       "pf_by_year": {
-        "2021": Infinity,
+        "2021": null,
         "2022": 2.0660642867723302
       },
       "gross_profit_by_year": {

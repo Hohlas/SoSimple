@@ -185,6 +185,7 @@ Exactly one next action: plan the next frozen probe using only current saved bat
 ## Related Materials
 
 - `docs/superpowers/plans/2026-08-01-mt5-execution-hygiene-postbatch.md`
+- `docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md`
 - `docs/reports/2026-07-30-mt5-single-rule-diagnostic-run.md`
 - `docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md`
 - `docs/reports/2026-07-31-mt5-nero-parity.md`

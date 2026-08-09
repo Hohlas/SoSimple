@@ -647,6 +647,16 @@ def compute_metrics_from_events(events_csv: Path, metrics_json: Path) -> dict | 
     }
 
 
+def _json_safe(value):
+    if isinstance(value, float) and (value != value or value in (float("inf"), float("-inf"))):
+        return None
+    if isinstance(value, dict):
+        return {k: _json_safe(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(v) for v in value]
+    return value
+
+
 def aggregate_batch(candidates: list[dict]) -> dict:
     rows = []
     for cand in candidates:
@@ -763,7 +773,9 @@ def aggregate_batch(candidates: list[dict]) -> dict:
 
     summary_path = BATCH_DIR / "batch_summary.json"
     summary_path.parent.mkdir(parents=True, exist_ok=True)
-    summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8")
+    summary_path.write_text(
+    json.dumps(_json_safe(summary), ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8"
+)
     print(f"\nVerdict: {verdict}" + (f" → {winner_id}" if winner_id else ""))
     print(f"Summary written to {summary_path}")
     return summary

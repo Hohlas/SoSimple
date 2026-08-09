@@ -82,7 +82,10 @@ feature_time <= signal_time < feature_available_time <= decision_time <= executi
   участвует в winner selection.
 - `TIMING_VIOLATION` означает, что MQL5 увидел строку signal CSV с нарушением
   timing contract; такая строка не должна размещать ордер.
-- Full batch зависит от MT5/Wine окружения. Если запуск терминала уходит в
-  LiveUpdate, runner должен считать этот tester-run невалидным, дождаться
-  завершения обновления и повторить тот же `.ini`; отсутствие ожидаемого
-  event-файла после успешного запуска остаётся ошибкой runtime verification.
+- Full batch зависит от MT5/Wine окружения. Runner копирует
+  `mt5_entry_signals.csv` в обе директории `MQL5/Files` — терминальную и
+  тестерного агента — до запуска (`run_mt5_batch.py::copy_entry_signal_file`).
+  Если запуск терминала уходит в LiveUpdate, runner должен считать этот
+  tester-run невалидным, дождаться завершения обновления и повторить тот же
+  `.ini`; отсутствие ожидаемого event-файла после успешного запуска остаётся
+  ошибкой runtime verification.
