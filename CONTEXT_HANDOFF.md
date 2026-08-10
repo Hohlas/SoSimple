@@ -46,6 +46,7 @@ MT5 multi-position: closeout-план **исполнен** (2026-08-07):
 - `batch_summary.json`: `status=DIAGNOSTIC_ONLY`, `verdict=BATCH_NO_WINNER`, `n_candidates=32`, `n_valid=32`, `n_eligible=11`, `n_diagnostic_only=16`.
 - `batch_runs`: `total_rows=54078`; `timing_contract.checked_rows=49030`, `violation_rows=0`, `timing_violation_event_count=0`.
 - `reference_runs.timing_contract`: historical copied-timing violations remain (`violation_rows=22510`); treat them as legacy context, not fresh batch evidence.
+- Position-ordinal PnL diagnostic: `ML/reports/mt5_execution_loop/diagnostics/position_ordinal_pnl.json` — PF по ordinal (1, 2, 3, 4, 5+) для 32 кандидатов max=64 пилота, candidate-level bootstrap CI.
 
 ## Do Not Do
 

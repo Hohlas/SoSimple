@@ -17,7 +17,9 @@
 ### MT5 entry mechanics / trade-count frozen probe
 
 Status: entry-mechanics probe plan pending. Fill-rate probe completed — fill rate
-is NOT the primary cause of BATCH_NO_WINNER.
+is NOT the primary cause of BATCH_NO_WINNER. Position-ordinal PnL diagnostic
+completed — PF by ordinal analysis in `position_ordinal_pnl.json` (pending
+result interpretation).
 
 Current facts:
 
