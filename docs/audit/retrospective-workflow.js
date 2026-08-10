@@ -1,7 +1,7 @@
 export const meta = {
   name: 'retrospective-v2',
   description: 'Ретроспектива проекта: fan-out по направлениям исследований. Читает CHANGELOG, группирует отчёты по направлениям, параллельно анализирует каждое направление, синтезирует итоговый документ.',
-  phases: ['Разведка', 'Чтение по направлениям', 'Синтез'],
+  phases: ['Разведка', 'Чтение по направлениям', 'Синтез', 'Верификация'],
 };
 
 // ═══════════════════════════════════════════════════════
@@ -15,6 +15,8 @@ log('Читаю CHANGELOG.md для построения карты направ
 
 const indexRaw = await agent(
   `Прочитай CHANGELOG.md полностью. Выдели направления исследований — группы связанных этапов с общей целью.
+
+Включи ВСЕ этапы с самого начала проекта, а не только избранные месяцы.
 
 Для каждого направления укажи:
 - name: краткое название (2-4 слова)
@@ -44,9 +46,35 @@ const indexRaw = await agent(
 
 let directions;
 try {
-  directions = JSON.parse(indexRaw).directions;
+  let extracted = indexRaw;
+  if (typeof indexRaw === 'object' && indexRaw !== null) {
+    if (indexRaw.content) {
+      extracted = indexRaw.content;
+    } else if (indexRaw.directions) {
+      directions = indexRaw.directions;
+    }
+  }
+
+  if (!directions) {
+    let raw = typeof extracted === 'string' ? extracted : JSON.stringify(extracted);
+    let cleaned = raw.trim();
+    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (_) {
+      const match = cleaned.match(/\{[\s\S]*"directions"[\s\S]*\}/);
+      if (match) {
+        parsed = JSON.parse(match[0]);
+      } else {
+        throw new Error('Could not extract JSON from agent response');
+      }
+    }
+    directions = parsed.directions;
+  }
 } catch (e) {
   log('ОШИБКА: не удалось распарсить JSON от агента разведки. Завершаю.');
+  log('Ответ агента (первые 500 символов): ' + String(indexRaw).slice(0, 500));
   throw new Error('Parse error: ' + e.message);
 }
 
@@ -80,7 +108,7 @@ ${dir.reports.join('\n')}
 Для каждого отчёта извлеки:
 - заголовок
 - дата
-- вердикт (PASS / FAIL / DIAGNOSTIC_ONLY — из header, поле "Вердикт")
+- вердикт (из header, поле "Вердикт" — обычно PASS/FAIL/DIAGNOSTIC_ONLY, но могут встречаться другие значения; указывай как в отчёте)
 - цель этапа (из header, поле "Цель")
 - что сделано (из секции "What Was Done", кратко)
 - метрики с конкретными числами и размером выборки (из секции "Results")
@@ -114,6 +142,9 @@ const analysisBlock = results
 
 await agent(
   `Ты пишешь итоговый документ ретроспективы проекта.
+
+Период документа: с начала проекта по текущий момент.
+Не ограничивай последними месяцами.
 
 Порог успеха: PF ≥ 1.3 на out-of-sample с учётом спреда и проскальзываний,
 подтверждённый bootstrap CI (нижняя граница > 1.0).
@@ -167,3 +198,49 @@ ${analysisBlock}
 );
 
 log('Ретроспектива записана в docs/reports/retrospective.md');
+
+// ═══════════════════════════════════════════════════════
+// Фаза 4: Верификация
+// Агент проверяет факты по первоисточникам.
+// ═══════════════════════════════════════════════════════
+
+phase('Верификация');
+log('Проверяю факты по первоисточникам...');
+
+const correctionsRaw = await agent(
+  `Прочитай docs/reports/retrospective.md. Выбери 10 утверждений
+с конкретными числами (PF, win rate, Spearman, N сделок, BS_p05).
+
+Для каждого:
+1. Найди первоисточник в docs/reports/ (файл отчёта).
+2. Сверь число с первоисточником.
+3. Если число неверное — укажи правильное со ссылкой на файл и строку.
+
+Ответь в формате markdown:
+## Верификация
+
+### Подтверждено (число совпадает)
+- Утверждение — источник: файл, число
+
+### Исправления
+- Секция X: было "PF=8.18" — правильно "PF=8.12" (источник: docs/reports/..., строка Y)
+
+Если все 10 утверждений верны — напиши "Все проверенные факты подтверждены."`,
+  { phase: 'Верификация', label: 'Проверка фактов' }
+);
+
+log('Верификация завершена.');
+
+await agent(
+  `Прочитай docs/reports/retrospective.md.
+Ниже — результаты верификации фактов:
+
+${correctionsRaw}
+
+Если есть исправления — внеси их в docs/reports/retrospective.md через Edit.
+Если все факты подтверждены — не изменяй файл.
+В конце напиши краткий отчёт: сколько фактов проверено, сколько исправлено.`,
+  { phase: 'Верификация', label: 'Применение исправлений' }
+);
+
+log('Верификация и исправления завершены.');
