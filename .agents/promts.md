@@ -85,5 +85,5 @@
 
 
 ```md
-ОЗапусти workflow из скрипта docs/audit/retrospective-workflow.js
+Запусти workflow из скрипта docs/audit/retrospective-workflow.js
 ```
