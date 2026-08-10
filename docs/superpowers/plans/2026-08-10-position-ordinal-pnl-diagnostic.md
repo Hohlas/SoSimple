@@ -24,7 +24,7 @@
 | Раздел | Что даёт |
 |--------|----------|
 | [A5-post-mortem-diagnostics.md](../../methodology/A5-post-mortem-diagnostics.md) | Шаг 1: декомпозиция PnL по категории (ordinal). Шаг 4: проверка ранжирования (монотонность PF по ordinal). |
-| [11-robustness.md](../../methodology/11-robustness.md) | Пункт 3: sequential simulation при ограничении позиций. Пункт 9: block bootstrap для временно зависимых сделок. |
+| [11-robustness.md](../../methodology/11-robustness.md) | Пункт 3: sequential simulation при ограничении позиций. Пункт 9: candidate-level bootstrap (ресэмплинг кандидатов, не block bootstrap — сделки внутри кандидата зависимы, но кандидаты независимы). |
 | [13b-mt5-execution-parity.md](../../methodology/13b-mt5-execution-parity.md) | Описание event log, `open_positions`, `ticket`, OPEN/CLOSE событий. |
 | [16-reporting-audit.md](../../methodology/16-reporting-audit.md) | Сверка отчёт ↔ JSON-артефакт, disclosure ограничений. |
 
@@ -46,7 +46,7 @@
 
 | Файл | Роль |
 |------|------|
-| `statistics/position_ordinal_analysis.py` | Загрузка events, парсинг сделок, вычисление PF по ordinal, bootstrap, вывод JSON |
+| `ML/baseline/position_ordinal_analysis.py` | Загрузка events, парсинг сделок, вычисление PF по ordinal, bootstrap, вывод JSON |
 | `tests/test_position_ordinal_analysis.py` | Unit-тесты парсинга, PF, bootstrap, smoke на реальных данных |
 | `ML/reports/mt5_execution_loop/diagnostics/position_ordinal_pnl.json` | Выходной артефакт |
 
@@ -55,7 +55,7 @@
 ### Task 1: Парсинг сделок из events.csv
 
 **Files:**
-- Create: `statistics/position_ordinal_analysis.py`
+- Create: `ML/baseline/position_ordinal_analysis.py`
 - Create: `tests/test_position_ordinal_analysis.py`
 
 **Interfaces:**
@@ -71,7 +71,7 @@
 ```python
 # tests/test_position_ordinal_analysis.py
 import pytest
-from statistics.position_ordinal_analysis import parse_trades
+from ML.baseline.position_ordinal_analysis import parse_trades
 
 
 def _write_events(path, lines):
@@ -146,12 +146,12 @@ def test_parse_trades_extracts_year_from_open_time(tmp_path):
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `./.venv/bin/python -m pytest tests/test_position_ordinal_analysis.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'statistics.position_ordinal_analysis'`
+Expected: FAIL — `ModuleNotFoundError: No module named 'ML.baseline.position_ordinal_analysis'`
 
 - [ ] **Step 3: Implement parse_trades**
 
 ```python
-# statistics/position_ordinal_analysis.py
+# ML/baseline/position_ordinal_analysis.py
 import csv
 from pathlib import Path
 
@@ -195,7 +195,7 @@ Expected: `5 passed`
 - [ ] **Step 5: Commit**
 
 ```bash
-git add statistics/position_ordinal_analysis.py tests/test_position_ordinal_analysis.py
+git add ML/baseline/position_ordinal_analysis.py tests/test_position_ordinal_analysis.py
 git commit -m "feat: parse trade ordinals from MT5 max=64 events"
 ```
 
@@ -204,7 +204,7 @@ git commit -m "feat: parse trade ordinals from MT5 max=64 events"
 ### Task 2: Вычисление PF по ordinal и по кандидату
 
 **Files:**
-- Modify: `statistics/position_ordinal_analysis.py`
+- Modify: `ML/baseline/position_ordinal_analysis.py`
 - Modify: `tests/test_position_ordinal_analysis.py`
 
 **Interfaces:**
@@ -218,7 +218,7 @@ git commit -m "feat: parse trade ordinals from MT5 max=64 events"
 Добавить в `tests/test_position_ordinal_analysis.py`:
 
 ```python
-from statistics.position_ordinal_analysis import compute_pf, analyze_candidate
+from ML.baseline.position_ordinal_analysis import compute_pf, analyze_candidate
 
 
 def test_compute_pf_basic():
@@ -284,7 +284,7 @@ Expected: FAIL — `ImportError: cannot import name 'compute_pf'`
 
 - [ ] **Step 3: Implement compute_pf and analyze_candidate**
 
-Добавить в `statistics/position_ordinal_analysis.py`:
+Добавить в `ML/baseline/position_ordinal_analysis.py`:
 
 ```python
 def compute_pf(profits):
@@ -321,7 +321,7 @@ Expected: `11 passed` (5 from Task 1 + 6 новых)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add statistics/position_ordinal_analysis.py tests/test_position_ordinal_analysis.py
+git add ML/baseline/position_ordinal_analysis.py tests/test_position_ordinal_analysis.py
 git commit -m "feat: compute PF by position ordinal per candidate"
 ```
 
@@ -330,7 +330,7 @@ git commit -m "feat: compute PF by position ordinal per candidate"
 ### Task 3: Агрегация, bootstrap и JSON-артефакт
 
 **Files:**
-- Modify: `statistics/position_ordinal_analysis.py`
+- Modify: `ML/baseline/position_ordinal_analysis.py`
 - Modify: `tests/test_position_ordinal_analysis.py`
 
 **Interfaces:**
@@ -346,7 +346,7 @@ git commit -m "feat: compute PF by position ordinal per candidate"
 
 ```python
 import json
-from statistics.position_ordinal_analysis import (
+from ML.baseline.position_ordinal_analysis import (
     load_all_candidates,
     aggregate_and_bootstrap,
     run,
@@ -416,7 +416,7 @@ Expected: FAIL — `ImportError`
 
 - [ ] **Step 3: Implement load_all_candidates, aggregate_and_bootstrap, run**
 
-Добавить в `statistics/position_ordinal_analysis.py`:
+Добавить в `ML/baseline/position_ordinal_analysis.py`:
 
 ```python
 import json
@@ -552,7 +552,7 @@ Expected: `14 passed`
 
 - [ ] **Step 5: Smoke test на реальных данных**
 
-Run: `./.venv/bin/python -m statistics.position_ordinal_analysis`
+Run: `./.venv/bin/python -m ML.baseline.position_ordinal_analysis`
 Expected: `Wrote ML/reports/mt5_execution_loop/diagnostics/position_ordinal_pnl.json`
 
 Проверить структуру:
@@ -572,7 +572,7 @@ for k in sorted(d['aggregated'].keys()):
 - [ ] **Step 6: Commit**
 
 ```bash
-git add statistics/position_ordinal_analysis.py tests/test_position_ordinal_analysis.py ML/reports/mt5_execution_loop/diagnostics/position_ordinal_pnl.json
+git add ML/baseline/position_ordinal_analysis.py tests/test_position_ordinal_analysis.py ML/reports/mt5_execution_loop/diagnostics/position_ordinal_pnl.json
 git commit -m "feat: position-ordinal PnL diagnostic with bootstrap CI"
 ```
 
