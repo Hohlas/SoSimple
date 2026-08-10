@@ -1,5 +1,13 @@
+import json
 import pytest
-from ML.baseline.position_ordinal_analysis import parse_trades, compute_pf, analyze_candidate
+from ML.baseline.position_ordinal_analysis import (
+    parse_trades,
+    compute_pf,
+    analyze_candidate,
+    load_all_candidates,
+    aggregate_and_bootstrap,
+    run,
+)
 
 
 def _write_events(path, lines):
@@ -125,3 +133,59 @@ def test_analyze_candidate_empty():
     result = analyze_candidate([])
     assert result["n_trades"] == 0
     assert result["by_ordinal"] == {}
+
+
+def test_load_all_candidates(tmp_path):
+    for name in ["cand_a", "cand_b"]:
+        d = tmp_path / name
+        d.mkdir()
+        p = d / "events.csv"
+        header = "event;time;ticket;side;profit;open_positions"
+        p.write_text(header + "\n"
+            "OPEN;2021.01.04 11:00;1;SELL;0.0;1\n"
+            "CLOSE;2021.01.04 15:00;1;SELL;50.0;0\n")
+    result = load_all_candidates(str(tmp_path))
+    assert set(result.keys()) == {"cand_a", "cand_b"}
+    assert len(result["cand_a"]) == 1
+    assert result["cand_a"][0]["ordinal"] == 1
+
+
+def test_aggregate_and_bootstrap_structure():
+    all_trades = {
+        "cand_a": [
+            {"ticket": "1", "side": "SELL", "ordinal": 1, "profit": 100.0, "year": 2021},
+            {"ticket": "2", "side": "SELL", "ordinal": 1, "profit": -50.0, "year": 2022},
+            {"ticket": "3", "side": "BUY", "ordinal": 2, "profit": -80.0, "year": 2021},
+        ],
+        "cand_b": [
+            {"ticket": "4", "side": "SELL", "ordinal": 1, "profit": -30.0, "year": 2021},
+            {"ticket": "5", "side": "BUY", "ordinal": 2, "profit": 200.0, "year": 2022},
+        ],
+    }
+    result = aggregate_and_bootstrap(all_trades, n_bootstrap=100, seed=42)
+    assert "aggregated" in result
+    assert "1" in result["aggregated"]
+    assert "ci_lower" in result["aggregated"]["1"]
+    assert "ci_upper" in result["aggregated"]["1"]
+    assert result["n_candidates"] == 2
+    assert result["n_total_trades"] == 5
+    assert result["bootstrap_config"]["n_bootstrap"] == 100
+    assert "by_ordinal_by_year" in result
+    assert "2021" in result["by_ordinal_by_year"]["1"]
+    assert "2022" in result["by_ordinal_by_year"]["1"]
+    assert result["by_ordinal_by_year"]["1"]["2021"]["n"] == 2
+
+
+def test_run_produces_json(tmp_path):
+    cand_dir = tmp_path / "data" / "cand_x"
+    cand_dir.mkdir(parents=True)
+    header = "event;time;ticket;side;profit;open_positions"
+    (cand_dir / "events.csv").write_text(header + "\n"
+        "OPEN;2021.01.04 11:00;1;SELL;0.0;1\n"
+        "CLOSE;2021.01.04 15:00;1;SELL;100.0;0\n")
+    out = tmp_path / "out.json"
+    run(str(tmp_path / "data"), str(out))
+    assert out.exists()
+    data = json.loads(out.read_text())
+    assert "aggregated" in data
+    assert data["n_candidates"] == 1
