@@ -1,6 +1,6 @@
 # Ретроспектива проекта SoSimple
 
-> Период: апрель 2026 -- август 2026
+> Период: июль 2025 -- август 2026
 > Дата формирования: август 2026
 > Порог успеха: PF >= 1.3 на out-of-sample с учётом спреда и проскальзываний,
 > подтверждённый bootstrap CI (нижняя граница > 1.0)
@@ -268,6 +268,57 @@
 
 **Итог:** MT5-контур построен и работает для диагностики. Batch из 32 кандидатов не дал ни одного с BS_p05 > 1.0. Fill-rate probe показал, что 99.2% OPEN_FAILED -- single-position policy, не broker no-fill. Position-ordinal PnL показал non-monotonic pattern (ordinal 1: PF=1.013, ordinal 3: PF=0.854, ordinal 5+: PF=3.205).
 
+### 2.16 Early ML baselines and architecture selection (февраль--март 2026)
+
+**Цель:** определить базовую архитектуру нейросети и режим обучения для предсказания фрактальных признаков.
+
+**Гипотеза:** deep learning модели (Transformer, BiLSTM, CNN1D, Hybrid) извлекут торговый сигнал из последовательности фракталов.
+
+| Этап | Вердикт | Метрики |
+|------|---------|---------|
+| Baseline ML (02-18) | COMPLETED | 5 baselines: Dummy, LogReg, RF, XGBoost, LightGBM |
+| Regression mode (02-23) | COMPLETED | HuberLoss, pearson_r early stopping |
+| Optuna HPO (02-25) | COMPLETED | Classification (macro F1) + regression (pearson_r) |
+| Architecture comparison -- classification (02-27) | COMPLETED | Transformer Macro F1=0.577, но F1(-1)=0.41, F1(1)=0.38 |
+| Architecture comparison -- regression (02-27) | COMPLETED | BiLSTM Pearson r=0.324, Transformer r=0.114 |
+| Class imbalance trap (02-27) | COMPLETED | Macro F1=0.57 обманчив: F1(0)=0.95, F1(+-1)=0.35 |
+| Project audit (03-10) | COMPLETED | DirAcc=97.5% -- артефакт abs(target), не leakage |
+| Reproducibility (03-11) | COMPLETED | Seed stability: max diff=0.00000, std=0.00228 |
+| Optuna BiLSTM regression (03-12) | COMPLETED | Pearson r: 0.323 -> 0.342 |
+| Ablation study (03-12) | COMPLETED | seq_len=20 оптимально (r=0.328 vs 0.324 при 100) |
+| Feature engineering (03-12) | FAIL | 16 признаков, PF=0.59 |
+| Custom trading loss (03-16) | COMPLETED | Asymmetric loss не помог: "основной лимит -- в слабых признаках" |
+| Up/Dn targets (03-18) | COMPLETED | direction-independent таргеты up_12..dn_48 |
+| Multi-task regression (03-19) | COMPLETED | Transformer r=0.427; up_12=0.502, dn_12=0.538 |
+| OOS evaluation + threshold (03-19) | COMPLETED | H12 PF=4.50 (val), θ=2.665 |
+| Threshold analysis H12/H24/H48 (03-19) | COMPLETED | H12 PF=2.95, H24 PF=2.34, H48 PF=1.98 (val) |
+| Phase B.1: 3H/6H targets (03-31) | FAIL | Pearson r: 0.433->0.565 (+30%), но PF: 1.20->0.87 |
+| Directional asymmetric loss (03-31) | FAIL | α=2.5: PF=1.04; α=5.0: PF=0.97 (убыточно) |
+| ATR-index bugfix (03-31) | COMPLETED | PF восстановлен 1.24 после исправления сдвига индекса |
+
+**Итог:** Фундаментальный этап: определена оптимальная архитектура (Transformer/BiLSTM), оптимальная длина последовательности (seq_len=20), режим регрессии (HuberLoss, Up/Dn targets). Pearson r вырос с 0.11 (Transformer regression) до 0.43 (Transformer regression_updn). Threshold analysis на validation дал PF=2.95 (H12), но это Python MFE-based метрика без SL/TP. Feature engineering (11->16 признаков) не поднял PF выше 0.59 в регрессии. Directional asymmetric loss провален. Class imbalance: Macro F1 обманчив при 95% neutral.
+
+### 2.17 MT4 integration and Strategy Tester diagnostics (март 2026)
+
+**Цель:** подключить ML-модель к MT4 Strategy Tester и оценить реальную торговую прибыльность.
+
+**Гипотеза:** Python OOS PF=4.50 транслируется в прибыльную MT4-систему с PF > 1.3.
+
+| Этап | Вердикт | Метрики |
+|------|---------|---------|
+| MT4<->ML integration (03-20) | PASS | Файловый обмен, 58540 signals loaded |
+| Conformal Prediction (03-20) | COMPLETED | Не добавляет ценности при θ=2.665 |
+| MT4 Strategy Tester debug (03-21) | COMPLETED | WR~46%, PF<1 при R:R=1:1 |
+| Asymmetric R:R diagnostics (03-22) | DIAGNOSTIC_ONLY | Python PF=4.50 vs MT4 PF<1: look-ahead bias + position blocking 51.3% |
+| signal_tracer v2.0 (03-24) | COMPLETED | MFE/MAE иллюзия: 33 сделки -- Python TP, MT4 SL |
+| Per-row updn denorm (03-25) | COMPLETED | Исправлена классификация TP/SL/TIMEOUT |
+| 922-trade analysis (03-26) | DIAGNOSTIC_ONLY | PF(SL/TP)=0.53; ratio>4.5 -- убыточная зона |
+| Trailing stop + optimization (03-23) | PASS | WR: 34.55%->54.07%; лучший PF=1.03, 922 сделки |
+| Triple Barrier classification (03-23) | COMPLETED | Val AUC=0.717, transfer learning обязателен |
+| EA optimization Phase A (03-27) | PASS | PF: 0.53->1.23; ML_MaxRatio=4.5 |
+
+**Итог:** Ключевой разрыв: Python OOS PF=4.50 (MFE-based, без SL/TP) vs MT4 PF=0.53 (фиксированные SL/TP). Причины: (1) look-ahead bias в Python -- считает сырые экскурсии без учёта SL/TP, (2) position blocking -- 51.3% сигналов теряются из-за уже открытой позиции, (3) MFE/MAE иллюзия -- Python видит TP достижимым, MT4 выбивает SL первым. Trailing stop поднял WR с 34.55% до 54.07%. EA-оптимизация подняла PF до 1.23, но это ниже порога 1.3. Conformal Prediction не добавил ценности при агрессивном θ.
+
 ---
 
 ## 3. Что работает
@@ -369,9 +420,23 @@
 - **Числа:** ни одно не прошло validation floor + yearly stability
 - **Почему:** close-at-12h labels не повторяют реальную MT4 execution.
 
+### 4.9 Raw regression baseline (февраль--март 2026)
+
+- **Что пробовали:** 4 архитектуры (BiLSTM, CNN1D, Transformer, Hybrid), Optuna HPO, feature engineering (11->16 признаков), custom asymmetric loss, ablation seq_len
+- **Числа:** лучшая regression Pearson r=0.324 (BiLSTM), PF=0.59 при threshold analysis; feature engineering не поднял PF выше 0.59; Optuna поднял r с 0.323 до 0.342
+- **Почему:** сырые фрактальные признаки (11 features, 100-барные последовательности) слишком шумны для прямого предсказания. Переход к Up/Dn targets (direction-independent) поднял r до 0.427, но это всё ещё regression, не торговля.
+
+### 4.10 Python-to-MT4 performance gap (март 2026)
+
+- **Что пробовали:** threshold analysis на OOS (PF=4.50), интеграция с MT4 Strategy Tester, trailing stop, EA-оптимизация
+- **Числа:** Python PF=4.50 (MFE-based) vs MT4 PF=0.53 (SL/TP fixed); после trailing stop + оптимизации -- PF=1.03--1.23
+- **Почему:** три структурных разрыва: (1) Python считает сырые экскурсии без SL/TP, MT4 -- фиксированные уровни; (2) position blocking теряет 51.3% сигналов; (3) MFE/MAE иллюзия -- Python видит TP достижимым, MT4 выбивает SL первым (33 сделки из 922).
+
 ---
 
 ## 5. Эволюция понимания
+
+**Февраль--март 2026:** Проект начинался с raw regression на 11 признаках (BiLSTM Pearson r=0.324, PF=0.59). Ключевые находки: (1) DirAcc=97.5% -- артефакт abs(target), не реальный сигнал; (2) Macro F1=0.57 обманчив при 95% neutral классе; (3) seq_len=20 оптимально -- "старые" данные шум; (4) Up/Dn direction-independent таргеты подняли r с 0.32 до 0.43. Переход к MT4 Strategy Tester выявил структурный разрыв: Python PF=4.50 vs MT4 PF=0.53 из-за look-ahead bias, position blocking (51.3%) и MFE/MAE иллюзии. Trailing stop + EA-оптимизация подняли MT4 PF до 1.23, но ниже порога 1.3. Это определило вектор апреля: нужен не regression target, а торговый контур с правильной механикой исполнения.
 
 **Апрель 2026:** Проект начинался с гипотезы "слабый положительный drift" (Variant 2). Signal Path Atlas совершил парадигмальный сдвиг: медианный сигнал -- монетка (возврат -0.064 ATR за 12 баров). Двумодальная структура: 64% провал, 36% плоский drift. Задача переформулирована: от "как войти" к "какие сигналы торговать".
 
@@ -385,14 +450,19 @@
 
 **Главные изменения убеждений:**
 
-1. "Слабый drift" -> "монетка на медиане" (Atlas Readout, апрель)
-2. "Direction из фракталов" -> "только amplitude, не direction" (май--июль)
-3. "Regression target" -> "binary take/skip лучше" (апрель)
-4. "Pullback entry" -> "механика, не архетип" (Atlas Readout)
-5. "ATR квартили" -> "нестационарны, не использовать" (Variant 3 Prep)
-6. "Time-only edge" -> "возможно режимный эффект, не фрактальный сигнал" (rich entry normalized rerun)
-7. "Structural fields" -> "time_only доминирует" (Stage 5.1 ablation)
-8. "H12 price action" -> "range_w1_atr -- артефакт" (Stage 6.2 postmortem)
+1. "Raw regression" -> "Up/Dn direction-independent targets" (март, ME-6/ME-8)
+2. "Python PF=4.50" -> "MT4 PF=0.53: execution gap, не сила модели" (март, ME-13)
+3. "Macro F1" -> "обманчив при 95% neutral" (февраль, class imbalance trap)
+4. "DirAcc=97.5%" -> "артефакт abs(target), не реальный сигнал" (март, audit)
+5. "seq_len=100" -> "seq_len=20 оптимально, старые данные -- шум" (март, ablation)
+6. "Слабый drift" -> "монетка на медиане" (Atlas Readout, апрель)
+7. "Direction из фракталов" -> "только amplitude, не direction" (май--июль)
+8. "Regression target" -> "binary take/skip лучше" (апрель)
+9. "Pullback entry" -> "механика, не архетип" (Atlas Readout)
+10. "ATR квартили" -> "нестационарны, не использовать" (Variant 3 Prep)
+11. "Time-only edge" -> "возможно режимный эффект, не фрактальный сигнал" (rich entry normalized rerun)
+12. "Structural fields" -> "time_only доминирует" (Stage 5.1 ablation)
+13. "H12 price action" -> "range_w1_atr -- артефакт" (Stage 6.2 postmortem)
 
 ---
 
@@ -519,4 +589,4 @@
 
 ---
 
-*Документ сформирован на основе 100+ отчётов в `docs/reports/`, wiki-страниц в `wiki/research/`, roadmap и CONTEXT_HANDOFF.md.*
+*Документ сформирован на основе 100+ отчётов в `docs/reports/` и `ML/reports/`, записей CHANGELOG.md за июль 2025 -- август 2026, wiki-страниц в `wiki/research/`, roadmap и CONTEXT_HANDOFF.md.*
