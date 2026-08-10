@@ -2,10 +2,10 @@
 
 ## Current Active State
 
-- active track: `MT5 entry mechanics / trade-count frozen probe` + частичное исполнение `MT5 per-expert ML tracker` (MQL5 + fallback)
+- active track: `MT5 entry mechanics / trade-count frozen probe` + `MT5 per-magic signal multiplexing` (plan pending)
 - latest report: `docs/reports/2026-08-03-mt5-multi-position-closeout.md`
 - latest plan (fill-rate, closed): `docs/superpowers/plans/2026-08-01-mt5-saved-batch-fill-rate-probe.md`
-- latest plan (per-expert, in progress): `docs/superpowers/plans/2026-08-03-mt5-per-expert-ml-tracker.md`
+- latest plan (per-magic multiplexing, pending): `docs/superpowers/plans/2026-08-03-mt5-per-magic-multiplexing.md`
 - latest spec: `docs/superpowers/specs/2026-08-01-mt5-diagnostic-timing-contract-design.md`
 - batch summary: `ML/reports/mt5_execution_loop/batch/batch_summary.json`
 - event diagnostics: `ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json`
@@ -29,11 +29,11 @@ MT5 diagnostic timing contract continues as `DIAGNOSTIC_ONLY`.
 - Default mode remains `latency_bars=0`; positive latency is diagnostic-only export mode and must not enter winner selection.
 - MT5 LiveUpdate startup interception is now handled in `run_mt5_batch.py`: the runner detects `LiveUpdate start ... /config:<ini>`, waits for update completion, settles briefly, then retries the same tester `.ini`.
 
-MT5 multi-position: closeout-план **исполнен** (2026-08-07); per-expert tracker — в частичном исполнении (2026-08-09):
+MT5 multi-position: closeout-план **исполнен** (2026-08-07); per-magic signal multiplexing — следующий pending-план:
 
 - `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md` — multi-position lifecycle tracking. **Исполнен**: диагностический слой переведён на массив tracked tickets (`MT5_TrackedPositions[]`), compile gate `0 errors, 0 warnings`, smoke max=1/2/16 с `UNEXPLAINED=0` и без нарушений timing-контракта. Отчёт: `docs/reports/2026-08-03-mt5-multi-position-closeout.md` (вердикт `DIAGNOSTIC_ONLY`). Дополнено 2026-08-07: **Full Batch 32×2** — max=1 паритет с эталоном 31.07 на уровне сделок 32/32; max=64 исполняет ~9.6× больше размещений, все позиции закрыты, `UNEXPLAINED=0`; артефакты в `ML/reports/mt5_execution_loop/multipos_pilot/{reference,max1,max64}/`. Регрессионные фиксы (`lib_ML_Signal.mqh`, `ORDERS.mqh`, `--only` раннера) не закоммичены.
-- `docs/superpowers/plans/2026-08-03-mt5-per-expert-ml-tracker.md` — per-expert `rule_id` filter + multi-expert smoke. **Частично исполнен** (коммиты `ed2fd9c`, `8c2d9ea` от 2026-08-09): MQL5-слой получил `rule_id`-обработку в `MT5_FindEntrySignal` с fallback на legacy CSV без `rule_id`, per-magic lifecycle helpers и логирование; `docs/superpowers/audit.md` переработан. Precondition-репорт `docs/reports/2026-08-03-mt5-per-expert-precondition.md` **не создан**; чекбоксы Tasks 1-9 в плане не отмечены; Python multi-rule generation, `--multi-expert` flag в `run_mt5_batch.py`, per-rule reconciliation и multi-expert smoke остаются открытыми.
-- Order management refactor (`POSITION_TRACKER Pos[]`) уже исполнен (отчёт `docs/reports/2026-08-02-mt5-multi-position-probe.md`, вердикт `DIAGNOSTIC_ONLY — BLOCKED на диагностическом слое`); блокер закрыт closeout-планом. Побочный фикс per-expert `Pos[]` — коммит `b1a714d` (`FUNCTIONS.mqh`, `EXPERT_PARENT_CLASS`).
+- `docs/superpowers/plans/2026-08-03-mt5-per-magic-multiplexing.md` — per-magic signal multiplexing внутри одного эксперта на одном графике (цикл `EXP[e]`, `ExpTotal>1`): `MT5_FindEntrySignal(barTime, rule_id_filter)` с локальным `rule_id_filter = "mt5_rule_" + IntegerToString(Mgc)` в `ML_TRADE`, multi-algo signal generation в `run_mt5_batch.py` через флаг `--multi-algo`, `(magic, rule_id)`-группировка в reconciliation. **Pending**: план написан, исполнение не начато; зависит от closeout-плана (исполнен).
+- Order management refactor (`POSITION_TRACKER Pos[]`) уже исполнен (отчёт `docs/reports/2026-08-02-mt5-multi-position-probe.md`, вердикт `DIAGNOSTIC_ONLY — BLOCKED на диагностическом слое`); блокер закрыт closeout-планом. Побочный фикс per-magic `Pos[]` — коммит `b1a714d` (`FUNCTIONS.mqh`, `EXPERT_PARENT_CLASS`).
 - Ограничение зафиксировано в `docs/methodology/13b-mt5-execution-parity.md` → секция «Ограничения прототипа». Single-expert диагностические прогоны работают корректно; `InpMT5_MaxPositions=1` остаётся каноническим режимом.
 
 ## Current Diagnostic Facts
@@ -41,7 +41,7 @@ MT5 multi-position: closeout-план **исполнен** (2026-08-07); per-exp
 - 32/32 regenerated `entry_signals.json` files contain `timing_contract` and `latency_bars=0`.
 - Signal timing verification: `checked_signal_files=32`, `bad_files=0`.
 - Signal timing diagnostics artifact: `ML/reports/mt5_execution_loop/diagnostics/signal_timing_check.json` (added 2026-08-09) — `checked_signal_files=32`, `bad_files=0`, `contract=feature_time <= time < feature_available_time <= decision_time`, `latency_bars=0`, 32 entry-signals paths listed. Канонический источник для цитирования timing-проверки (вместо строки в `batch_summary.json`).
-- Per-expert MQL5 progress (2026-08-09): `rule_id`-обработка в `MT5_FindEntrySignal` с legacy-CSV fallback, per-magic lifecycle helpers и логирование закоммичены (`ed2fd9c`); `audit.md` пересмотрен (`ed2fd9c`, `8c2d9ea`).
+- Per-magic multiplexing plan (2026-08-09): `docs/superpowers/plans/2026-08-03-mt5-per-magic-multiplexing.md` написан, pending. MQL5 `lib_ML_Signal.mqh` уже содержит `rule_id`-обработку и per-magic lifecycle helpers (коммит `ed2fd9c`); `audit.md` пересмотрен (`ed2fd9c`, `8c2d9ea`).
 - MetaEditor compile log: `Result: 0 errors, 0 warnings`.
 - Smoke tester: passed with `UNEXPLAINED=0`.
 - Initial full batch runtime was `UNKNOWN`: MT5 LiveUpdate intercepted 30/32 tester launches, producing process exit code 0 without Strategy Tester event files.

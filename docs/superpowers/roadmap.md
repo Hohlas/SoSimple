@@ -17,11 +17,12 @@
 ### MT5 entry mechanics / trade-count frozen probe
 
 Status: entry-mechanics probe plan pending. Fill-rate probe completed — fill rate
-is NOT the primary cause of BATCH_NO_WINNER. Per-expert ML tracker plan
-(`docs/superpowers/plans/2026-08-03-mt5-per-expert-ml-tracker.md`) в частичном
-исполнении: MQL5 `rule_id`-обработка с legacy-fallback и per-magic lifecycle
-helpers закоммичены (2026-08-09, `ed2fd9c`), Python multi-rule generation,
-`--multi-expert` flag, per-rule reconciliation и multi-expert smoke открыты.
+is NOT the primary cause of BATCH_NO_WINNER. Per-magic signal multiplexing plan
+(`docs/superpowers/plans/2026-08-03-mt5-per-magic-multiplexing.md`) написан,
+pending: мультиплексирование ML-сигналов между алгоритмами `EXP[e]` внутри
+одного эксперта на одном графике (цикл `ExpTotal>1`, per-magic `rule_id`
+filter). MQL5 `lib_ML_Signal.mqh` уже содержит `rule_id`-обработку и per-magic
+lifecycle helpers (2026-08-09, `ed2fd9c`); `audit.md` пересмотрен.
 
 Current facts:
 
@@ -36,17 +37,17 @@ Current facts:
   `checked_signal_files=32, bad_files=0`, `contract=feature_time <= time <
   feature_available_time <= decision_time`, `latency_bars=0`. Канонический
   источник для цитирования timing-проверки.
-- Per-expert MQL5 layer committed (2026-08-09, `ed2fd9c`): `rule_id`
-  обработка в `MT5_FindEntrySignal` с fallback на legacy CSV без `rule_id`,
-  per-magic lifecycle helpers. Precondition-репорт
-  `docs/reports/2026-08-03-mt5-per-expert-precondition.md` не создан;
-  чекбоксы Tasks 1-9 в плане не отмечены.
+- MQL5 `lib_ML_Signal.mqh` содержит `rule_id`-обработку и per-magic lifecycle
+  helpers (2026-08-09, `ed2fd9c`); используется будущим per-magic multiplexing
+  планом.
 
 Next action:
 
-1. Завершить per-expert ML tracker plan (Tasks 1-9): precondition report,
-   Python type guard, multi-rule signal generation, `--multi-expert` flag,
-   per-rule reconciliation, multi-expert smoke, финальная отчётность.
+1. Исполнить per-magic multiplexing plan (Tasks P0, 1-8): static contract
+   tests, `MT5_FindEntrySignal(barTime, rule_id_filter)`, локальный
+   `rule_id_filter` в `ML_TRADE`, Python type guard, `--multi-algo` flag,
+   `(magic, rule_id)` reconciliation, smoke `ExpTotal=2` (max=1 / max=64),
+   финальный отчёт.
 2. Create frozen probe plan targeting entry mechanics / trade-count
    consolidation:
    - Accept single-position policy as design constraint.

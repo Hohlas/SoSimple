@@ -15,12 +15,13 @@
 ```
 ---
 
-## [2026-08-09] — MT5 Per-Expert MQL5 Layer + Signal Timing Diagnostics (DIAGNOSTIC_ONLY, partial)
-- **topics**: `mt5`, `per-expert`, `rule_id`, `timing-diagnostics`, `audit-rework`
-- **summary**: Частичное исполнение плана `docs/superpowers/plans/2026-08-03-mt5-per-expert-ml-tracker.md`: MQL5-слой получил `rule_id`-обработку с fallback на legacy CSV без `rule_id`, per-magic lifecycle helpers и логирование; добавлен диагностический артефакт `signal_timing_check.json` (`checked_signal_files=32`, `bad_files=0`, `contract=feature_time <= time < feature_available_time <= decision_time`, `latency_bars=0`); `docs/superpowers/audit.md` пересмотрен. Python multi-rule generation, `--multi-expert` flag в `run_mt5_batch.py`, per-rule reconciliation и multi-expert smoke остаются открытыми.
-- **artifacts**: `MT/MQL5/Include/lib_ML_Signal.mqh`, `ML/baseline/run_mt5_batch.py` (helper `_json_safe`), `ML/reports/mt5_execution_loop/diagnostics/signal_timing_check.json`, `docs/superpowers/audit.md`
-- **decision**: `DIAGNOSTIC_ONLY`. Precondition-репорт `docs/reports/2026-08-03-mt5-per-expert-precondition.md` не создан; чекбоксы Tasks 1-9 в плане не отмечены. Запись `[2026-08-07]` о «multi-position + per-expert plans deferred» уточнена: per-expert больше не полностью отложен, MQL5-слой закоммичен.
-- **notes**: Файл `signal_timing_check.json` создан как артефакт; код генерации в Python-модулях не обнаружен (ручной/внешний источник). Новый winner не выбирается; `locked_test` не открыт.
+## [2026-08-09] — MT5 Per-Magic Multiplexing Plan + Signal Timing Diagnostics (DIAGNOSTIC_ONLY)
+- **plan**: `docs/superpowers/plans/2026-08-03-mt5-per-magic-multiplexing.md`
+- **topics**: `mt5`, `per-magic`, `multiplexing`, `rule_id`, `single-expert-loop`, `timing-diagnostics`, `audit-rework`
+- **summary**: Написан план per-magic мультиплексирования ML-сигналов внутри одного эксперта на одном графике (цикл `EXP[e]`, `ExpTotal>1`): `MT5_FindEntrySignal(barTime, rule_id_filter)` с локальным `rule_id_filter = "mt5_rule_" + IntegerToString(Mgc)` в `ML_TRADE`, multi-algo signal generation через `--multi-algo` flag, `(magic, rule_id)`-группировка в reconciliation. MQL5 `lib_ML_Signal.mqh` уже содержит `rule_id`-обработку и per-magic lifecycle helpers (коммит `ed2fd9c`). Добавлен диагностический артефакт `signal_timing_check.json` (`checked_signal_files=32`, `bad_files=0`, `contract=feature_time <= time < feature_available_time <= decision_time`, `latency_bars=0`); `docs/superpowers/audit.md` пересмотрен.
+- **artifacts**: `docs/superpowers/plans/2026-08-03-mt5-per-magic-multiplexing.md`, `MT/MQL5/Include/lib_ML_Signal.mqh`, `ML/baseline/run_mt5_batch.py` (helper `_json_safe`), `ML/reports/mt5_execution_loop/diagnostics/signal_timing_check.json`, `docs/superpowers/audit.md`
+- **decision**: `DIAGNOSTIC_ONLY`. План pending; исполнение не начато. Новый winner не выбирается; `locked_test` не открыт.
+- **notes**: Файл `signal_timing_check.json` создан как артефакт; код генерации в Python-модулях не обнаружен (ручной/внешний источник). Запись `[2026-08-07]` о multi-position closeout сохраняет силу.
 
 ## [2026-08-07] — MT5 Full Batch 32×2: max=1 паритет и мультипозиция max=64 (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-08-03-mt5-multi-position-closeout.md` (раздел «Full Batch 32×2»)
@@ -43,7 +44,7 @@
 - **topics**: `mt5`, `multi-position`, `per-expert`, `deferred`, `methodology-note`
 - **summary**: В `docs/methodology/13b-mt5-execution-parity.md` → секция «Ограничения прототипа» добавлена пометка: multi-position lifecycle tracking и per-expert multi-tester режимы реализованы не до конца и отложены. Single-expert диагностические прогоны работают корректно.
 - **artifacts**: `docs/methodology/13b-mt5-execution-parity.md`, `CONTEXT_HANDOFF.md`
-- **decision**: Планы `2026-08-03-mt5-multi-position-closeout.md` и `2026-08-03-mt5-per-expert-ml-tracker.md` отложены без изменения статуса старых вердиктов (`DIAGNOSTIC_ONLY` сохранён). Очередность при возобновлении: сначала closeout-план, затем per-expert (per-expert зависит от closeout).
+- **decision**: Планы `2026-08-03-mt5-multi-position-closeout.md` и `2026-08-03-mt5-per-magic-multiplexing.md` отложены без изменения статуса старых вердиктов (`DIAGNOSTIC_ONLY` сохранён). Очередность при возобновлении: сначала closeout-план, затем per-magic multiplexing (per-magic зависит от closeout).
 - **notes**: Multi-position **order management** уже исполнен (отчёт `docs/reports/2026-08-02-mt5-multi-position-probe.md`, вердикт `DIAGNOSTIC_ONLY — BLOCKED на диагностическом слое`) — не путать с closeout-планом, который относится к lifecycle tracking и на момент этой записи не был исполнен в коде. Обновление: closeout-план исполнен 2026-08-07, см. запись `[2026-08-03]` и отчёт `docs/reports/2026-08-03-mt5-multi-position-closeout.md`.
 
 ## [2026-08-02] — MT5 Multi-Position Probe (DIAGNOSTIC_ONLY — BLOCKED)

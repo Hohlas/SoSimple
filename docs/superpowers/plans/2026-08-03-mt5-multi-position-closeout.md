@@ -22,9 +22,9 @@
 ## Scope
 
 - Покрытие: только `iSignal == 3` (диагностический ML_TRADE path, `MT5_DiagnosticExecutor=true`). По умолчанию `InpiSignal=3` в `MT/MQL5/Experts/$o$imple.mq5:41`.
-- Вне покрытия: `iSignal == 5` (`ML_TRADE_TB` в `lib_ML_Signal_TB.mqh`) — отдельная signal-система с собственным state (`TB_Times[]`, `TB_SignalCount`, `TB_cnt_*`); в рамках этого closeout не тестируется. Будет покрыта отдельным планом `2026-08-03-mt5-per-expert-ml-tracker.md`.
+- Вне покрытия: `iSignal == 5` (`ML_TRADE_TB` в `lib_ML_Signal_TB.mqh`) — отдельная signal-система с собственным state (`TB_Times[]`, `TB_SignalCount`, `TB_cnt_*`); в рамках этого closeout не тестируется. Будет покрыта отдельным планом `2026-08-03-mt5-per-magic-multiplexing.md`.
 - Архитектурное ограничение multi-pos: `set.BUY`/`set.SEL` в `INPUT.mqh` остаются singleton pending-queue (один planned order per bar, `INPUT.mqh:13-14`). Поэтому multiple same-side позиции могут возникнуть только через серию баров (pending → fill → следующий бар → новый pending), а не через постановку нескольких ордеров в одном баре. Это ограничение явно фиксируется в отчёте (Task 9 Limitations).
-- Multi-expert (`ExpTotal>1`) и per-expert ML-CSV (`rule_id` filter) не покрываются — это отдельный план `2026-08-03-mt5-per-expert-ml-tracker.md`.
+- Multi-expert (`ExpTotal>1`) и per-expert ML-CSV (`rule_id` filter) не покрываются — это отдельный план `2026-08-03-mt5-per-magic-multiplexing.md`.
 
 ---
 
@@ -1513,7 +1513,7 @@ Create `docs/reports/2026-08-03-mt5-multi-position-closeout.md` with these secti
 ## Limitations
 
 Multi-position scope (A11) — MANDATORY content of this section:
-- Multi-pos is exercised only through `iSignal == 3` (`ML_TRADE`, `MT5_DiagnosticExecutor=true`). `iSignal == 5` (`ML_TRADE_TB` in `lib_ML_Signal_TB.mqh`) is out of scope for this closeout; covered by separate plan `2026-08-03-mt5-per-expert-ml-tracker.md`.
+- Multi-pos is exercised only through `iSignal == 3` (`ML_TRADE`, `MT5_DiagnosticExecutor=true`). `iSignal == 5` (`ML_TRADE_TB` in `lib_ML_Signal_TB.mqh`) is out of scope for this closeout; covered by separate plan `2026-08-03-mt5-per-magic-multiplexing.md`.
 - `set.BUY` / `set.SEL` in `INPUT.mqh:13-14` remain a single planned order per bar. Therefore multiple same-side positions can only appear across multiple bars (pending → fill → next bar → new pending), never as several simultaneous `OrderSend` calls in the same bar. If max=2 smoke does not produce two simultaneous BUY (or SELL) positions on any tick, record the max-counted simultaneous positions explicitly and mark multi-pos proof as PARTIAL — do NOT claim full multi-pos proof from a single-bar-incomplete smoke.
 - Multi-expert (`ExpTotal>1`) and per-expert ML-CSV (`rule_id` filter) are out of scope; covered by separate plan.
 - `CLOSE` event only reads MT5 history by ticket and uses placeholder `broker_history_limited` for close reason, `order_close_price`, `take_profit`, `swap`, `commission` per `docs/methodology/13b-mt5-execution-parity.md:138-141` — not reconciled against MT5 deals in this closeout.

@@ -278,14 +278,14 @@ timing/binding нарушений) и full batch max=64 (32/32 `UNEXPLAINED=0`, 
 риск требует оценки приоритета переноса фиксов (см. Limitations); (2)
 `InpMT5_MaxPositions` не является жёстким лимитом — фактический лимит зависит
 от частоты сигналов и скорости fill (см. Limitations); (3) multi-tester
-(per-expert magic) не реализован — план `2026-08-03-mt5-per-expert-ml-tracker.md`.
+(per-expert magic) не реализован — план `2026-08-03-mt5-per-magic-multiplexing.md`.
 
 ## Limitations
 
 - Multi-pos проверяется только через `iSignal == 3` (`ML_TRADE`,
   `MT5_DiagnosticExecutor=true`). `iSignal == 5` (`ML_TRADE_TB` в
   `lib_ML_Signal_TB.mqh`) вне покрытия; отдельный план
-  `2026-08-03-mt5-per-expert-ml-tracker.md`. Риск: если `ML_TRADE_TB`
+  `2026-08-03-mt5-per-magic-multiplexing.md`. Риск: если `ML_TRADE_TB`
   используется в production-прогонах, его multi-pos механика может содержать
   те же дефекты, что и `ML_TRADE` до closeout (ML-закрытия не исполнялись,
   окно привязки fill обрывалось, legacy-закрытия игнорировались). Текущий
@@ -346,11 +346,11 @@ timing/binding нарушений) и full batch max=64 (32/32 `UNEXPLAINED=0`, 
 2. Обновить `docs/methodology/13b-mt5-execution-parity.md` (строки 145-153):
    per-ticket lifecycle реализован в closeout 2026-08-03 (multi-ticket tracker,
    swap-remove, per-ticket OPEN/ML_EVAL/ML_CLOSE/CLOSE); осталось multi-tester
-   (per-expert magic) — план `2026-08-03-mt5-per-expert-ml-tracker.md`.
+   (per-expert magic) — план `2026-08-03-mt5-per-magic-multiplexing.md`.
 3. При необходимости — полный батч 32 кандидатов для max=2 и max=16
    (`--phase tester --max-positions=N --force-rerun` + `--phase aggregate`);
    решение принимается отдельно с учётом стоимости.
-4. Затем — план `2026-08-03-mt5-per-expert-ml-tracker.md` (зависит от этого
+4. Затем — план `2026-08-03-mt5-per-magic-multiplexing.md` (зависит от этого
    closeout и теперь разблокирован).
 5. ACTIVE-трек roadmap не меняется: «MT5 entry mechanics / trade-count frozen
    probe» остаётся направлением.

@@ -145,7 +145,7 @@ TX_CLOSE
 - **Multi-tester (per-expert magic) остаётся
   не реализованным** — одновременная работа двух и более экспертов с разными
   magic в одном прогоне невозможна. План:
-  `docs/superpowers/plans/2026-08-03-mt5-per-expert-ml-tracker.md`
+  `docs/superpowers/plans/2026-08-03-mt5-per-magic-multiplexing.md`
 
 ### Компиляция
 
