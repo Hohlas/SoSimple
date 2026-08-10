@@ -1,5 +1,5 @@
 import pytest
-from ML.baseline.position_ordinal_analysis import parse_trades
+from ML.baseline.position_ordinal_analysis import parse_trades, compute_pf, analyze_candidate
 
 
 def _write_events(path, lines):
@@ -69,3 +69,59 @@ def test_parse_trades_extracts_year_from_open_time(tmp_path):
     trades = parse_trades(str(p))
     assert len(trades) == 1
     assert trades[0]["year"] == 2022
+
+
+def test_compute_pf_basic():
+    result = compute_pf([100.0, -50.0, 200.0, -100.0])
+    assert result["pf"] == pytest.approx(2.0)
+    assert result["n"] == 4
+    assert result["gross_profit"] == pytest.approx(300.0)
+    assert result["gross_loss"] == pytest.approx(150.0)
+
+
+def test_compute_pf_all_losses():
+    result = compute_pf([-100.0, -50.0])
+    assert result["pf"] == 0.0
+    assert result["gross_profit"] == 0.0
+
+
+def test_compute_pf_all_wins():
+    result = compute_pf([100.0, 50.0])
+    assert result["pf"] == float("inf")
+    assert result["gross_loss"] == 0.0
+
+
+def test_compute_pf_empty():
+    result = compute_pf([])
+    assert result["pf"] == 0.0
+    assert result["n"] == 0
+
+
+def test_analyze_candidate_groups_by_ordinal():
+    trades = [
+        {"ticket": "1", "side": "SELL", "ordinal": 1, "profit": 100.0},
+        {"ticket": "2", "side": "SELL", "ordinal": 1, "profit": -50.0},
+        {"ticket": "3", "side": "BUY", "ordinal": 2, "profit": 200.0},
+        {"ticket": "4", "side": "BUY", "ordinal": 2, "profit": -100.0},
+        {"ticket": "5", "side": "SELL", "ordinal": 3, "profit": -80.0},
+        {"ticket": "6", "side": "SELL", "ordinal": 5, "profit": 150.0},
+        {"ticket": "7", "side": "BUY", "ordinal": 7, "profit": -30.0},
+    ]
+    result = analyze_candidate(trades)
+    assert result["n_trades"] == 7
+    assert result["by_ordinal"]["1"]["pf"] == pytest.approx(2.0)
+    assert result["by_ordinal"]["1"]["n"] == 2
+    assert result["by_ordinal"]["2"]["pf"] == pytest.approx(2.0)
+    assert result["by_ordinal"]["2"]["n"] == 2
+    assert result["by_ordinal"]["3"]["pf"] == 0.0
+    assert result["by_ordinal"]["3"]["n"] == 1
+    assert "5+" in result["by_ordinal"]
+    assert result["by_ordinal"]["5+"]["n"] == 2
+    assert result["by_ordinal"]["5+"]["pf"] == pytest.approx(5.0)
+    assert "4" not in result["by_ordinal"]
+
+
+def test_analyze_candidate_empty():
+    result = analyze_candidate([])
+    assert result["n_trades"] == 0
+    assert result["by_ordinal"] == {}
