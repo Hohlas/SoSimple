@@ -11,6 +11,18 @@
 
 **Tech Stack:** MQL5 (MetaEditor 5, Wine + xvfb-run), Python 3.10+ (pandas, pytest), существующие `mt5_signal_schema`, `export_mt5_entry_signals`, `parse_mt5_execution_report`.
 
+## Контекст
+
+### Суть алгоритма мультиплексирования через разные magic
+
+Данная опция реализована для работы онлайн, в целях экономии оперативной памяти сервера. На несколько алгоритмов торговли запускается не несколько экспертов (для каждого нужен отдельный график), а всего один эксперт на одном графике. Он поочередно выполняет на одном графике алгоритмы для разных magic, заменяя тем самым работу нескольких экспертов.
+
+По сути, этот алгоритм мультиплексирования нескольких алгоритмов через разные magic уже был успешно реализован в предыдущей MT4 версии этого эксперта. А данный эксперт является его портом MT4→MT5, и чисто теоретически, функционал мультиплексирования должен был тоже портироваться из MT4 версии (не проверялось).
+
+**Архитектурная адаптация:** функционал мультиплексирования работал в MT4 версии эксперта через `ML_RuleSlot` (1..5) и отдельные файлы сигналов `ml_signals_fixed11_rule0X.csv` (`MT4/lib_ML_Signal.mqh:90-104`). MT5 адаптировал этот механизм под свою архитектуру: вместо `ML_RuleSlot` используется `rule_id="mt5_rule_"+Mgc` в едином CSV (`mt5_entry_signals.csv`), что заложено в ранних планах миграции (`2026-07-29-mt5-execution-loop-migration.md:409,814`) и методологии (`13b-mt5-execution-parity.md:58,73`). Цель та же — мультиплексирование нескольких алгоритмов через разные magic — но реализация адаптирована под MT5-контракт.
+
+После добавления в текущий MT5 эксперт возможности одновременно открывать несколько позиций в одном направлении возникло подозрение, что функционал мультиплексирования не будет работать в режиме мультипозиций (не сломался ли per-magic учёт позиций, когда разрешено несколько позиций в одном направлении?).
+
 ## Global Constraints
 
 - depends_on: `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md` (исполнен 2026-08-07).
@@ -40,7 +52,7 @@
 | `ML/baseline/run_mt5_batch.py` | флаг `--multi-algo`, multi-rule signal CSV generation | Modify |
 | `ML/baseline/parse_mt5_execution_report.py` | `(magic, rule_id)`-группировка в reconciliation | Modify |
 | `tests/test_mt5_per_magic_multiplexing_contract.py` | static contract tests (MQL5 + Python) | Create |
-| `tests/test_mt5_multi_algo_smoke.py` | интеграционный smoke-тест `ExpTotal=2` | Create |
+| `tests/test_mt5_per_rule_smoke.py` | per-rule filter smoke-тест (`ExpTotal=1`) | Create |
 
 ---
 
@@ -58,7 +70,7 @@
 ```bash
 rg -n "MT5_TrackedTicket\b" MT/MQL5/Include/lib_ML_Signal.mqh
 rg -n "MT5_TRACKED_POSITION\b|MT5_TrackedPositions\b|MT5_LogLifecycleForTicket\b" MT/MQL5/Include/lib_ML_Signal.mqh
-rg -n "\(int\)OrderTicket\(\)|\(int\)ticket\b|\(int\)MT5_TrackedTicket" MT/MQL5/Include/lib_ML_Signal.mqh MT/MQL5/Include/ORDERS.mqh MT/MQL5/Include/ERRORs.mqh
+grep -Pn '\(int\)(OrderTicket\(\)|ticket\b|MT5_TrackedTicket\b)' MT/MQL5/Include/lib_ML_Signal.mqh MT/MQL5/Include/ORDERS.mqh MT/MQL5/Include/ERRORs.mqh | grep -vP ':\s*//'
 rg -n "force_rerun" ML/baseline/run_mt5_batch.py
 ```
 
@@ -187,7 +199,7 @@ def test_no_global_rule_id_filter_singleton() -> None:
 def test_prepare_entry_quality_source_rule_id_type_annotation() -> None:
     text = _text(PREPARE_SOURCE)
     m = re.search(
-        r"def\s+prepare_entry_quality_source\s*\([^)]*rule_id\s*:\s*str[,\)]",
+        r"def\s+prepare_entry_quality_source\s*\([^)]*rule_id\s*:\s*str\b",
         text,
     )
     assert m is not None, "prepare_entry_quality_source: rule_id: str type annotation обязателен."
@@ -316,7 +328,7 @@ git commit -m "feat(mt5): per-magic rule_id filter in MT5_FindEntrySignal"
 - Modify: `MT/MQL5/Include/lib_ML_Signal.mqh` (тело `ML_TRADE`, текущий `mt5_idx = MT5_FindEntrySignal(Time[bar])` на строке 875)
 
 **Interfaces:**
-- Consumes: `Mgc` (входной параметр `ML_TRADE`, см. `lib_ML_Signal.mqh:365`); сигнатура из Task 2.
+- Consumes: `Mgc` (член класса `EXPERT`, см. `MT/MQL5/Include/MAIN.mqh:10`; присваивается в `SERVICE.mqh:49` для тестера и `SERVICE.mqh:178` для live); сигнатура из Task 2.
 - Produces: `string rule_id_filter` (local), вызов `MT5_FindEntrySignal(Time[bar], rule_id_filter)`.
 
 - [ ] **Step 1: Build local rule_id_filter in ML_TRADE**
@@ -330,19 +342,35 @@ git commit -m "feat(mt5): per-magic rule_id filter in MT5_FindEntrySignal"
 
 **У-4 (global singleton запрещён)**: `rule_id_filter` — **local string**. Глобальная `MT5_RuleIdFilter` не вводится: `ML_TRADE` вызывается последовательно в `for (e=0; e<ExpTotal; e++) EXP[e].MAIN()` — гонки между алгоритмами нет.
 
-- [ ] **Step 2: Add backcompat branch for single-algo**
+- [ ] **Step 2: Replace Step 1 with backcompat-aware branch**
 
-Чтобы старый single-algo режим (`ExpTotal==1`, CSV без `rule_id` или с одним значением) продолжал работать, обернуть фильтр:
+> **Важно:** этот шаг **заменяет** код Step 1. В старых single-algo CSV
+> `rule_id` **непустой, но не имеет префикса `mt5_rule_`** (пример:
+> `rule_id=time_plus_atr_extra_trees_small_24h_thr0.3`). Проверка «непустоты»
+> без проверки префикса включила бы фильтр, совпадений не нашлось бы, и
+> `MT5_FindEntrySignal` вернул бы `-1` → 0 сделок. Поэтому фильтр включаем
+> **только** при соблюдении конвенции `mt5_rule_*` в первой строке CSV.
+
+В теле `ML_TRADE` (строка 875) использовать:
 
 ```cpp
    string rule_id_filter = "";
-   if (MT5_EntrySignalCount > 0 && MT5_RuleIds[0] != "") {
+   if (MT5_EntrySignalCount > 0
+       && StringLen(MT5_RuleIds[0]) >= 9
+       && StringSubstr(MT5_RuleIds[0], 0, 9) == "mt5_rule_") {
       rule_id_filter = "mt5_rule_" + IntegerToString(Mgc);
    }
    int mt5_idx = MT5_FindEntrySignal(Time[bar], rule_id_filter);
 ```
 
-Контракт: если в CSV вообще нет `rule_id` (все строки пустые) — фильтр выключен, поведение идентично старому. Если `rule_id` есть — включается per-magic фильтрация.
+Контракт:
+- CSV со старым `rule_id` (без префикса `mt5_rule_`) → `rule_id_filter=""` →
+  поведение идентично pre-change `MT5_FindEntrySignal(Time[bar])`.
+- CSV с `rule_id=mt5_rule_<Mgc>` → фильтр включён, мультиплексирование
+  работает per-magic.
+
+Не использовать `StringFind(MT5_RuleIds[0], "mt5_rule_") == 0` — `StringSubstr`
++ `==` читаются явно и не зависят от семантики поиска пустой подстроки.
 
 - [ ] **Step 3: Compile gate**
 
@@ -424,8 +452,8 @@ git commit -m "feat(mt5): prepare_entry_quality_source rule_id type guard"
 - Modify: `ML/baseline/run_mt5_batch.py`
 
 **Interfaces:**
-- Consumes: `#.csv`-контракт (`SERVICE.mqh:122-220`) — список `EXP[e].Mgc` для каждой строки. Python-парсер `#.csv` уже существует в `run_mt5_batch.py` (grep `INPUT_FILE_READ` / `read_exp_csv`).
-- Produces: флаг `--multi-algo`, который включает multi-rule signal generation: одна CSV, где `rule_id=f"mt5_rule_{Mgc}"` для каждой строки, соответствующей конкретному алгоритму.
+- Consumes: `#.csv`-контракт (`SERVICE.mqh:122-220`) — список `EXP[e].Mgc` для каждой строки; колонка 16 (1-indexed) = cols[15] (0-indexed) содержит `Mgc` (`SERVICE.mqh:178`: `EXP[e].Mgc=int(StrToDouble(FileReadString(File)))`). Python-парсер `#.csv` **не существует** — создаётся в этом Task. `generate_signals(candidates, eq_scores)` (`run_mt5_batch.py:68`) — точка интеграции флага `--multi-algo`.
+- Produces: флаг `--multi-algo`, который включает multi-rule signal generation: одна CSV, где `rule_id=f"mt5_rule_{Mgc}"` для каждой строки, соответствующей конкретному алгоритму. Соответствие candidate↔Mgc: позиционное — `candidates[i]` → строка `i` файла `#.csv`.
 
 - [ ] **Step 1: Add `--multi-algo` argument to argparse**
 
@@ -443,30 +471,63 @@ git commit -m "feat(mt5): prepare_entry_quality_source rule_id type guard"
     )
 ```
 
-- [ ] **Step 2: Implement multi-rule generation**
+- [ ] **Step 2: Add `parse_exp_csv` helper и модифицировать `generate_signals`**
 
-В функции `signals`/`prepare_signals` (или аналог, отвечающий за генерацию signal CSV) добавить ветку:
+Добавить helper для чтения `#.csv` (semicolon-separated, колонка 16 (1-indexed) = cols[15] = Mgc):
 
 ```python
-    if args.multi_algo:
-        exp_rows = read_exp_csv(EXP_CSV_PATH)  # существующий парсер #.csv
-        per_algo_sources: list[pd.DataFrame] = []
-        for _, exp in exp_rows.iterrows():
-            mgc = int(exp["Mgc"])
-            src = prepare_entry_quality_source(
-                source=base_source,
-                rule_id=f"mt5_rule_{mgc}",
-                latency_bars=args.latency_bars,
+def parse_exp_csv(csv_path: Path = Path("MT/tester/files/#.csv")) -> list[int]:
+    """Читает #.csv и возвращает список Mgc (колонка 16, 1-indexed = cols[15]).
+
+    Формат строки: semicolon-separated values. Mgc — 16-е поле.
+    """
+    mgc_values = []
+    with open(csv_path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("//"):
+                continue
+            cols = line.split(";")
+            if len(cols) > 15:
+                mgc_values.append(int(float(cols[15])))
+    return mgc_values
+```
+
+Изменить сигнатуру `generate_signals` и добавить ветку `multi_algo`:
+
+```python
+def generate_signals(candidates: list[dict], eq_scores: pd.DataFrame,
+                     *, multi_algo: bool = False) -> None:
+    # ... существующий setup (source_artifact, ctx, eq_for_join) ...
+
+    if multi_algo:
+        mgc_values = parse_exp_csv()
+        if len(mgc_values) != len(candidates):
+            raise ValueError(
+                f"#.csv has {len(mgc_values)} rows but candidates has {len(candidates)} entries. "
+                "Positional mapping requires equal counts."
             )
-            per_algo_sources.append(src)
-        combined = pd.concat(per_algo_sources, ignore_index=True)
-        combined = combined.sort_values("time").reset_index(drop=True)
-    else:
-        combined = prepare_entry_quality_source(
-            source=base_source,
-            rule_id=make_run_id(cand),
-            latency_bars=args.latency_bars,
-        )
+
+    for i, cand in enumerate(candidates, 1):
+        run_id = make_run_id(cand)
+        # ... существующая логика materialize/filter/merge ...
+
+        if multi_algo:
+            mgc = mgc_values[i - 1]
+            rule_id = f"mt5_rule_{mgc}"
+        else:
+            rule_id = run_id
+
+        prepared = prepare_entry_quality_source(source_df, rule_id=rule_id)
+        # ... существующий export ...
+```
+
+В `main()` передать `multi_algo` из args:
+
+```python
+    if args.phase in ("signals", "all"):
+        eq_scores = load_eq_scores()
+        generate_signals(candidates, eq_scores, multi_algo=args.multi_algo)
 ```
 
 - [ ] **Step 3: Run multi-algo static tests**
@@ -511,7 +572,29 @@ git commit -m "feat(mt5): --multi-algo flag generates multi-rule signal CSV"
 - Consumes: event CSV, в котором уже есть колонки `magic` и `rule_id`.
 - Produces: итоговый отчёт с группировкой по `(magic, rule_id)` — per-algo + per-rule метрики в одном документе.
 
-- [ ] **Step 1: Add `(magic, rule_id)` groupby branch**
+- [ ] **Step 1: Add `_agg` helper и `(magic, rule_id)` groupby branch**
+
+Добавить в `parse_mt5_execution_report.py` helper `_agg`:
+
+```python
+def _agg(group: pd.DataFrame) -> dict:
+    """Агрегация одной (magic, rule_id) группы.
+
+    Per-rule PnL считается только по событиям OPEN/CLOSE/ML_CLOSE,
+    которые несут непустой rule_id. TX_OPEN/TX_CLOSE логируются с
+    rule_id="" (lib_ML_Signal.mqh:572) и попадают в bucket rule_id="",
+    поэтому в per-rule разбивку не входят.
+    """
+    opens = group[group["event"] == "OPEN"]
+    closes = group[group["event"].isin(["CLOSE", "ML_CLOSE"])]
+    pnl = closes["profit"].sum() if "profit" in closes.columns else 0.0
+    return {
+        "open_count": int(len(opens)),
+        "close_count": int(len(closes)),
+        "pnl": float(pnl),
+        "fill_rate": len(closes) / max(len(opens), 1),
+    }
+```
 
 В функции агрегации событий (после базовой агрегации по `magic`) добавить:
 
@@ -520,12 +603,12 @@ git commit -m "feat(mt5): --multi-algo flag generates multi-rule signal CSV"
         df["rule_id"] = df["rule_id"].fillna("").astype(str)
         grouped = df.groupby(["magic", "rule_id"])
         report["per_algo"] = {
-            (int(m), str(r)): _agg(group)
+            f"{int(m)}:{r}": _agg(group)
             for (m, r), group in grouped
         }
 ```
 
-где `_agg(group)` — существующий helper агрегации (count OPEN/CLOSE, PnL sum, fill rate и т.д.).
+Ключи `per_algo` — строки вида `"12345:mt5_rule_12345"` для корректной сериализации `json.dumps` (tuple-ключи не поддерживаются JSON).
 
 - [ ] **Step 2: Run the reconciliation test**
 
@@ -552,73 +635,110 @@ git commit -m "feat(mt5): (magic, rule_id) grouping in parse_mt5_execution_repor
 
 ---
 
-## Task 7: Compile gate и multi-algo smoke (`ExpTotal=2`)
+## Task 7: Compile gate и per-rule filter smoke (`ExpTotal=1`)
 
 **Files:**
-- Create: `tests/test_mt5_multi_algo_smoke.py`
+- Create: `tests/test_mt5_per_rule_smoke.py`
 - Read-only: `MT/MQL5/Experts/$o$imple.mq5`, `MT/MQL5/Include/*.mqh`
 
 **Interfaces:**
-- Consumes: результат Tasks 1-6.
-- Produces: smoke-репорт `ML/reports/mt5_execution_loop/multiplex_smoke/` с подпрогонами `single_algo_max1`, `single_algo_max64`, `multi_algo_max1`, `multi_algo_max64`.
+- Consumes: результат Tasks 1-6; signal CSV с несколькими `rule_id=mt5_rule_<Mgc_X>` (разные гипотетические magic) в одном файле.
+- Produces: smoke-отчёт `ML/reports/mt5_execution_loop/per_rule_smoke/{reference,filtered}/` с метриками `order_counts`, `reconciliation`, `profit_sum`, `status`, plus per-rule breakdown в `events.csv` по колонкам `magic` + `rule_id`.
+- **Scope constraint**: MT5 Strategy Tester **всегда** запускается с `ExpTotal==1` (`SERVICE.mqh:46-50` — `BackTest==0` branch; `SERVICE.mqh:149` — `IsTesting()` читает только строку `DataLine==BackTest`). Multi-algo мультиплексирование с `ExpTotal>1` требует изменений `SERVICE.mqh`, явно исключённых из scope этого плана (Global Constraints), и покрывается отдельным production-планом. Этот Task проверяет **per-rule фильтрацию сигналов** в рамках одного эксперта: когда CSV содержит несколько `rule_id`, эксперт с конкретным `Mgc` должен обрабатывать только «свои» строки.
 
-- [ ] **Step 1: Compile full Expert**
+- [ ] **Step 1: Compile full Expert (methodology-aligned command)**
 
 ```bash
-xvfb-run -a wine /home/hohla/.mt5/drive_c/Program\ Files/MetaTrader\ 5/metaeditor5.exe \
-  /compile:"/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/MQL5/Experts/\$o\$imple.mq5" \
-  /log /inc:"/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/MQL5/Include"
-grep -E "errors|warnings" <compile.log>
+WINEPREFIX=/home/hohla/.mt5 xvfb-run -a wine \
+  '/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/MetaEditor64.exe' \
+  /compile:'/home/hohla/git/SoSimple/MT/MQL5/Experts/$o$imple.mq5' \
+  /log:'/home/hohla/git/SoSimple/MT/MQL5/Experts/compile.log'
+grep -E "errors|warnings" /home/hohla/git/SoSimple/MT/MQL5/Experts/compile.log
 ```
+
+> **Важно:** не считать exit-код `wine` verdict-ом компиляции
+> (`docs/methodology/13b-mt5-execution-parity.md:168-170`). Verdict — только
+> строка `Result: N errors, M warnings` в `compile.log`.
 
 Expected: `0 errors, 0 warnings`.
 
-- [ ] **Step 2: Prepare #.csv с `ExpTotal=2`**
+- [ ] **Step 2: Prepare multi-rule signal CSV (ExpTotal=1)**
 
-Создать `MT/MQL5/Files/$o$imple.csv` (или tester-копию) с двумя строками, отличающимися magic:
+Вместо изменения `#.csv` (читается только одна строка в тестере,
+`SERVICE.mqh:149`) — сгенерировать signal CSV, содержащий строки с **двумя
+разными** `rule_id`: один совпадает с `Mgc` эксперта (`mt5_rule_<Mgc_self>`),
+другой — с гипотетическим `Mgc` другого алгоритма (`mt5_rule_<Mgc_other>`).
 
-```csv
-$o$imple_v3.0;...;<Mgc_A>
-$o$imple_v3.0;...;<Mgc_B>
-```
-
-где `Mgc_A` и `Mgc_B` — разные int, сгенерированные `MAGIC_GENERATOR()` для двух наборов входных параметров.
-
-- [ ] **Step 3: Generate multi-algo signal CSV (smoke)**
+Конкретно: взять `Mgc_self = MAGIC_GENERATOR()` для текущих input-параметров
+smoke-профиля (детерминирован, вычисляется Python-парсером `#.csv`; см.
+Task 5 Interfaces); `Mgc_other = Mgc_self + 1` (или любой int, заведомо не
+совпадающий).
 
 ```bash
-./.venv/bin/python -m ML.baseline.run_mt5_batch --phase signals --multi-algo --smoke-only
+./.venv/bin/python -m ML.baseline.run_mt5_batch --phase signals --smoke-only \
+  --multi-algo --inject-rule-id=mt5_rule_<Mgc_other>
 ```
 
-Expected: `_smoke/entry_signals.csv` содержит строки `rule_id=mt5_rule_<Mgc_A>` и `rule_id=mt5_rule_<Mgc_B>`.
+> Флаг `--inject-rule-id` (добавить в Task 5) принимает дополнительный
+> `rule_id`, строки с которым **копируются** из базового сигнала с подменой
+> `rule_id`. Это даёт CSV с двумя rule_id на одних и тех же барах без
+> изменения Python-генератора сигналов.
 
-- [ ] **Step 4: Run MT5 tester smoke в 4 режимах**
+Expected: `_smoke/entry_signals.csv` содержит ≥2 уникальных `rule_id`:
+`mt5_rule_<Mgc_self>` и `mt5_rule_<Mgc_other>`.
+
+- [ ] **Step 3: Run MT5 tester smoke (single expert, two rule_id in CSV)**
 
 ```bash
 ./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --smoke-only --max-positions=1
 ./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --smoke-only --max-positions=64
-./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --smoke-only --multi-algo --max-positions=1
-./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --smoke-only --multi-algo --max-positions=64
 ```
 
-Expected для каждого:
-- Process exits `0`.
-- Event CSV создан и содержит события обоих magic (в multi-algo режимах).
+Expected для каждого прогона:
+- `compile.log` → `0 errors, 0 warnings`.
+- Tester exits `0`.
+- Event CSV создан (`ML/reports/mt5_execution_loop/batch/_smoke/events.csv`).
+- Все события, приписанные к сигналу (`OPEN`, `CLOSE`, `ML_EVAL`, `ML_CLOSE`),
+  несут `rule_id=mt5_rule_<Mgc_self>`; строк с `rule_id=mt5_rule_<Mgc_other>`
+  в signal-linked событиях **нет** (фильтр сработал).
 - `UNEXPLAINED=0` в per-magic lifecycle counters.
 - `TIMING_VIOLATION=0`.
-- В single-algo режимах поведение **не меняется** относительно closeout-эталона 2026-08-07.
 
-- [ ] **Step 5: Aggregate и сравнить с single-algo эталоном**
+- [ ] **Step 4: Aggregate и сравнить с reference-прогоном (single rule_id)**
+
+Сохранить reference: повторить Step 3 на CSV **без** `--inject-rule-id` (т.е.
+все строки с `rule_id=mt5_rule_<Mgc_self>`):
 
 ```bash
-./.venv/bin/python -m ML.baseline.run_mt5_batch --phase aggregate --smoke-only
+./.venv/bin/python -m ML.baseline.run_mt5_batch --phase signals --smoke-only
+./.venv/bin/python -m ML.baseline.run_mt5_batch --phase tester --smoke-only --max-positions=1
+# сохранить _smoke/events.csv и _smoke/metrics.json как reference/
 ```
 
-Expected: per-algo PnL в multi-algo режиме совпадает (в пределах копеек) с PnL соответствующего single-algo прогона → мультиплексирование не вносит интерференции.
+Сравнить filtered (Step 3) и reference (Step 4):
 
-- [ ] **Step 6: Write smoke test**
+```bash
+./.venv/bin/python -c "
+import json, pandas as pd
+ref = json.load(open('...reference/metrics.json'))
+flt = json.load(open('...filtered/metrics.json'))
+assert ref['profit_sum'] == flt['profit_sum'], 'PnL parity broken'
+assert ref['order_counts'] == flt['order_counts'], 'order count diverges'
+ref_ev = pd.read_csv('...reference/events.csv', sep=';')
+flt_ev = pd.read_csv('...filtered/events.csv', sep=';')
+# В filtered все signal-linked события — только свой rule_id
+linked = flt_ev[flt_ev['rule_id'] != '']
+assert (linked['rule_id'] == 'mt5_rule_<Mgc_self>').all(), (
+    'foreign rule_id leaked into events')
+"
+```
 
-Создать `tests/test_mt5_multi_algo_smoke.py`:
+Expected: PnL, order counts и структура событий идентичны reference; «чужой»
+`rule_id` не появляется в signal-linked событиях.
+
+- [ ] **Step 5: Write per-rule smoke test**
+
+Создать `tests/test_mt5_per_rule_smoke.py`:
 
 ```python
 from __future__ import annotations
@@ -626,46 +746,56 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-SMOKE_DIR = Path("ML/reports/mt5_execution_loop/multiplex_smoke")
+import pandas as pd
+
+SMOKE_DIR = Path("ML/reports/mt5_execution_loop/per_rule_smoke")
 
 
-def test_multi_algo_per_algo_pnl_matches_single_algo_reference() -> None:
-    ref = json.loads((SMOKE_DIR / "single_algo_max1" / "metrics.json").read_text())
-    multi = json.loads((SMOKE_DIR / "multi_algo_max1" / "metrics.json").read_text())
-    for (magic, rule_id), per_algo in multi["per_algo"].items():
-        ref_pnl = ref["per_magic"][str(magic)]["pnl"]
-        assert abs(per_algo["pnl"] - ref_pnl) < 0.02, (
-            f"magic={magic} rule_id={rule_id}: multi-algo PnL {per_algo['pnl']} "
-            f"!= single-algo reference {ref_pnl}"
-        )
+def test_per_rule_filter_keeps_only_own_rule_id() -> None:
+    """В filtered events signal-linked события несут только rule_id эксперта."""
+    ev = pd.read_csv(SMOKE_DIR / "filtered" / "events.csv", sep=";")
+    linked = ev[ev["rule_id"].fillna("") != ""]
+    self_rule = "<Mgc_self>"  # подставляется в test-time из #.csv
+    assert (linked["rule_id"] == f"mt5_rule_{self_rule}").all(), (
+        f"foreign rule_id leaked: {linked['rule_id'].unique()}"
+    )
 
 
-def test_multi_algo_unexplained_zero() -> None:
-    for mode in ("multi_algo_max1", "multi_algo_max64"):
-        summary = json.loads((SMOKE_DIR / mode / "summary.json").read_text())
-        assert summary["unexplained"] == 0, f"{mode}: unexplained={summary['unexplained']}"
+def test_per_rule_filter_pnl_matches_reference() -> None:
+    """PnL filtered-прогона = PnL reference-прогона (filter не вносит интерференции)."""
+    ref = json.loads((SMOKE_DIR / "reference" / "metrics.json").read_text())
+    flt = json.loads((SMOKE_DIR / "filtered" / "metrics.json").read_text())
+    assert ref["profit_sum"] == flt["profit_sum"]
+    assert ref["order_counts"] == flt["order_counts"]
 
 
-def test_multi_algo_no_timing_violation() -> None:
-    for mode in ("multi_algo_max1", "multi_algo_max64"):
-        summary = json.loads((SMOKE_DIR / mode / "summary.json").read_text())
-        assert summary.get("timing_violation_count", 0) == 0
+def test_per_rule_filter_no_unexplained() -> None:
+    summary = json.loads((SMOKE_DIR / "filtered" / "summary.json").read_text())
+    assert summary.get("unexplained", 0) == 0
 ```
 
-- [ ] **Step 7: Run smoke tests**
+- [ ] **Step 6: Run smoke tests**
 
 ```bash
-./.venv/bin/python -m pytest tests/test_mt5_multi_algo_smoke.py -v
+./.venv/bin/python -m pytest tests/test_mt5_per_rule_smoke.py -v
 ```
 
 Expected: 3 passed.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add tests/test_mt5_multi_algo_smoke.py ML/reports/mt5_execution_loop/multiplex_smoke/
-git commit -m "test(mt5): multi-algo ExpTotal=2 smoke (max=1 / max=64)"
+git add tests/test_mt5_per_rule_smoke.py \
+        ML/reports/mt5_execution_loop/per_rule_smoke/
+git commit -m "test(mt5): per-rule filter smoke (ExpTotal=1, two rule_id in CSV)"
 ```
+
+> **Production-план для `ExpTotal>1`**: live-развёртывание мультиплексирования
+> с несколькими экспертами на одном графике требует изменений `SERVICE.mqh`
+> (чтение всех строк `#.csv` в тестере + разрешение цикла `EXP[]` без
+> `BackTest`-constraint). Это out-of-scope данного diagnostic-плана и
+> покрывается отдельным production-планом, который опирается на результат
+> этого Task как на доказательство per-rule фильтрации.
 
 ---
 
@@ -679,7 +809,7 @@ git commit -m "test(mt5): multi-algo ExpTotal=2 smoke (max=1 / max=64)"
 
 **Interfaces:**
 - Consumes: результаты Tasks P0, 1-7.
-- Produces: отчёт со всеми 8 mandatory disclosure fields (`docs/methodology/16-reporting-audit.md:65-77`): `lifecycle_status`, `origin_bias`, `research_priority`, `current_search_budget`, `cumulative_search_budget`, `next_probe_freeze`, `allowed_max_verdict`, `forbidden_interpretations`.
+- Produces: отчёт со всеми 8 mandatory disclosure fields (`docs/methodology/16-reporting-audit.md:69-76`): `lifecycle_status`, `origin_bias`, `research_priority`, `current_search_budget`, `cumulative_search_budget`, `next_probe_freeze`, `allowed_max_verdict`, `forbidden_interpretations`.
 
 - [ ] **Step 1: Write the report**
 
