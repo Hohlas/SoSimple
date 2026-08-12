@@ -14,7 +14,7 @@ current_search_budget: 3 конфигурации MI (k=5 основная, за
 cumulative_search_budget: ветка MI — 3 конфигурации; подбора по результату не было
 next_probe_freeze: joint MI (npeet) на пониженной размерности (топ-признаки по MI); XAUUSD H1; live-safe 42 признака; таргет amplitude; метрика — строгий потолок R²; allowed_max_verdict research_only
 allowed_max_verdict: research_only
-forbidden_interpretations: «прибыльно», «готово», «можно запускать», «live-ready», «tradable»; «маргинальный потолок — строгая граница R²»
+forbidden_interpretations: «прибыльно», «готово», «можно запускать», «live-ready», «tradable»; «маргинальный потолок — строгая граница R²»; «PASS/FAIL MI-скрининга = вердикт предобученческого гейта (07b): это диагностика, гейт решает совместный RF-прогон»
 ```
 
 ## Context

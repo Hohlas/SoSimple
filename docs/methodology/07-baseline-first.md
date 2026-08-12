@@ -14,6 +14,7 @@
 
 ### Пошаговые действия
 
+0. Убедиться, что [07b-predictability-gate.md](07b-predictability-gate.md) пройден; `FAIL` гейта запрещает обучение и baseline.
 1. Запустить dummy baseline:
    - majority class;
    - random class с class prior;

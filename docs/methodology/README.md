@@ -57,6 +57,7 @@
 | EDA, качество данных, дисбаланс классов, константные признаки | [05-eda-data-quality.md](05-eda-data-quality.md) |
 | Train/validation/locked_test split, событийный ряд, regime shift, sample size gate, walk-forward, роли validation (`val-stop`/`val-select`/`val-eval`) | [06-temporal-split.md](06-temporal-split.md) |
 | Предварительно проверяешь oracle-потолок торговой механики при идеальном знании будущих labels и выбираешь перспективную side/H/off-зону | [06b-oracle-preflight.md](06b-oracle-preflight.md) |
+| Предобученческая проверка предсказуемости набора признаков: совместный RF-гейт (обязательно) + MI-скрининг (диагностика) — выполнять до 07 | [07b-predictability-gate.md](07b-predictability-gate.md) |
 | Baseline-модели: dummy, простые ML, сравнение | [07-baseline-first.md](07-baseline-first.md) |
 | Обучение: архитектура, seed, кеш, ablation, CPU/GPU | [08-model-development.md](08-model-development.md) |
 | Выбор winner на validation (с ролями `val-stop`/`val-select`/`val-eval`), заморозка перед `locked_test`, коррекция множественного тестирования | [09-validation-freeze.md](09-validation-freeze.md) |
