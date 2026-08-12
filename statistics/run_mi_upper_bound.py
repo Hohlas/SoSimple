@@ -5,12 +5,74 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 from mi_upper_bound import (
+    ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS,
     estimate_mi,
     estimate_mi_per_feature,
+    estimate_rolling_mi,
     load_mi_data,
 )
+
+
+FEATURE_GROUPS = {
+    'time': ['session_hour', 'weekday'],
+    'strong': [c for c in ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS if 'strong' in c],
+    'break': [c for c in ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS if 'break' in c],
+    'direction_balance': [c for c in ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS if 'direction_balance' in c],
+    'back': [c for c in ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS if 'back' in c],
+    'impulse': [c for c in ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS if 'impulse' in c],
+    'power': [c for c in ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS if 'power' in c],
+    'count': [c for c in ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS if 'count' in c],
+}
+
+
+def group_mi(per_feature: list[dict]) -> dict:
+    df = pd.DataFrame(per_feature)
+    result = {}
+    for group_name, group_features in FEATURE_GROUPS.items():
+        mask = df['feature'].isin(group_features)
+        if mask.any():
+            result[group_name] = {
+                'mean_mi': float(df.loc[mask, 'mi_bits'].mean()),
+                'max_mi': float(df.loc[mask, 'mi_bits'].max()),
+                'n_features': int(mask.sum()),
+            }
+    return result
+
+
+def compute_rolling_mi(split_paths: list[str], ohlc_path: str, k: int, random_state: int) -> dict:
+    parts = [load_mi_data(path, ohlc_path=ohlc_path) for path in split_paths]
+    X = np.concatenate([p['X'] for p in parts])
+    order = np.argsort(np.concatenate([p['time'] for p in parts]), kind='stable')
+    X = X[order]
+    y_dir = np.concatenate([p['y_direction'] for p in parts])[order]
+    y_amp = np.concatenate([p['y_amplitude'] for p in parts])[order]
+    timestamps = np.concatenate([p['time'] for p in parts])[order]
+
+    # Границы split'ов (аудит п.10): последний timestamp каждого split'а —
+    # для вертикальных линий на plot и disclosure окон на стыках.
+    split_boundaries = []
+    for p in parts[:-1]:
+        split_boundaries.append(str(p['time'].max()))
+
+    return {
+        'direction': estimate_rolling_mi(
+            X, y_dir, timestamps, window=500, step=100, k=k,
+            random_state=random_state, discrete_target=True,
+        ),
+        'amplitude': estimate_rolling_mi(
+            X, y_amp, timestamps, window=500, step=100, k=k,
+            random_state=random_state, discrete_target=False,
+        ),
+        'splits': split_paths,
+        'split_boundaries': split_boundaries,
+        'disclosure': ('окно W=500 может охватывать два split\'а; значения MI на '
+                       'границах имеют смешанный характер и интерпретируются как '
+                       'сглаженный переход'),
+        'n_samples_total': int(len(y_dir)),
+    }
 
 
 def main():
@@ -23,6 +85,7 @@ def main():
     parser.add_argument('--n-folds', type=int, default=10)
     parser.add_argument('--n-permutations', type=int, default=200)
     parser.add_argument('--random-state', type=int, default=42)
+    parser.add_argument('--no-rolling', action='store_true')
     args = parser.parse_args()
 
     results = {
@@ -92,7 +155,17 @@ def main():
         )
         split_result['per_feature_amplitude'] = per_feat_amp.to_dict('records')
 
+        split_result['group_mi_direction'] = group_mi(split_result['per_feature_direction'])
+        if 'per_feature_amplitude' in split_result:
+            split_result['group_mi_amplitude'] = group_mi(split_result['per_feature_amplitude'])
+
         results[split_name] = split_result
+
+    if not args.no_rolling:
+        results['rolling'] = compute_rolling_mi(
+            [args.train, args.val, 'DATA/Nero_test_labeled.csv'],
+            ohlc_path=args.ohlc, k=args.k, random_state=args.random_state,
+        )
 
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     with open(args.output, 'w') as f:
