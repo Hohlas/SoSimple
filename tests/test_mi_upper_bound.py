@@ -2,6 +2,7 @@ import importlib.util
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 _MODULE_PATH = Path(__file__).resolve().parents[1] / 'statistics' / 'mi_upper_bound.py'
@@ -11,6 +12,35 @@ _spec.loader.exec_module(mi_upper_bound)
 
 estimate_mi = mi_upper_bound.estimate_mi
 estimate_mi_per_feature = mi_upper_bound.estimate_mi_per_feature
+load_mi_data = mi_upper_bound.load_mi_data
+estimate_rolling_mi = mi_upper_bound.estimate_rolling_mi
+
+
+def test_estimate_rolling_mi_returns_time_series():
+    rng = np.random.RandomState(42)
+    n = 1000
+    X = rng.randn(n, 2)
+    y = X[:, 0] + rng.randn(n) * 0.5
+    timestamps = pd.date_range('2020-01-01', periods=n, freq='h')
+    result = estimate_rolling_mi(X, y, timestamps, window=200, step=100, k=5, random_state=42)
+    assert 'timestamps' in result
+    assert 'mi_bits' in result
+    assert 'r2_ceiling' in result
+    assert len(result['mi_bits']) == len(result['timestamps'])
+    assert all(0 <= v <= 1 for v in result['r2_ceiling'])
+
+
+def test_load_mi_data_returns_features_and_targets():
+    data = load_mi_data('DATA/Nero_train_labeled.csv', ohlc_path='DATA/XAUUSD_H1_OHLC.csv')
+    assert 'X' in data
+    assert 'y_direction' in data
+    assert 'y_amplitude' in data
+    assert 'feature_names' in data
+    assert 'time' in data
+    assert data['X'].shape[1] == len(data['feature_names'])
+    assert data['X'].shape[0] > 1000
+    assert set(np.unique(data['y_direction'])).issubset({-1.0, 0.0, 1.0})
+    assert np.isfinite(data['y_amplitude']).all()
 
 
 def test_estimate_mi_per_feature_returns_dataframe():
