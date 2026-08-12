@@ -26,9 +26,10 @@
 |---|---|---|---|
 | Task 1: Аудит существующих MI | 05-eda-data-quality | Smoke-check данных, проверка колонок | Известно, что уже есть в `feature_catalog.json` |
 | Task 2: MI-скрипт (ядро) | 03-feature-contract-leakage | Все признаки live-safe, нет future-derived | Функция `estimate_mi()` проходит тесты |
-| Task 3: Direction vs Amplitude MI | 00-research-management | Гипотеза зафиксирована до запуска | MI оценён для обоих таргетов с CI по временным фолдам |
+| Task 3: Direction vs Amplitude MI | 00-research-management, 05-eda-data-quality | Гипотеза и gate-критерии зафиксированы до запуска; smoke-check данных (Step 5) | MI оценён для обоих таргетов с fold-CI и permutation p-value |
 | Task 4: Per-feature MI | 05-eda-data-quality | MI по каждому признаку отдельно | Таблица MI per feature сохранена |
 | Task 5: Rolling MI | 06b-oracle-preflight | Окно фиксировано до запуска | Временной ряд MI построен |
+| Task 5b: Robustness по k | spec «Метод оценки» | k=10/15 не используются для выбора | Диапазон MI при k=5/10/15 зафиксирован |
 | Task 6: R² ceiling + отчёт | 16-reporting-audit | Сравнение с текущими моделями | JSON + markdown отчёт |
 
 ### Применимость методологии
@@ -109,7 +110,7 @@ print(f'Features with MI > 0.05: {sum(1 for v in mi_values if v > 0.05)}')
 
 **Interfaces:**
 - Consumes: `DATA/Nero_train_labeled.csv`, `ML/entry_path_task.py:ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS`
-- Produces: `estimate_mi(X, y, k=5, n_folds=10, n_permutations=200, random_state=42, discrete_target=False) -> dict` со средним/максимумом маргинальных MI, fold-CI, permutation p-value, R² ceiling
+- Produces: `estimate_mi(X, y, k=5, n_folds=10, n_permutations=200, random_state=42, discrete_target=False, discrete_mask=None) -> dict` со средним/максимумом маргинальных MI **в bits** (sklearn возвращает nats — конверсия `/np.log(2)` внутри), fold-CI, permutation p-value (`None` при `n_permutations=0`), R² ceiling
 
 **Методология:** [03-feature-contract-leakage.md](../../methodology/03-feature-contract-leakage.md) — проверка live-safe признаков.
 
@@ -164,6 +165,26 @@ def test_estimate_mi_independent_features_low_mi():
     result = estimate_mi(X, y, k=5, n_folds=5, n_permutations=20, random_state=42)
     assert result['mean_marginal_mi_bits'] < 0.05
     assert result['perm_p_value'] > 0.05
+
+
+def test_estimate_mi_r2_ceiling_not_below_true_r2():
+    # Семантический тест (аудит п.1): для гауссовой пары R²-потолок обязан быть
+    # не ниже истинной R². Если MI перепутать nats/bits, потолок 0.83 < 0.92 — тест падает.
+    rng = np.random.RandomState(42)
+    X = rng.randn(20000, 1)
+    y = X[:, 0] + rng.randn(20000) * 0.3
+    true_r2 = np.corrcoef(X[:, 0], y)[0, 1] ** 2
+    result = estimate_mi(X, y, k=5, n_folds=5, n_permutations=10, random_state=42)
+    assert result['r2_ceiling'] >= true_r2 - 0.05
+
+
+def test_estimate_mi_zero_permutations_returns_none_p_value():
+    # Аудит п.2: n_permutations=0 — p-value не вычисляется, не фейковое 1.0
+    rng = np.random.RandomState(42)
+    X = rng.randn(200, 2)
+    y = X[:, 0] + rng.randn(200) * 0.5
+    result = estimate_mi(X, y, k=5, n_folds=5, n_permutations=0, random_state=42)
+    assert result['perm_p_value'] is None
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -188,9 +209,11 @@ import numpy as np
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 
 
-def _mi_scores(X, y, k, random_state, discrete_target):
+def _mi_scores(X, y, k, random_state, discrete_target, discrete_mask):
     estimator = mutual_info_classif if discrete_target else mutual_info_regression
-    return estimator(X, y, discrete_features=False, n_neighbors=k, random_state=random_state)
+    return estimator(
+        X, y, discrete_features=discrete_mask, n_neighbors=k, random_state=random_state,
+    )
 
 
 def estimate_mi(
@@ -201,10 +224,18 @@ def estimate_mi(
     n_permutations: int = 200,
     random_state: int = 42,
     discrete_target: bool = False,
+    discrete_mask: np.ndarray | None = None,
 ) -> dict:
     n_samples, n_features = X.shape
     rng = np.random.RandomState(random_state)
-    scores = _mi_scores(X, y, k, random_state, discrete_target)
+    if discrete_mask is None:
+        discrete_mask = False  # все признаки continuous
+    else:
+        discrete_mask = np.asarray(discrete_mask, dtype=bool)
+    scores = _mi_scores(X, y, k, random_state, discrete_target, discrete_mask)
+    # sklearn возвращает MI в nats (натуральный логарифм); переводим в bits:
+    # формула R²-потолка 1 - 2^(-2·I) верна только для I в bits (аудит п.1).
+    scores = scores / np.log(2)
     mean_mi = float(scores.mean())
     max_mi = float(scores.max())
     # Разброс по непересекающимся временным сегментам (данные отсортированы по времени).
@@ -213,8 +244,8 @@ def estimate_mi(
         if len(chunk) < max(2 * k + 1, 50):
             continue
         fold_scores.append(float(_mi_scores(
-            X[chunk], y[chunk], k, rng.randint(0, 2**31), discrete_target,
-        ).mean()))
+            X[chunk], y[chunk], k, rng.randint(0, 2**31), discrete_target, discrete_mask,
+        ).mean() / np.log(2)))
     if len(fold_scores) >= 2:
         ci = np.percentile(fold_scores, [5, 95])
     else:
@@ -223,16 +254,19 @@ def estimate_mi(
     for _ in range(n_permutations):
         y_perm = y[rng.permutation(n_samples)]
         perm_scores.append(float(_mi_scores(
-            X, y_perm, k, rng.randint(0, 2**31), discrete_target,
-        ).mean()))
-    perm_p_value = float((np.sum(np.asarray(perm_scores) >= mean_mi) + 1) / (n_permutations + 1))
+            X, y_perm, k, rng.randint(0, 2**31), discrete_target, discrete_mask,
+        ).mean() / np.log(2)))
+    if n_permutations > 0:
+        perm_p_value = float((np.sum(np.asarray(perm_scores) >= mean_mi) + 1) / (n_permutations + 1))
+    else:
+        perm_p_value = None  # p-value не вычислялось (аудит п.2)
     return {
         'mean_marginal_mi_bits': mean_mi,
         'max_marginal_mi_bits': max_mi,
         'mi_ci_p05': float(ci[0]),
         'mi_ci_p95': float(ci[1]),
         'perm_p_value': perm_p_value,
-        # R² <= 1 - 2^(-2·I); диагностическая оценка из маргинального MI
+        # R² <= 1 - 2^(-2·I), I в bits; диагностическая оценка из маргинального MI
         'r2_ceiling': float(1 - 2**(-2 * mean_mi)),
         'n_samples': n_samples,
         'n_features': n_features,
@@ -281,9 +315,11 @@ def estimate_mi_per_feature(
     k: int = 5,
     random_state: int = 42,
     discrete_target: bool = False,
+    discrete_mask: np.ndarray | None = None,
 ) -> pd.DataFrame:
-    scores = _mi_scores(X, y, k, random_state, discrete_target)
-    df = pd.DataFrame({'feature': feature_names, 'mi_bits': scores})
+    scores = _mi_scores(X, y, k, random_state, discrete_target,
+                        False if discrete_mask is None else np.asarray(discrete_mask, dtype=bool))
+    df = pd.DataFrame({'feature': feature_names, 'mi_bits': scores / np.log(2)})
     return df.sort_values('mi_bits', ascending=False).reset_index(drop=True)
 ```
 
@@ -328,13 +364,24 @@ locked_test = not_opened
 
 Таргеты (строятся джойном labeled CSV с DATA/XAUUSD_H1_OHLC.csv по time;
 в labeled CSV нет open/close):
-  T1_direction: sign(close[t+1] - open[t+1]), дискретный → mutual_info_classif
+  T1_direction: sign(close[t+1] - open[t+1]), домен {-1, 0, +1} —
+                ТРЁХКЛАССОВЫЙ, не binary: класс 0 (close == open) ~3.84% строк
+                train (1590/41362, проверено); дискретный → mutual_info_classif.
+                Доли классов фиксируются в JSON (direction_class_balance).
   T2_amplitude: |log(close[t+1] / open[t+1])|, непрерывный → mutual_info_regression
 
-Gate-критерии (permutation test, H0: MI = 0):
-  perm_p_value < 0.05 и CI не включает 0 → предсказуемость существует (PASS)
+Gate-критерии вердикта (permutation test, H0: MI = 0):
+  perm_p_value < 0.05 → предсказуемость существует (PASS)
   perm_p_value >= 0.05 → предсказуемость отсутствует (FAIL)
-  p < 0.05, но CI включает 0 → INCONCLUSIVE
+  INCONCLUSIVE — только при технических проблемах (мало данных, расходящиеся оценки).
+
+Стабильность — отдельная метрика, не часть вердикта (аудит п.11):
+  fold-CI — эмпирический разброс MI по временным фолдам (устойчивость, не
+  статистический CI). Доля фолдов с MI > 0 и разброс fold_scores идут в
+  отчёт как метрика стабильности. Regime drift (MI падает на части фолдов) —
+  самостоятельный осмысленный результат, а НЕ INCONCLUSIVE.
+  Секция rolling — диагностическая (n_permutations=0, perm_p_value=null) и в
+  вердикте PASS/FAIL не участвует.
 
 Минимальные числа:
   min_samples: 1000 (train)
@@ -374,7 +421,7 @@ Expected: FAIL
 
 Добавить в `statistics/mi_upper_bound.py`. Таргеты строятся джойном с OHLC: в labeled CSV колонок `open`/`close` нет (проверено: их нет в заголовке `DATA/Nero_train_labeled.csv`).
 
-**Дубли `time` (факт, обнаружен при проверке):** в labeled CSV `time` не уникален — train: 5 592 строк-дублей (44 159 → 41 363, −6.3%), validation −5.1%, test −5.4%. Пары различаются во фрактальных колонках (и в производных таргетах), т.е. это два состояния одного бара. Конвенция проекта — `drop_duplicates('time', keep='last')` (`ML/benchmark_execution_policy_v2.py:78`, `ML/baseline/compare_nero_by_time.py:151`); применяется она ДО feature bank и фиксируется в disclosure.
+**Дубли `time` (факт, обнаружен при проверке):** в labeled CSV `time` не уникален — train: 2 796 строк-дублей (44 159 → 41 363, −6.3%), validation −5.1%, test −5.4%. Пары различаются во фрактальных колонках (и в производных таргетах), т.е. это два состояния одного бара. Конвенция проекта — `drop_duplicates('time', keep='last')` (`ML/benchmark_execution_policy_v2.py:78`, `ML/baseline/compare_nero_by_time.py:151`); применяется она ДО feature bank и фиксируется в disclosure.
 
 ```python
 import sys
@@ -451,7 +498,22 @@ def load_mi_data(csv_path: str, ohlc_path: str = 'DATA/XAUUSD_H1_OHLC.csv') -> d
 
 Expected: PASS (OHLC-джойн обязателен: без `DATA/XAUUSD_H1_OHLC.csv` таргеты не построить)
 
-- [ ] **Step 5: Write runner script**
+- [ ] **Step 5: Data contract smoke-check (обязателен по методологии 05)**
+
+Методология `docs/methodology/05-eda-data-quality.md` требует прогнать smoke-check до любой интерпретации результата как ML-качества:
+
+```bash
+.venv/bin/python statistics/data_contract_smoke_check.py \
+    --train DATA/Nero_train_labeled.csv \
+    --val DATA/Nero_validation_labeled.csv \
+    --test DATA/Nero_test_labeled.csv
+```
+
+**Известный факт (проверено 2026-08-12):** smoke-check падает на колонках `target_buy_H6_val` и далее — эти fav-target колонки отсутствуют и в `Nero_train_labeled.csv`, и в дефолтном `Nero_XAUUSD_train_labeled.csv` (проверено: `grep target_buy_H6_val` по заголовкам обоих файлов — 0 совпадений; дефолтный прогон тоже FAIL на той же колонке). Это устаревшая проверка под колонки, которых больше нет в данных, — не дефект файлов данного эксперимента. Все проверки, релевантные MI-эксперименту (тензор (N,100,29), NaN/inf = 0, direction ∈ {−1,1}, up/dn ∈ [0,1], ATR-инварианты), проходят.
+
+**Действие:** зафиксировать в disclosure отчёта: «smoke-check: FAIL по устаревшей проверке `target_*_H6_val` (колонки отсутствуют в обоих наборах labeled CSV; все инварианты, используемые MI-экспериментом, PASS). Результат имеет статус research_only». Чинить smoke-check или данные в рамках этого плана запрещено (посторонний рефакторинг); при необходимости — отдельная задача.
+
+- [ ] **Step 6: Write runner script**
 
 Runner запускается как `.venv/bin/python statistics/run_mi_upper_bound.py` — sys.path[0] = каталог `statistics/`, поэтому импорт `from mi_upper_bound import ...` (не `statistics.mi_upper_bound` — это имя конфликтует со stdlib).
 
@@ -496,8 +558,10 @@ def main():
             'feature_set': 'ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS',
             'n_features': 42,
             'r2_ceiling_formula': '1 - 2^(-2 * mean_marginal_mi_bits)',
+            'mi_units': 'bits (sklearn возвращает nats; конверсия /ln(2) внутри estimate_mi)',
+            'discrete_features': ['session_hour', 'weekday'],
             'targets': {
-                'direction': 'sign(close[t+1] - open[t+1]) из OHLC-джойна',
+                'direction': 'sign(close[t+1] - open[t+1]) из OHLC-джойна, домен {-1,0,+1} (~3.8% нулей)',
                 'amplitude': '|log(close[t+1] / open[t+1])| из OHLC-джойна',
             },
         },
@@ -505,15 +569,25 @@ def main():
 
     for split_name, split_path in [('train', args.train), ('validation', args.val)]:
         data = load_mi_data(split_path, ohlc_path=args.ohlc)
+        # session_hour (23 уровня) и weekday (5 уровней) — дискретные (аудит п.5):
+        # передаём маску, чтобы sklearn не добавлял к ним noise как к continuous.
+        discrete_mask = np.array([
+            name in ('session_hour', 'weekday') for name in data['feature_names']
+        ])
         split_result = {
             'n_samples': data['X'].shape[0],
             'n_features': data['X'].shape[1],
+            'direction_class_balance': {
+                str(int(c)): int(n) for c, n in zip(
+                    *np.unique(data['y_direction'], return_counts=True))
+            },
         }
 
         mi_dir = estimate_mi(
             data['X'], data['y_direction'],
             k=args.k, n_folds=args.n_folds, n_permutations=args.n_permutations,
             random_state=args.random_state, discrete_target=True,
+            discrete_mask=discrete_mask,
         )
         split_result['direction'] = mi_dir
 
@@ -521,20 +595,21 @@ def main():
             data['X'], data['y_amplitude'],
             k=args.k, n_folds=args.n_folds, n_permutations=args.n_permutations,
             random_state=args.random_state, discrete_target=False,
+            discrete_mask=discrete_mask,
         )
         split_result['amplitude'] = mi_amp
 
         per_feat_dir = estimate_mi_per_feature(
             data['X'], data['y_direction'],
             data['feature_names'], k=args.k, random_state=args.random_state,
-            discrete_target=True,
+            discrete_target=True, discrete_mask=discrete_mask,
         )
         split_result['per_feature_direction'] = per_feat_dir.to_dict('records')
 
         per_feat_amp = estimate_mi_per_feature(
             data['X'], data['y_amplitude'],
             data['feature_names'], k=args.k, random_state=args.random_state,
-            discrete_target=False,
+            discrete_target=False, discrete_mask=discrete_mask,
         )
         split_result['per_feature_amplitude'] = per_feat_amp.to_dict('records')
 
@@ -550,7 +625,7 @@ if __name__ == '__main__':
     main()
 ```
 
-- [ ] **Step 6: Run the estimation**
+- [ ] **Step 7: Run the estimation**
 
 ```bash
 .venv/bin/python statistics/run_mi_upper_bound.py \
@@ -561,7 +636,7 @@ if __name__ == '__main__':
     --k 5 --n-folds 10 --n-permutations 200 --random-state 42
 ```
 
-- [ ] **Step 7: Проверить результат**
+- [ ] **Step 8: Проверить результат**
 
 ```bash
 .venv/bin/python -c "
@@ -580,7 +655,7 @@ for split in ['train', 'validation']:
 "
 ```
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add statistics/run_mi_upper_bound.py ML/reports/mi_upper_bound.json
@@ -821,6 +896,12 @@ def compute_rolling_mi(split_paths: list[str], ohlc_path: str, k: int, random_st
     y_amp = np.concatenate([p['y_amplitude'] for p in parts])[order]
     timestamps = np.concatenate([p['time'] for p in parts])[order]
 
+    # Границы split'ов (аудит п.10): последний timestamp каждого split'а —
+    # для вертикальных линий на plot и disclosure окон на стыках.
+    split_boundaries = []
+    for p in parts[:-1]:
+        split_boundaries.append(str(p['time'].max()))
+
     return {
         'direction': estimate_rolling_mi(
             X, y_dir, timestamps, window=500, step=100, k=k,
@@ -831,6 +912,10 @@ def compute_rolling_mi(split_paths: list[str], ohlc_path: str, k: int, random_st
             random_state=random_state, discrete_target=False,
         ),
         'splits': split_paths,
+        'split_boundaries': split_boundaries,
+        'disclosure': ('окно W=500 может охватывать два split\'а; значения MI на '
+                       'границах имеют смешанный характер и интерпретируются как '
+                       'сглаженный переход'),
         'n_samples_total': int(len(y_dir)),
     }
 ```
@@ -856,6 +941,7 @@ r = json.load(open('ML/reports/mi_upper_bound.json'))
 rolling = r.get('rolling', {})
 
 fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+boundaries = rolling.get('split_boundaries', [])
 
 for ax, target in zip(axes, ['direction', 'amplitude']):
     if target not in rolling:
@@ -864,6 +950,11 @@ for ax, target in zip(axes, ['direction', 'amplitude']):
     ts = [t[:10] for t in d['timestamps']]
     ax.plot(ts, d['mi_bits'], label='MI (bits)')
     ax.axhline(0.01, color='red', linestyle='--', alpha=0.5, label='threshold 0.01')
+    # Вертикальные линии на границах split'ов (аудит п.10)
+    for b in boundaries:
+        idx = next((i for i, t in enumerate(d['timestamps']) if t >= b), None)
+        if idx is not None:
+            ax.axvline(idx, color='gray', linestyle=':', alpha=0.7)
     ax.set_ylabel('MI (bits)')
     ax.set_title(f'Rolling MI: {target}')
     ax.legend()
@@ -881,6 +972,69 @@ print('Saved ML/plots/mi_rolling.png')
 git add statistics/mi_upper_bound.py statistics/run_mi_upper_bound.py \
        ML/reports/mi_upper_bound.json ML/plots/mi_rolling.png
 git commit -m "feat: rolling MI for regime drift detection"
+```
+
+---
+
+### Task 5b: Robustness по k (k=10, 15)
+
+**Files:**
+- Create: `ML/reports/mi_upper_bound_k10.json`, `ML/reports/mi_upper_bound_k15.json`
+
+**Interfaces:**
+- Consumes: `statistics/run_mi_upper_bound.py` из Task 3
+- Produces: два дополнительных JSON с оценками при k=10 и k=15
+
+**Методология:** spec «Метод оценки» — «k = 10, 15 — robustness-проверка (не для выбора по результату)» (аудит п.6).
+
+**Фиксация до запуска:** k=10 и k=15 запускаются только как проверка устойчивости. Итоговые значения и вердикт берутся из k=5 (зафиксирован в Task 3); результаты k=10/15 не используются для выбора «лучшего» числа.
+
+- [ ] **Step 1: Запустить оценку с k=10 и k=15**
+
+Rolling MI в robustness-прогонах отключён (ускорение; rolling — только k=5):
+
+```bash
+.venv/bin/python statistics/run_mi_upper_bound.py \
+    --train DATA/Nero_train_labeled.csv \
+    --val DATA/Nero_validation_labeled.csv \
+    --ohlc DATA/XAUUSD_H1_OHLC.csv \
+    --output ML/reports/mi_upper_bound_k10.json \
+    --k 10 --n-folds 10 --n-permutations 200 --random-state 42 --no-rolling
+.venv/bin/python statistics/run_mi_upper_bound.py \
+    --train DATA/Nero_train_labeled.csv \
+    --val DATA/Nero_validation_labeled.csv \
+    --ohlc DATA/XAUUSD_H1_OHLC.csv \
+    --output ML/reports/mi_upper_bound_k15.json \
+    --k 15 --n-folds 10 --n-permutations 200 --random-state 42 --no-rolling
+```
+
+Флаг `--no-rolling` добавить в runner (argparse `action='store_true'`; при установке блок `results['rolling'] = compute_rolling_mi(...)` пропускается).
+
+- [ ] **Step 2: Зафиксировать диапазон устойчивости**
+
+```bash
+.venv/bin/python -c "
+import json
+for k, path in [(5, 'ML/reports/mi_upper_bound.json'),
+                (10, 'ML/reports/mi_upper_bound_k10.json'),
+                (15, 'ML/reports/mi_upper_bound_k15.json')]:
+    r = json.load(open(path))
+    for split in ['train', 'validation']:
+        for target in ['direction', 'amplitude']:
+            m = r[split][target]
+            print(f'k={k:>2} {split:>10} {target:>9}: MI={m[\"mean_marginal_mi_bits\"]:.4f} '
+                  f'(max {m[\"max_marginal_mi_bits\"]:.4f}) R2ceil={m[\"r2_ceiling\"]:.4f}')
+"
+```
+
+В отчёт (Task 6) вынести таблицу «MI при k=5/10/15»: если ранги и порядок величин стабильны — результат устойчив к гиперпараметру оценщика; если нет — зафиксировать как ограничение. Вердикт не меняется.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add ML/reports/mi_upper_bound_k10.json ML/reports/mi_upper_bound_k15.json \
+       statistics/run_mi_upper_bound.py
+git commit -m "feat: MI robustness check over k=10,15"
 ```
 
 ---
@@ -969,11 +1123,18 @@ for split in ['train', 'validation']:
 
 [Вставить анализ стабильности MI во времени, включая поведение после 2022]
 [Вставить график mi_rolling.png]
+Обязательно: окна W=500 на границах split'ов имеют смешанный характер
+(split_boundaries из JSON отмечены на графике вертикальными линиями).
+
+## 5b. Robustness по k
+
+[Таблица MI при k=5/10/15 (Task 5b): устойчивы ли ранги и порядок величин]
 
 ## 6. Интерпретация
 
 ### 6.1 Direction vs Amplitude
-[Сравнить MI direction и amplitude. Подтверждает ли hypothesis ретроспективы?]
+[Сравнить MI direction и amplitude. Подтверждает ли hypothesis ретроспективы?
+Учесть: direction — трёхклассовый таргет с классом 0 (~3.8% строк).]
 
 ### 6.2 R² Ceiling vs Models
 [Модели на пределе или есть запас? Обязательно указать ограничения сравнения:
@@ -981,14 +1142,16 @@ legacy-модели на future-derived входах (ретроспектива
 потолок из маргинального MI — диагностический.]
 
 ### 6.3 Regime Drift
-[Rolling MI показывает стабильность или деградацию, в т.ч. после 2022?]
+[Rolling MI показывает стабильность или деградацию, в т.ч. после 2022?
+Regime drift — самостоятельный результат, не INCONCLUSIVE.]
 
 ### 6.4 Time-only dominance
 [Группа time vs другие группы по MI]
 
 ## 7. Вердикт
 
-[PASS / FAIL / INCONCLUSIVE по gate-критериям permutation test из Task 3]
+[PASS / FAIL по gate-критериям permutation test из Task 3 (perm_p_value).
+Fold-CI и rolling — метрики стабильности, в вердикте не участвуют.]
 
 ## 8. Рекомендации
 
@@ -996,12 +1159,16 @@ legacy-модели на future-derived входах (ретроспектива
 
 ## 9. Disclosure
 
-- N конфигураций: 1 (фиксированная до запуска)
-- Search budget: 1 оценка MI
+- N конфигураций: 1 основная (k=5, зафиксирована до запуска) + 2 robustness (k=10, 15; не для выбора)
+- Search budget: 3 оценки MI (основная + robustness)
 - Feature contract: ENTRY_PATH_V1_LIVE_SAFE (PASS по live-safe audit)
+- Дискретные признаки: session_hour (23 уровня), weekday (5 уровней) переданы с discrete-маской; остальные 40 — continuous
+- Direction таргет: трёхклассовый {-1, 0, +1}, доля класса 0 в train = [direction_class_balance из JSON]
+- Единицы MI: bits (sklearn возвращает nats; конверсия /ln(2) внутри estimate_mi)
 - R² ceiling: диагностический (маргинальный MI, не joint)
 - Сравнение с legacy R²: ориентировочное (future-derived входы legacy-моделей)
-- Smoke-check: [результат]
+- Rolling: окна на стыках split'ов — смешанный характер (см. split_boundaries)
+- Smoke-check: FAIL по устаревшей проверке target_*_H6_val (колонки отсутствуют в обоих наборах labeled CSV; все инварианты MI-эксперимента PASS); статус результата — research_only
 ```
 
 - [ ] **Step 3: Заполнить отчёт фактическими данными**
@@ -1023,7 +1190,7 @@ git commit -m "docs: MI upper bound report with R² ceiling analysis"
 
 2. **Таргет amplitude — РЕШЕНО (аудит К2):** `close`/`open` берутся из OHLC-джойна, future-derived прокси (`ret_*_dir_atr`) не нужны. Контроль качества джойна: дубли `time` запрещены, потери строк ≤ 5% (stop rule в spec).
 
-3. **feature_catalog.json — РЕШЕНО (аудит У4):** существующий MI посчитан против таргета `signal` (future-derived, `statistics/EDA.ipynb`, n_neighbors=3, только top-100 признаков). Не переиспользуется; ядро пишется заново.
+3. **feature_catalog.json — РЕШЕНО (аудит У4):** существующий MI посчитан для 233 engineered-признаков против таргета `signal` (future-derived, `statistics/EDA.ipynb`, n_neighbors=3). Не переиспользуется; ядро пишется заново.
 
 4. **Вычислительная стоимость:** train ~41 000 строк после дедупликации (не ~4000 — факт проверен), оценка MI с фолдами и permutation по 42 признакам занимает минуты. Rolling MI: ~620 окон по всей конкатенации (~60 000 строк) × (1 + 5 фолдов) вызовов. **Решение:** rolling считается с n_folds=5 и без permutation (зафиксировано в Task 5); при неприемлемом времени — уменьшить шаг до 200, зафиксировав это до запуска.
 
