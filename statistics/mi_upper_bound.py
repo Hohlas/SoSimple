@@ -1,3 +1,24 @@
+# =============================================================================
+# Файл: mi_upper_bound.py
+# Назначение: KSG-оценка взаимной информации (bits) между live-safe признаками и таргетами следующего бара; диагностический потолок R²
+# Обновлён: 2026-08-12
+# Зависимости:
+#   Входные данные:
+#     - DATA/Nero_{train,validation,test}_labeled.csv (откуда: processing/)
+#     - DATA/XAUUSD_H1_OHLC.csv (откуда: MT4-экспорт)
+#   Выходные данные:
+#     - dict / DataFrame в памяти (куда: run_mi_upper_bound.py)
+#   Внутренние зависимости:
+#     - ML/entry_path_task.py (ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS)
+#     - ML/entry_path_feature_bank.py (build_entry_path_feature_bank)
+#   Внешние зависимости:
+#     - scikit-learn (mutual_info_regression / mutual_info_classif)
+# Использование:
+#   импорт из run_mi_upper_bound.py (запуск из statistics/ из-за конфликта имени со stdlib)
+# Примечания:
+#   - sklearn возвращает MI в nats; внутри конверсия в bits (/ln(2))
+#   - __init__.py не добавлять: statistics/ конфликтует со stdlib-модулем statistics
+# =============================================================================
 from __future__ import annotations
 
 import sys
@@ -32,6 +53,12 @@ FUTURE_DERIVED_DENYLIST = {
 
 
 def load_mi_data(csv_path: str, ohlc_path: str = 'DATA/XAUUSD_H1_OHLC.csv') -> dict:
+    """Загружает split, дедуплицирует по time, джойнит OHLC и строит live-safe признаки и таргеты t+1.
+
+    Возвращает:
+        dict с ключами X (N, 42), y_direction (N,), y_amplitude (N,),
+        feature_names, time, n_dedup_dropped, n_join_dropped.
+    """
     df = pd.read_csv(csv_path, delimiter=';')
     assert 'time' in df.columns
     df = df.sort_values('time').reset_index(drop=True)
@@ -92,6 +119,16 @@ def estimate_mi(
     discrete_target: bool = False,
     discrete_mask: np.ndarray | None = None,
 ) -> dict:
+    """Оценивает среднее маргинальное MI (bits) с fold-CI и permutation p-value.
+
+    Аргументы:
+        X: признаки, shape (N, F); y: таргет, shape (N,).
+        discrete_target: True → mutual_info_classif; discrete_mask: маска дискретных признаков.
+
+    Возвращает:
+        dict: mean/max MI в bits, mi_ci_p05/p95 (метрика стабильности),
+        perm_p_value (None при n_permutations=0), r2_ceiling = 1 - 2^(-2·I).
+    """
     n_samples, n_features = X.shape
     rng = np.random.RandomState(random_state)
     if discrete_mask is None:
@@ -150,6 +187,7 @@ def estimate_mi_per_feature(
     discrete_target: bool = False,
     discrete_mask: np.ndarray | None = None,
 ) -> pd.DataFrame:
+    """Возвращает DataFrame (feature, mi_bits) по каждому признаку, отсортированный по убыванию MI."""
     scores = _mi_scores(X, y, k, random_state, discrete_target,
                         False if discrete_mask is None else np.asarray(discrete_mask, dtype=bool))
     df = pd.DataFrame({'feature': feature_names, 'mi_bits': scores / np.log(2)})
@@ -166,6 +204,10 @@ def estimate_rolling_mi(
     random_state: int = 42,
     discrete_target: bool = False,
 ) -> dict:
+    """Скользящее среднее маргинальное MI (bits) по временным окнам (window/step), без permutation.
+
+    Примечание: discrete_mask в rolling не передаётся (session_hour/weekday — как continuous).
+    """
     n = len(y)
     ts_list, mi_list, r2_list = [], [], []
     for start in range(0, n - window + 1, step):

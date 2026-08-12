@@ -28,6 +28,8 @@
 | [signal_tracer.py](statistics/signal_tracer.py) | Trade-level reconciliation: ML vs MT4 | `ml_signals.csv` + `Nero_*_labeled.csv` + `*.npy` + log → dossiers, CSV | [docs](docs/statistics/signal_tracer.py.md) | ✅ |
 | [analyze_path_ordering.py](statistics/analyze_path_ordering.py) | Path-ordering анализ: что бьёт первым — SL или TP? Сравнение с реальным MT4 | `all_trades.csv` + OHLC → отчёт | — | 🏁 |
 | [data_contract_smoke_check.py](statistics/data_contract_smoke_check.py) | Быстрая проверка контрактов данных | CSV → smoke verdict | — | ✅ |
+| [mi_upper_bound.py](statistics/mi_upper_bound.py) | KSG-оценка MI (bits) между live-safe признаками и таргетами t+1; диагностический потолок R² | `Nero_*_labeled.csv` + OHLC → dict/DataFrame | [docs](docs/statistics/mi_upper_bound.py.md) | ✅ |
+| [run_mi_upper_bound.py](statistics/run_mi_upper_bound.py) | Runner MI: split'ы, per-feature, группы, rolling, графики | CSV → `ML/reports/mi_upper_bound*.json`, `ML/plots/mi_*.png` | [docs](docs/statistics/run_mi_upper_bound.py.md) | ✅ |
 
 ## API
 
@@ -264,6 +266,7 @@
 | [test_exit_policy_research.py](tests/test_exit_policy_research.py) | `API/exit_policy_research.py` | — | ✅ |
 | [test_generate_signals_research.py](tests/test_generate_signals_research.py) | TB signal selection в `API/generate_signals.py` | — | ✅ |
 | [test_signal_tracer_tb.py](tests/test_signal_tracer_tb.py) | TB-specific parsing в `statistics/signal_tracer.py` | — | ✅ |
+| [test_mi_upper_bound.py](tests/test_mi_upper_bound.py) | `statistics/mi_upper_bound.py`: bits-конверсия, p-value, rolling, load-инварианты | — | ✅ |
 | [test_triple_barrier_calibration.py](tests/test_triple_barrier_calibration.py) | EV/calibration helper для Triple Barrier | — | ✅ |
 | [test_triple_barrier_first_touch.py](tests/test_triple_barrier_first_touch.py) | first-touch helper для Triple Barrier разметки | — | ✅ |
 | [test_triple_barrier_training.py](tests/test_triple_barrier_training.py) | transfer-learning kwargs для TB обучения | — | ✅ |
@@ -330,6 +333,8 @@
 | [statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике |
 | [EDA.ipynb.md](docs/statistics/EDA.ipynb.md) | Отчет по разведочному анализу |
 | [signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF |
+| [mi_upper_bound.py.md](docs/statistics/mi_upper_bound.py.md) | KSG-оценка MI и диагностический потолок R²: API и соглашения |
+| [run_mi_upper_bound.py.md](docs/statistics/run_mi_upper_bound.py.md) | Runner MI-этапа: запуск, входы/выходы, ограничения |
 | [neural_networks.md](docs/ML/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики |
 | [benchmark_take_skip_lib_pic_selection.py.md](docs/ML/benchmark_take_skip_lib_pic_selection.py.md) | Внешний отбор `take_skip_v2` по признакам `lib_PIC` |
 | [run_take_skip_lib_pic_feature_matrix.py.md](docs/ML/run_take_skip_lib_pic_feature_matrix.py.md) | Training matrix для `take_skip_v2` с признаками `lib_PIC` внутри модели |

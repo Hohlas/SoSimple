@@ -1,3 +1,19 @@
+# =============================================================================
+# Файл: run_mi_upper_bound.py
+# Назначение: runner оценки MI upper bound: train/validation, per-feature, групповой разбор, rolling, графики, JSON-отчёт
+# Обновлён: 2026-08-12
+# Зависимости:
+#   Входные данные:
+#     - DATA/Nero_{train,validation,test}_labeled.csv (откуда: processing/)
+#     - DATA/XAUUSD_H1_OHLC.csv (откуда: MT4-экспорт)
+#   Выходные данные:
+#     - ML/reports/mi_upper_bound.json (куда: отчёт docs/reports/2026-08-11-mi-upper-bound.md)
+#     - ML/plots/mi_per_feature.png, ML/plots/mi_rolling.png
+#   Внутренние зависимости:
+#     - mi_upper_bound.py (load_mi_data, estimate_mi, estimate_mi_per_feature, estimate_rolling_mi)
+# Использование:
+#   .venv/bin/python statistics/run_mi_upper_bound.py [--k 5] [--no-rolling] [--replot]
+# =============================================================================
 from __future__ import annotations
 
 import argparse
@@ -6,6 +22,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 from mi_upper_bound import (
     ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS,
@@ -75,6 +94,49 @@ def compute_rolling_mi(split_paths: list[str], ohlc_path: str, k: int, random_st
     }
 
 
+def plot_per_feature(results: dict, out_path: str = 'ML/plots/mi_per_feature.png') -> None:
+    train = results.get('train', {})
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    for ax, target in zip(axes, ['direction', 'amplitude']):
+        per_feat = train.get(f'per_feature_{target}', [])
+        if not per_feat:
+            continue
+        df = pd.DataFrame(per_feat).head(20)
+        ax.barh(df['feature'], df['mi_bits'])
+        ax.set_xlabel('MI (bits)')
+        ax.set_title(f'Top-20 features: {target}')
+        ax.invert_yaxis()
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+def plot_rolling(results: dict, out_path: str = 'ML/plots/mi_rolling.png') -> None:
+    rolling = results.get('rolling', {})
+    if not rolling:
+        return
+    fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+    boundaries = rolling.get('split_boundaries', [])
+    for ax, target in zip(axes, ['direction', 'amplitude']):
+        if target not in rolling:
+            continue
+        d = rolling[target]
+        ts = [t[:10] for t in d['timestamps']]
+        ax.plot(ts, d['mi_bits'], label='MI (bits)')
+        ax.axhline(0.01, color='red', linestyle='--', alpha=0.5, label='threshold 0.01')
+        for b in boundaries:
+            idx = next((i for i, t in enumerate(d['timestamps']) if t >= b), None)
+            if idx is not None:
+                ax.axvline(idx, color='gray', linestyle=':', alpha=0.7)
+        ax.set_ylabel('MI (bits)')
+        ax.set_title(f'Rolling MI: {target}')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
 def main():
     parser = argparse.ArgumentParser(description='MI Upper Bound estimation')
     parser.add_argument('--train', default='DATA/Nero_train_labeled.csv')
@@ -86,7 +148,17 @@ def main():
     parser.add_argument('--n-permutations', type=int, default=200)
     parser.add_argument('--random-state', type=int, default=42)
     parser.add_argument('--no-rolling', action='store_true')
+    parser.add_argument('--replot', action='store_true',
+                        help='перестроить графики из сохранённого JSON без пересчёта MI')
     args = parser.parse_args()
+
+    if args.replot:
+        with open(args.output) as f:
+            results = json.load(f)
+        plot_per_feature(results)
+        plot_rolling(results)
+        print(f'Plots rebuilt from {args.output}')
+        return
 
     results = {
         'config': {
@@ -171,6 +243,10 @@ def main():
     with open(args.output, 'w') as f:
         json.dump(results, f, indent=2, default=float)
     print(f'Results saved to {args.output}')
+
+    plot_per_feature(results)
+    plot_rolling(results)
+    print('Plots saved to ML/plots/mi_per_feature.png, ML/plots/mi_rolling.png')
 
 
 if __name__ == '__main__':

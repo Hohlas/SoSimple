@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-08-11] — MI Upper Bound: информационный потолок XAUUSD H1 (RESEARCH_ONLY)
+- **report**: `docs/reports/2026-08-11-mi-upper-bound.md`
+- **topics**: `mutual-information`, `ksg`, `r2-ceiling`, `live-safe`, `regime-drift`, `amplitude`
+- **summary**: KSG-оценка MI (42 live-safe признака, bits) дала диагностический потолок R² ≈ 0.006–0.030 — кратно ниже legacy R² 0.084–0.18; разрыв наиболее вероятно объясняется leakage future-derived входов legacy-моделей. Amplitude предсказуема (p=0.005 на train и validation), direction на validation — нет (p=0.229). Rolling MI 2004–2026 стабилен: regime drift в информации признаков не обнаружен.
+- **artifacts**: `ML/reports/mi_upper_bound.json`, `ML/reports/mi_upper_bound_k10.json`, `ML/reports/mi_upper_bound_k15.json`, `statistics/mi_upper_bound.py`, `statistics/run_mi_upper_bound.py`, `ML/plots/mi_per_feature.png`, `ML/plots/mi_rolling.png`
+- **decision**: amplitude — PASS (research_only), direction — FAIL на validation; фокус следующих веток — amplitude; маргинальный потолок — не строгая joint-граница; сравнение с legacy — ориентировочное.
+- **notes**: fold-CI на validation смещён вверх (KSG-смещение малых фолдов) и в вердикте не участвует; `statistics/data_contract_smoke_check.py` устарел (FAIL по `target_*_H6_val`) — отдельная задача.
+
 ## [2026-08-09] — MT5 Per-Magic Multiplexing Plan + Signal Timing Diagnostics (DIAGNOSTIC_ONLY)
 - **plan**: `docs/superpowers/plans/2026-08-03-mt5-per-magic-multiplexing.md`
 - **topics**: `mt5`, `per-magic`, `multiplexing`, `rule_id`, `single-expert-loop`, `timing-diagnostics`, `audit-rework`

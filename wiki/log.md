@@ -903,3 +903,7 @@
 - Ingested MT5 execution-loop research page covering reports from 2026-07-29 through 2026-08-01, including `EXECUTION_HYGIENE_PARTIAL` and missing `ERROR-4756` linkage artifacts.
 - Updated MT5 execution-loop research page: historical missing `ERROR_SoSimple_163856259.csv` and cumulative tester-agent `ERROR-4756` log are abandoned as non-reproducible inputs; next frozen probe should use current saved batch artifacts.
 - Expanded future MT5 diagnostic `events.csv` with execution context columns (`error_code`, `error_class`, `retcode`, `retcode_text`, `request_seq`, `magic`, `symbol`, `entry_type`); legacy CSVs are backfilled on parse and remain `UNKNOWN` for linkage until rerun.
+# 2026-08-12
+
+- Ingested closed stage `docs/reports/2026-08-11-mi-upper-bound.md` (MI Upper Bound, RESEARCH_ONLY): created `wiki/research/mi-upper-bound.md` and `wiki/concepts/mi-upper-bound.md`; updated `wiki/index.md` (Research + Concepts rows).
+- Key synthesis: amplitude предсказуема (p=0.005 на train/val), direction нет (p=0.229 на val); диагностический R²-потолок 0.006–0.030 кратно ниже legacy R² (0.03–0.18); rolling MI стабилен 2004–2026; fold-CI — стабильность, не доверительный интервал.
