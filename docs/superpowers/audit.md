@@ -1,261 +1,414 @@
-# Аудит: docs/methodology/07b-predictability-gate.md
+# Аудит плана `docs/superpowers/plans/2026-08-12-predictability-gate-raw-fractals.md`
 
-> Дата аудита: 2026-08-12
-> Объект: `docs/methodology/07b-predictability-gate.md` (100 строк, untracked — не в git)
-> Метод: доказательный аудит по первоисточникам; использованы graphify и knowledge-rag для навигации, выводы сверены с файлами проекта
-> Окружение: проверены README.md методики, 03/03b/07/06b/11/16/A3/A4/A5 разделы, `statistics/mi_upper_bound.py`, `statistics/run_mi_upper_bound.py`, `tests/test_mi_upper_bound.py`, `docs/superpowers/specs/2026-08-11-mi-upper-bound-design.md`, отчёт `docs/reports/2026-08-11-mi-upper-bound.md`, `ML/reports/mi_upper_bound.json`, `ML/baseline/feature_ablation.py`, `ML/live_safe_audit.py`, `tests/test_live_safe_audit.py`
+> **Дата**: 2026-08-12
+> **Аудитируемый документ**: `docs/superpowers/plans/2026-08-12-predictability-gate-raw-fractals.md` (674 строки)
+> **Метод аудита**: точечное чтение связанных артефактов, эмпирическая проверка кода из плана на контрольных примерах и реальных данных `DATA/Nero_train_labeled.csv`.
+> **Окружение**: `./.venv/bin/python` 3.10, scikit-learn, pandas, numpy.
 
-## Контекст погружения
+## Контекст, по которому проводилась проверка
 
-`07b-predictability-gate.md` — методический этап «предобученческая проверка предсказуемости набора признаков». Заявлены две проверки:
-1. **Совместный RF-гейт** (обязательный) — единственная, что вправе отклонить набор (FAIL при p ≥ 0.05 против перестановочного фона).
-2. **MI-скрининг** (опциональный, диагностика) — через `statistics/mi_upper_bound.py`; не вправе отклонять набор.
+Методики:
+- `docs/methodology/07b-predictability-gate.md` (157 строк) — основная методика гейта;
+- `docs/methodology/03-feature-contract-leakage.md` (299 строк) — live-safe контракт признаков, режимы parse;
+- `docs/methodology/11-robustness.md` (131 строка), `06-temporal-split.md` (106 строк), `02-data-pipeline.md` (87 строк), `16-reporting-audit.md` (129 строк), `A4-verdicts-stop-conditions.md` (65 строк).
 
-Положение в цепочке: между `06b-oracle-preflight` и `07-baseline-first` (но см. замечание C1 о порядке). Документ ссылается на `07-baseline-first.md`, `16-reporting-audit.md`, `A5-post-mortem-diagnostics.md` и `statistics/mi_upper_bound.py`.
+Код и данные:
+- `ML/fractal_level_feature_builder.py` — `FRACTAL_FIELDS` (23 поля), `build_feature_contract` (существующий аудит);
+- `statistics/mi_upper_bound.py` и `docs/superpowers/plans/2026-08-11-mi-upper-bound.md`, `docs/reports/2026-08-11-mi-upper-bound.md` — предыдущий MI-этап (конвенции, дедупликация 6.33%);
+- `DATA/Nero_train_labeled.csv` — структура колонок, реальные распределения таргетов и полей фракталов.
 
-Проверены фактические реализации: в проекте **реализован только MI-скрининг** (`statistics/mi_upper_bound.py`, `run_mi_upper_bound.py`, `tests/test_mi_upper_bound.py`). **Реализация совместного RF-гейта отсутствует**: ни в `ML/`, ни в `statistics/`, ни в `ML/baseline/` нет модуля, соответствующего описанию 07b шаг 1 (RF `n_estimators=100, max_depth=10, random_state=42` + walk-forward CV по времени + перестановочный тест). Поиск `grep -rn "RF-gate|RF-gейт|совместный RF|predictability gate" ML/ statistics/ docs/superpowers/` — пуст.
-
----
-
-## Сводка замечаний
-
-| ID | Важность | Кратко |
-|----|---------|--------|
-| C1 | Критично | Порядок 07b противоречит README и `07-baseline-first.md` (07b должен идти до 07, но в README стоит после 07) |
-| C2 | Критично | Совместный RF-гейт не реализован — обязательный компонент методики не существует в коде |
-| C3 | Важное | RF-гейт заявляет walk-forward CV по времени, но в проекте нет реализации TimeSeriesSplit (только комментарий в EDA) |
-| C4 | Важное | Документ не упоминает 03b (feature selection) в заказе pipeline, хотя 03b идёт между 03 и 07 |
-| C5 | Важное | Параметры RF не полны: нет `n_jobs`, `class_weight`, `min_samples_leaf` — воспроизводимость под вопросом |
-| C6 | Важное | MI-отчёт выдаёт `PASS`/`FAIL` verdicts, но 07b говорит MI — «не основание для reject» — расхождение методики и отчёта |
-| C7 | Важное | «joint-MI в >5–10 измерениях статистически недостоверно» — источник не подтверждается; spec говорит о 42-мерной ненадёжности |
-| C8 | Улучшение | «минимум 199 перестановок; p_min=0.005» рассинхрон с spec/кодом: в обоих 200, 1/(200+1)≈0.00498 |
-| C9 | Улучшение | Нет требований к воспроизводимости/сохранению RF-гейта как structured artifact (JSON) |
-| C10 | Улучшение | Нет ответа на вопрос о делении N наборов через тренинг: сказано «раскрыть число», но не указано как сравнивать/корректировать |
-| C11 | Улучшение | «typo xor» в «XOR-эффект» — избегать англицизмов вне списка разрешённых |
-| C12 | Вопрос | Нет association между RF-гейтом 07b и RF-фильтром 03b шаг 2 — оба обучают RF с одними параметрами |
-| C13 | Вопрос | Есть ли single seed (`random_state=42`) у RF-гейта; как работает «проверить по seeds» из строки 69? |
-| C14 | Улучшение | Документ не указывает `decision_time` / target contract как обязательные входы явно (только «target contract» общо) |
+graphify & knowledge-rag: поиск по «predictability gate», «live safe fractal fields updn» — существенных прошлых артефактов именно по этому плану нет; план создаёт новый модуль гейта. Этот вывод совпадает с self-disclosure плана (строка 665: «Формального аудита по методике 03 для этого набора раньше не проводилось»).
 
 ---
 
-## Полные замечания
+## Сводка по важности замечаний
 
-### C1 — Критично: порядок 07b противоречит README и 07-baseline-first.md
-
-- **Место**: `docs/methodology/README.md:60-61` против `docs/methodology/07-baseline-first.md:17` и `docs/methodology/07b-predictability-gate.md:98`.
-- **Суть**: В README таблица «задача → файл» ставит 07b **после** 07-baseline-first (строка 61 после 60). Но `07-baseline-first.md:17` шаг 0 требует: «Убедиться, что `07b-predictability-gate.md` пройден; `FAIL` гейта запрещает обучение и baseline». В 07b строка 98 ветвления: «RF-гейт PASS → далее `07-baseline-first.md`». Эти указания согласованы между собой (07b → 07), но противоречат таблице в README, где порядок обратный. Новый пользователь методики, идущий по таблице, попадёт в 07 (baseline) раньше 07b и нарушит обязательный pre-step.
-- **Доказательство**:
-  - `docs/methodology/README.md:60`: `| Baseline-модели: dummy, простые ML, сравнение | 07-baseline-first.md |`
-  - `docs/methodology/README.md:61`: `| Предобученческая проверка предсказуемости ... | 07b-predictability-gate.md |`
-  - `docs/methodology/07-baseline-first.md:17`: «0. Убедиться, что `07b-predictability-gate.md` пройден; `FAIL` гейта запрещает обучение и baseline.»
-  - `docs/methodology/07b-predictability-gate.md:98`: «RF-гейт PASS → далее `07-baseline-first.md`».
-- **Почему важно**: нарушение порядкаereoда шагов — типовой источник leakage и ложных выводов (A3-typical-false-conclusions.md упоминает «сразу обучать Transformer без baseline» как типовую ошибку). Аудитория projectа идёт по README первым.
-- **Рекомендация**: переставить строку 61 в README **до** строки 60, чтобы 07b стоял между 06b и 07. Либо переименовать 07 → 07c (baseline), чтобы порядок нумерации совпадал с порядком выполнения. Альтернатива — явный текстовый маркер в README «важно: 07b выполнять до 07».
-
-### C2 — Критично: совместный RF-гейт не реализован в коде
-
-- **Место**: `docs/methodology/07b-predictability-gate.md:21-40` (шаг 1); сравнить с `statistics/mi_upper_bound.py`, `statistics/run_mi_upper_bound.py`.
-- **Суть**: Документ заявляет **обязательный** совместный RF-гейт как единственную проверку, способную отклонить набор (строка 9: «Решение об отклонении принимает **только совместный RF-гейт**»; строка 65: «Отклонить набор без обучения — только если совместный RF-гейт: p ≥ 0.05»). Однако реализован только MI-скрининг (шаг 2, **опциональная диагностика**). RF-гейт — отсутствующий артефакт. Поиск:
-  - `grep -rn "RF-gate|RF-gейт|predictability gate|совместный RF" ML/ statistics/` — пусто.
-  - В `ML/baseline/feature_ablation.py:163` есть `RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42, n_jobs=-1)`, но это часть feature-selection сцены (03b шаг 2), **не** совместный гейт с walk-forward CV и перестановочным тестом.
-  - В `ML/baseline/benchmark_fractal_stop_stage3_1.py`, `oracle_fractal_stop_fav.py` и др. есть RF-обучение для других сцен, но ни одно экспонирует API вида «given (X_train, y_train) → verdict + p-value + walk-forward scores».
-- **Доказательство**: `docs/methodology/07b-predictability-gate.md:9,21-40,65-67` против `ls statistics/` (только `mi_upper_bound.py`, `run_mi_upper_bound.py`, `signal_tracer.py`, `statistics.py`, `EDA.ipynb`), и `ls ML/baseline/ | grep -i gate` — пусто.
-- **Почему важно**: методика требует **обязательной** проверки, отсутствие которой блокирует переход к обучению (`07-baseline-first.md:17`). В проекте сейчас **невозможно** пройти gate 07b → формально весь дальнейший pipeline нарушил методику, либо gate молчаливо обходили. Любые отчёты экспериментов, заявляющие baseline-training, формально в долге перед обязательным pre‑gate.
-- **Рекомендация**: либо реализовать `statistics/predictability_gate.py` (RF + `TimeSeriesSplit` + permutation test,JSON-артефакт согласно 16-reporting-audit.md) и привязать к нему тесты (по шаблону `tests/test_mi_upper_bound.py`), либо явно пометить 07b как `DRAFT`/`planned` (как сделано с другими «b»-разделами в каталогах планов), чтобы не выдавать идею за обязательную практику. Подробнее форма — `docs/superpowers/specs/2026-08-11-mi-upper-bound-design.md` (шаблон спецификации): identify `Что оценщик делает`, `Артефакты` (JSON + plot), `Stop Rules`.
-
-### C3 — Важное: отсутствие TimeSeriesSplit / walk-forward CV в коде
-
-- **Место**: `docs/methodology/07b-predictability-gate.md:23`: «на train с **walk-forward CV по времени** (перемешивание строк запрещено)».
-- **Суть**: Документ требует walk-forward CV по времени, но в проекте **нет точки реализации** `TimeSeriesSplit` или эквивалента. Поиск `grep -rn "TimeSeriesSplit" ML/ statistics/` возвращает только комментарий в EDA ноутбуке `statistics/reports/EDA_executed.ipynb:5290` (discarded code). Реализованный MI-оценщик не использует CV для verdicts — он использует fold-CI как метрику стабильности (`mi_upper_bound.py:144-155`), а verdict берётся из permutation p-value на полном объёме train. Для RF-гейта тот же паттерн невозможен в sklearn без явного `TimeSeriesSplit`.
-- **Доказательство**:
-  - `grep -rn "TimeSeriesSplit" ML/ statistics/` → только `statistics/reports/EDA_report.md`, `statistics/reports/EDA_executed.ipynb`, `statistics/EDA.ipynb` (все три — строки комментария «Временной порядок (для TimeSeriesSplit)», без реализации).
-  - `statistics/mi_upper_bound.py:122-178` — нет CV для verdict.
-  - `docs/methodology/11-robustness.md:55-69` даёт определения `expanding`/`anchored`/`rolling`/`warm-start`, но нигде не фиксирует выбор по умолчанию для 07b.
-- **Почему важно**: без указания **типа** walk-forward (expanding vs anchored vs rolling vs TimeSeriesSplit) «walk-forward CV по времени» неоднозначен. Метрика RF-гейта (val score) сильно зависит от выбора окна; разные реализации дадут разные вердикты. Кроме того, 11-robustness.md:68 явно предупреждает: «Окно с малым N можно показывать только как diagnostic» — это влияет на конфигурацию CV в 07b.
-- **Рекомендация**:
-  1. Указать в 07b тип walk-forward (минимум — `TimeSeriesSplit(n_splits=K)` sklearn; обосновать K относительно `sample_size_gate` из `06-temporal-split.md:50-67`).
-  2. Явно указать, что **verdict** берётся по агрегированному CV-score против перестановочного фона, а не по одному окну (это уже в духе `11-robustness.md:67-69` — «выбирать не максимальный PF одного окна, а устойчивый паттерн»).
-  3. Сохранять seed-стабильность (см. `11-robustness.md:55-69`).
-
-### C4 — Важное: документ игнорирует 03b (feature selection) в заказе pipeline
-
-- **Место**: `docs/methodology/07b-predictability-gate.md:15-17` (входы «проверяемый набор признаков (live-safe, после Leakage Gate п.3)»), в противовес `docs/methodology/03b-feature-selection.md:10` и `docs/methodology/README.md:55`.
-- **Суть**: 07b принимает «набор признаков (live-safe, после Leakage Gate п.3)» и не упоминает 03b (feature-selection gate), который в README (`README.md:55`) стоит **после** 03 и **до** 07. При этом `03b-feature-selection.md:10` явно связывает себя с 07b: «Проверка „предсказуем ли target от набора вообще“ — отдельный гейт: `07b-predictability-gate.md`». Это односторонняя ссылка; 07b не возвращает её. Следствие: трактовка «на каком наборе проверять предсказуемость» (полный список / отфильтрованный 03b / предварительно отобранный через RF-важность) — неоднозначна.
-- **Доказательство**:
-  - `docs/methodology/07b-predictability-gate.md:17` — единственный „pipeline-референс“ в `Входах` — это Leakage Gate п.3, **03b отсутствует**.
-  - `docs/methodology/03b-feature-selection.md:10` явно отправляет читателя в 07b.
-  - `docs/methodology/README.md:54-55,60-61` подтверждает порядок: 03 → 03b → ... → 07 → 07b.
-- **Почему важно**: отложенный/отфильтрованный 03b набор может дать FAIL на 07b даже при PASS полного, либо наоборот — поэтому нужно явно фиксировать, какой набор проходит 07b: «полный live-safe» или «минимальный, после 03b». Детекция „signalльь в шуме“ зависит от состава набора (07b:37-40 — «при больших W дешевле агрегировать окно до статистик»).
-- **Рекомендация**: в разделе «Входы» указать: «проверяемый набор — полный live-safe (после `03b-feature-selection` если selection уже выполнен); в отчёте раскрывать, на каком наборе считается gate». Либо явно зафиксировать: 07b работает **до** 03b (как prefilter для feature selection), чтобы не смешивать цели.
-
-### C5 — Важное: неполные параметры RF
-
-- **Место**: `docs/methodology/07b-predictability-gate.md:22`: «Random Forest (`n_estimators=100, max_depth=10, random_state=42`)».
-- **Суть**: Указаны три параметра, но в `ML/baseline/` все RF-использования фиксируют дополнительно `n_jobs=-1` (для скорости), а в `ML/baseline/oracle_fractal_stop_fav.py:111` — и `min_samples_leaf=50`. В progetto также встречаются дисбалансированные классы (см. `docs/reports/2026-08-11-mi-upper-bound.md` «direction/attribute class 0 ~3.84%», и `03b:28` — про precision/recall/F1/MCC). Несохранённые параметры (`class_weight`, `min_samples_leaf`, `n_jobs`) сделают разные прогоны не воспроизводимыми.
-- **Доказательство**:
-  - `ML/baseline/feature_ablation.py:163`: `RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42, n_jobs=-1)` — добавлено `n_jobs=-1`.
-  - `ML/baseline/oracle_fractal_stop_fav.py:111`: добавлено `min_samples_leaf=50`.
-  - `docs/methodology/03b-feature-selection.md:25` — тот же mismatch (тоже 3 параметра), но это связанная проблема.
-  - `docs/methodology/05-eda-data-quality.md` и 03b `'discriminant' class balancing` — упоминается в контексте дисбаланса, но в 07b баланса классов не упоминается.
-- **Почему важно**: дисбаланс классов direction (см. JSON отчёта MI: `direction_class_balance` зафиксирован как `{"-1": ..., "0": ..., "1": ...}`) значителен. Если RF без `class_weight` обучается базовым majority — он занижает чувствительность к minorитарным классам → ложно FAIL на данных, где для разбросанных rare-классов существует истинный сигнал. Сильная гипотеза про FAIL из 07b строки 35-37 («FAIL при сильной гипотезе signal в порядке шагов — не automatic reject») требует сравнения метрик; параметр `class_weight` критичен.
-- **Рекомендация**: добавить в 07b: `class_weight='balanced'` для несбалансированного target, зафиксировать `n_jobs`, `min_samples_leaf`. Либо явно указать: «параметры по умолчанию: `sklearn.ensemble.RandomForestClassifier` defaults with `random_state=42`»; и **требовать** в отчёте полный набор используемых параметров RF (это уже частично в 07b строке 59 — «параметры RF и CV», но список не формализован).
-
-### C6 — Важное: расхождение между MI-отчётом и 07b (вердикт PASS/FAIL MI)
-
-- **Место**: `docs/methodology/07b-predictability-gate.md:56`: «Результат MI-скрининга **не является основанием для reject**»; `docs/reports/2026-08-11-mi-upper-bound.md:5,207` (′PASS для amplitude / FAIL на validation direction′).
-- **Суть**: 07b устанавливает, что MI — **опциональная диагностика** и **не вправе отклонять набор**. В то же время фактический отчёт MI использует термины `PASS`/`FAIL` для verdicts (`docs/reports/2026-08-11-mi-upper-bound.md:5` «Смешанный — amplitude PASS / direction FAIL на validation», строка 207 «PASS для amplitude»). В отчёте ставится verdict (через `perm_p_value < 0.05`), но **нет явного предупреждения**, что этот PASS/FAIL ≠ gate-вердикт 07b. Читатель может спутать «PASS MI» с «PASS predictability gate», хотя RF-гейт (обязательный) не запускался.
-- **Доказательство**:
-  - `docs/methodology/07b-predictability-gate.md:42,56`: «MI-скрининг (опционально, диагностика)»; «Результат MI-скрининга не является основанием для reject».
-  - `docs/methodology/07b-predictability-gate.md:70-72`: «Диагностический R²-потолок из MI ниже лучшего исторического R² target — не reject, а предупреждение».
-  - `docs/reports/2026-08-11-mi-upper-bound.md:5`: «Вердикт: смешанный — amplitude PASS (p=0.005 на train и validation), direction FAIL на validation (p=0.229)».
-  - `docs/reports/2026-08-11-mi-upper-bound.md:207`: «**PASS** для amplitude (perm_p_value = 0.005 на train и validation)».
-  - `ML/reports/mi_upper_bound.json`: ключи verdicts через `perm_p_value` на каждом split.
-- **Почему важно**: согласованность методики и отчётов — обязательная проверка по `16-reporting-audit.md:91` (отчёт обязан раскрывать forbidden_interpretations). MI-отчёт имеет блок `forbidden_interpretations` (`2026-08-11-mi-upper-bound.md:16`), но в нём нет явного «PASS/FAIL MI ≠ gate verdict 07b». 07b строка 56 указывает на «не основание для reject», но не объясняет, как MI-вердикт должен помечаться в отчётах, чтобы его не путали с gate.
-
-
-### C7 — Важное: «joint-MI в >5–10 измерениях» — источник не подтверждается
-
-- **Место**: `docs/methodology/07b-predictability-gate.md:53-55`: «прямое joint-MI в >5–10 измерениях статистически недостоверно. Если всё же нужен joint-MI: топ-k фич (k ≤ 5), PCA-компоненты, групповое MI по семействам.»
-- **Суть**: В 07b заявлено, что joint-MI теряет достоверность в «>5–10 измерениях». Сравним со spec'ом: «Оценка I(X1..X42; Y) в **42-мерном** пространстве ненадёжна при доступных объёмах данных» (`2026-08-11-mi-upper-bound-design.md:68`). Spec объясняет ненадёжность **объёмом данных** (train ~41K строк × 42 признака), не привязываясь к волшебной границе «5-10». Конкретная граница 5-10 в 07b не подкреплена ссылкой на источник, расчётом или опыт проекта. У `2026-08-11-mi-upper-bound-design.md:181,244-245` joint-MI по топ-k (k≤5) и npeet обозначены как **follow-up исследование** (открытые вопросы), не как готовое правило.
-- **Доказательство**:
-  - `docs/methodology/07b-predictability-gate.md:53`: «прямое joint-MI в >5–10 измерениях статистически недостоверно».
-  - `docs/superpowers/specs/2026-08-11-mi-upper-bound-design.md:68`: «Оценка I(X1..X42; Y) в **42-мерном** пространстве ненадёжна при доступных объёмах данных» — **не** «>5–10».
-  - `docs/superpowers/specs/2026-08-11-mi-upper-bound-design.md:181`: «Joint-оценка (например, npeet на пониженной размерности) — отдельное follow-up исследование».
-  - `docs/superpowers/specs/2026-08-11-mi-upper-bound-design.md:234-245`: «Stop rules», «Открытые вопросы для implementation plan» — нет утверждения «>5–10».
-  - В отчёте 2026-08-11-mi-upper-bound.md тоже не упоминается «>5–10 измерений».
-- **Почему важно**: методика — управляющий документ; некрепкое число может быть использовано как догмат. Если в следующем эксперименте кто-то посчитает joint-MI в 7 измерениях и доверится ему (ведь «5-10 — граница, 7 внутри»), это будет противоречить spec, где упор на **объём данных** и конкретный объект (XAUUSD H1, 42 признака). Правильный критерий — «данные/параметр KSG достаточны для данной размерности», который требует отдельных обоснований (как в spec) и проведения empirical проверки.
-- **Рекомендация**: убрать «>5–10 измерений»; вставить конкретнее: «joint-MI в 42-мерном пространстве недостоверен при объёмах train (~41K строк); если всё же нужен joint-MI — редуцировать до топ-k (k≤5 по маргинальному MI), PCA-компонент или группового MI по семействам, и оценить устойчивость через с перестановочный тест». Сослаться на spec 2026-08-11-mi-upper-bound-design, Шаг 5: «joint MI follow-up».
-
-### C8 — Улучшение: p_min = 0.005 рассинхронизирован с spec/кодом
-
-- **Место**: `docs/methodology/07b-predictability-gate.md:47`: «перестановочный p-value (минимум 199 перестановок; p_min = 1/(n_perm+1) = 0.005)».
-- **Суть**: 07b фиксирует минимум 199 перестановок → `p_min=1/(199+1)=0.005`. В spec: «≥200 перестановок y» (`2026-08-11-mi-upper-bound-design.md:66`). В коде `statistics/run_mi_upper_bound.py:148` default `--n-permutations=200`. В фактическом прогоне `ML/reports/mi_upper_bound.json:5` — `n_permutations: 200`, `p_min = 1/(200+1) ≈ 0.00498`. То есть «199» в 07b выбрано **искусственно** так, чтобы заменить 200 на «199+1=200» по формуле — логика понятна, но создаёт путаницу: reader видит «199», конфиг/spec — «200». Кроме того, `07b:78` «Число перестановок зафиксировано и отражено в минимально достижимом p» — это правильно, но требует **одного** числа в коде/spec/методике.
-- **Доказательство**:
-  - `docs/methodology/07b-predictability-gate.md:47`: «п_min = 1/(n_perm+1) = 0.005».
-  - `docs/superpowers/specs/2026-08-11-mi-upper-bound-design.md:66`: «≥200 перестановок».
-  - `statistics/run_mi_upper_bound.py:148`: `--n-permutations default=200`.
-  - `ML/reports/mi_upper_bound.json:5`: `"n_permutations": 200`, `"perm_p_value": 0.004975...`.
-- **Почему важно**: согласованность параметров между методикой, spec и кодом — обязательное условие воспроизводимости (16-reporting-audit.md:97 — «ключевые числа сверены со structured artifact»). Разночтение «минимум 199» vs «≥200» вынуждает будущего агента выбирать — и, например, взять `n_perm=199` в violation фактического кода. p_min 0.005 — округлённое значение, но методика должна **точно** отражать код.
-- **Рекомендация**: в 07b указать «минимум 200 перестановок» (как в spec), и пояснить, что `p_min = 1/(200+1) ≈ 0.00498` (округление 0.005 — приближённое). Либо завести одну `config.py`/константу в коде (например, `MIN_PERMUTATIONS = 200`) и в методике сослаться на неё.
-
-### C9 — Улучшение: нет требования к RF-гейту как structured artifact
-
-- **Место**: `docs/methodology/07b-predictability-gate.md:58-61` (раздел «Фиксация результата»).
-- **Суть**: Документ требует «Вердикт RF-гейта, p-value, параметры RF и CV, число проверенных наборов — в отчёт эксперимента (формат: `16-reporting-audit.md`)». Но 16-reporting-audit.md:97 требует: «Ключевые числа в отчёте (AUC, PF, trades count, yearly PF) **сверены со structured artifact (JSON/CSV/parquet)**. Если structured artifact отсутствует, отчёт обязан содержать команду воспроизведения и hash входов». 07b не упоминает structured artifact (JSON) для RF-гейта, только текстовый отчёт. Для сравнения, MIский spec (`2026-08-11-mi-upper-bound-design.md:212-230`) перечисляет: «Артефакты: `ML/reports/mi_upper_bound.json` ... JSON обязан содержать: MI для каждого таргета, permutation p-value, ..._Verdict: PASS/FAIL/INCONCLUSIVE».
-- **Доказательство**:
-  - `docs/methodology/07b-predictability-gate.md:58-61`: упоминает только «отчёт эксперимента».
-  - `docs/methodology/16-reporting-audit.md:97`: «Ключевые числа ... сверены со structured artifact (JSON/CSV/parquet). ... Расхождение отчёт↔artifact — блокирующая ошибка.»
-  - `docs/superpowers/specs/2026-08-11-mi-upper-bound-design.md:214-218`: указаны конкретные пути артефактов.
-- **Почему важно**: отсутствие structured artifact означает, что следующий агент не сможет сверить «p-value=0.03» из отчёта с реальным значением → risk расхождения отчёта и фактической оценки (16-reporting-audit.md:120 «Копировать числа в отчёт вручную без сверки со structured artifact — источник расхождений отчёт↔результат»).
-- **Рекомендация**: в 07b добавить в «Фиксация результата»: «RF-гейт сохраняется как `ML/reports/predictability_gate_<run>.json`: набор, RF-параметры, CV-конфигурация, score на оригинале, перестановочный фон (массив), p-value, n_permutations, verdict. Plot fold-scores и permutation distribution. JSON сверяется с отчётом (см. `16-reporting-audit.md:97`)».
-
-### C10 — Улучшение: «выбор лучшего из N проверок смещён» без протокола
-
-- **Место**: `docs/methodology/07b-predictability-gate.md:79-80`: «Если проверялось несколько наборов — раскрыть их число: выбор лучшего из N проверок смещён (multiple testing, см. `16-reporting-audit.md`)».
-- **Суть**: Документ говорит «раскрыть число» и ссылается на 16-reporting-audit.md, но 16-reporting-audit.md:22 только требует **disclosure** поиска (cumulative_search_budget), без **коррекции** (нет Bonferroni/BH). 09-validation-freeze.md:120 уточняет: «Не корректировать множественное тестирование при переборе >10 конфигураций на одном validation. Чем больше search budget, тем выше риск ложного winner; результат без коррекции не должен становиться `frozen_rule_for_locked_test`». 07b даёт **несмотря на ссылку на 16-reporting-audit** — без указания, что **делать** при several провальных наборах. «multiple testing» не разобрано как практическое последствие для gate: должен ли быть `Bonferroni-corrected p-value < 0.05` для PASS? Или достаточно disclosure?
-- **Доказательство**:
-  - `docs/methodology/07b-predictability-gate.md:79-80`: правило только «раскрыть число».
-  - `docs/methodology/16-reporting-audit.md:22`: «Multiple Testing Context: ... применённая коррекция или статус `DIAGNOSTIC_ONLY`/`RESEARCH_ONLY`».
-  - `docs/methodology/09-validation-freeze.md:120`: «Не корректировать ... >10 конфигураций ... результат без коррекции не должен становиться `frozen_rule_for_locked_test`».
-  - `docs/methodology/A3-typical-false-conclusions.md:28`: «Множественное тестирование без коррекции: лучший PF из большого числа конфигураций может оказаться статистически неотличим от случайности».
-- **Почему важно**: практический сценарий: агент проверил 5 наборов → 4 FAIL, 1 PASS при p≈0.04. Документ 07b требует «раскрыть 5», но не указывает, что PASS-набор уже с поправкой Bonferroni (p<0.01 или 0.05/5=0.01), либо что статус понижается до `research_only` (по правawe `09-validation-freeze.md:120`). Если агент перейдёт к 07-baseline-first с p=0.04 без коррекции — будет ложноположительный gate.
-- **Рекомендация**: в 07b раздел «Обязательные проверки» добавить: «Если RF-гейт проверял N наборов и хотя бы один получил PASS, применять **Bonferroni correction**: PASS если `p < 0.05/N`. Если `N*hath` policy для нескольких gate (полный + подгруппы по фичам) — раскрывать cumulative_search_budget Meinung, статус не выше `DIAGNOSTIC_ONLY` до отдельного повторного прогона» (по аналогии с `09-validation-freeze.md:120` и `00-research-management.md:88-89`).
-
-### C11 — Улучшение: «XOR-эффект» — англицизм вне списка разрешённых
-
-- **Место**: `docs/methodology/07b-predictability-gate.md:50`: «маргинальное MI не видит взаимодействий (XOR-эффект)».
-- **Суть**: Per `AGENTS.md` «Rules of dialogue»: язык ответов — простой, ясный, русский; «английские слова допустимы только для имён файлов, функций, колонок, команд, библиотек и устойчивых обозначений проекта: CSV, MT4, ATR, PF, PnL. Технический термин при первом использовании объяснять». «XOR» — строгий математический термин, но в контексте ML он означает «взаимодействие признаков через исключающее-или»; sing слово не широко понятно русскоговорящему читателю-неспециалисту. AGENTS.md упоминает, что я превзoxожу пользователя по знаниям и обязан пояснять.
-- **Доказательство**: `AGENTS.md` > «Правила ответов» > «НЕ ИСПОЛЬЗУЙ: жаргон, англицизмы и узкие термины. Английские слова допустимы только для имён файлов, функций, колонок, команд, библиотек и устойчивых обозначений проекта». «XOR» не входит в список явных разрешённых терминов.
-- **Почему важно**: нарушение стилевой политики проекта; в остальном документе 07b строго соблюдается стиль (RF, MI, CV, PASS, FAIL помеченом как методические термины). Этот термин **embedded** в важное объяснение — "маргинальное MI не видит взаимодействий" — и должен быть понят.
-- **Рекомендация**: заменить на «взаимодействие признаков (исключающее-или, классический пример XOR: две бинарные фичи, каждая без сигнала, но их XOR даёт таргет)», либо добавить в скобках аналогию. Либо использовать «синергию» (из spec `2026-08-11-mi-upper-bound-design.md:181` «возможна синергия»).
-
-### C12 — Вопрос: связь RF-гейта 07b и RF-фильтра 03b шаг 2
-
-- **Место**: `docs/methodology/07b-predictability-gate.md:22` (`n_estimators=100, max_depth=10, random_state=42`) против `docs/methodology/03b-feature-selection.md:25` (те же параметры).
-- **Суть**: Оба документа описывают RF `n_estimators=100, max_depth=10, random_state=42` на train. В 03b — это фильтр важности (важность признаков → удаление шумовых); в 07b — совместный гейт предсказуемости (RF + walk-forward CV + permutation test). Одинаковые параметры — либо это дублирование, либо 07b переиспользует 03b. Документы не ссылаются друг на друга.
-- **Доказательство**:
-  - `docs/methodology/03b-feature-selection.md:25`: «Обучить RF (`n_estimators=100, max_depth=10, random_state=42`) на train. Извлечь `feature_importances_`».
-  - `docs/methodology/07b-predictability-gate.md:22`: «Random Forest (`n_estimators=100, max_depth=10, random_state=42`) на train с **walk-forward CV по времени**».
-- **Почему важно**: одинаковый RF с одинаковой конфигурацией в двух местах — опасность drift: если parameters RF в одном обновят, а в другом забудут — конфигурации расходятся. Кроме того, неясно, можно ли **переиспользовать** один прогон RF из 07b (c CV) для importance-фильтрации 03b, чтобы не запускать RF дважды. С точки зрения прагматики проект — personal research; экономия процессорного времени важна.
-- **Рекомендация**: в 07b указать связь с 03b: «RF-гейт 07b — расширение шага 2 из `03b-feature-selection.md`: тот же RF-объект, дополненный walk-forward CV и permutation test. Importance-значения можно переиспользовать для шага 2 из 03b». Либо развести их: «07b использует `TimeSeriesSplit` CV → типично другое распределение RF importance по сравнению с 03b (по полному train)» — и зафиксировать выбор отдельно.
-
-### C13 — Вопрос: single seed `random_state=42` против «проверить стабильность по seeds»
-
-- **Место**: `docs/methodology/07b-predictability-gate.md:22,68-69`: «`random_state=42` ... Если RF-гейт FAIL на малой выборке, это может быть ошибка второго рода: проверить стабильность по seeds и размеру train до окончательного reject».
-- **Суть**: Документ фиксирует единственный seed 42 для основного прогона, но требует «проверить стабильность по seeds» при FAIL на малой выборке. Не разобрано: **сколько seeds**, **какой verdict при разных seeds** (majority vote? все должно пройти? среднее score?). Замечание в A3 (типовые ошибки): «Один seed — одна выборка из распределения метрик; разница в AUC около 0.001–0.005 на single-seed неразличима с шумом. Без multi-seed CI нельзя заявлять воспроизводимость».
-- **Доказательство**:
-  - `docs/methodology/07b-predictability-gate.md:22`: один `random_state=42`.
-  - `docs/methodology/07b-predictability-gate.md:68-69`: «проверить стабильность по seeds и размеру train».
-  - `docs/methodology/A3-typical-false-conclusions.md:31`: «Один удачный результат на проверочной выборке трактовался как устойчивый сигнал. Один seed — одна выборка ... Без multi-seed CI нельзя заявлять воспроизводимость».
-  - `docs/methodology/00-research-management.md:67-75`: «min_seeds: ...» явно требуется в plan.
-- **Почему важно**: «проверить стабильность по seeds» — без конкретики легко исполнить формально (запустить 2-3 seeds и принять решение на глаз). Должно быть: «минимум 5 seeds, quantitative rule (e.g. все 5 p-values <0.05, либо среднее + min/max, зафиксировать в plan)».
-- **Рекомендация**: указать **минимум** seeds (5 — по аналогии с `2026-06-23-stage5_0d-diagnostic-screening.md:46` — `Seeds: [42, 77, 123]` для screening и `min_seeds` из `00-research-management.md:73`), и правило интерпретации: «PASS устойчив, если >X% из N seeds дают p<0.05; при mixed → проверяем мощность / расширяем train / понижаем статус до `research_only`».
-
-### C14 — Улучшение: `decision_time` отсутствует в обязательных входах
-
-- **Место**: `docs/methodology/07b-predictability-gate.md:13-17` (Входы).
-- **Суть**: В списке входов: `train split`, `target contract`, `проверяемый набор признаков`. Не упомянут `decision_time`. Но `03-feature-contract-leakage.md:46` и `00-research-management.md:20` требуют `decision_time` как фундамент pre-ML. 07b — единственный этап, использующий(target contract + признаки), и без `decision_time` непонятно, что mean «train split» с точки зренияleakage: если `decision_time` неизвестен, как проверить, что все признаки live-safe (как требует вход 17)?
-- **Доказательство**:
-  - `docs/methodology/07b-predictability-gate.md:13-17`: нет `decision_time`.
-  - `docs/methodology/03-feature-contract-leakage.md:46`: «Зафиксировать `decision_time`».
-  - `docs/methodology/00-research-management.md:20`: «Зафиксировать `decision_time`: open/close бара, таймфрейм, инструмент, момент входа».
-- **Почему важно**: 07b требует «проверяемый набор признаков (live-safe, после Leakage Gate п.3)» — но leakage gate проверяет live-safe именно **относительно** `decision_time`. Если вход не требует `decision_time` в 07b, агент может запустить gate на наборе без полной уверенности оfreshness каждой фичи — формально пройдя «после Leakage Gate», но технически с пробелом.
-- **Рекомендация**: добавить в Входы 07b: «`decision_time` (из `00-research-management.md` и Leakage Gate п.3)». Либо явно: «проверяемый набор признаков (live-safe, после Leakage Gate п.3, с зафиксированным `decision_time`)».
+| Важность | Кол-во |
+|---|---|
+| Критично | 5 |
+| Важно | 7 |
+| Улучшение | 6 |
+| Вопрос | 4 |
 
 ---
 
-## Независимая проверка утверждений документа
+## КРИТИЧНО
 
-### Проверка формулы `p_min = 1/(n_perm+1)` (строка 47)
+### K1. Парсер плана теряет 49% информации поля `break` в labeled CSV
 
-- **Утверждение**: «p_min = 1/(n_perm+1) = 0.005» при n_perm=199.
-- **Пересчёт**: python `1/(199+1) = 0.005`. Верно (для n=199).
-- **Фактический код** (`statistics/mi_upper_bound.py:163`): `perm_p_value = (np.sum(...) + 1) / (n_permutations + 1)` — формула идентичная.
-- **Однако**: spec и код используют `n_perm=200`, не 199 → `1/201 ≈ 0.00498`. См. C8.
+- **Место**: план строки 188, 201 (Task 1 Step 3, функция `_parse_fractal_row`).
+- **Код**:
+  ```python
+  _INT_FIELDS = {'direction', 'strong', 'break', 'count'}
+  out[name] = float(int(float(raw))) if name in _INT_FIELDS and raw else float(raw or 0.0)
+  ```
+- **Суть**: `float(int(float(raw)))` **отбрасывает дробную часть** для `_INT_FIELDS`. В реальном `DATA/Nero_train_labeled.csv` поле `break` внутри фрактальных строк **уже нормализовано** и содержит дробные значения: `0.8095238209`, `0.53125`, `0.9833952785`, `0.6601941586` и т.д. Поле `direction`, `strong`, `count` при этом остаются integer-like.
+- **Доказательство**:
+  ```bash
+  ./.venv/bin/python -c "
+  import pandas as pd
+  from ML.fractal_level_feature_builder import FRACTAL_FIELDS
+  df = pd.read_csv('DATA/Nero_train_labeled.csv', delimiter=';', nrows=5000)
+  total = 0; break_lost = 0
+  for col in ['fractal1','fractal5','fractal10','fractal50']:
+      for val in df[col].head(500):
+          if pd.isna(val) or str(val) == '': continue
+          parts = str(val).split(':')
+          if len(parts) != 23: continue
+          total += 1
+          raw = parts[FRACTAL_FIELDS['break']]
+          try:
+              if float(raw) != int(float(raw)): break_lost += 1
+          except (TypeError, ValueError): pass
+  print(f'break дробных: {break_lost}/{total} = {100*break_lost/total:.1f}%')
+  "
+  # break дробных: 9894/20000 = 49.5%
+  ```
+  Вывод этой команды на реальных данных train: **49.5% значений поля `break` дробные**. Парсер плана заменит `break=0.8095` на `0`, `break=0.9833` на `0`, теряя смысл «силы пробоя» — информативный признак вырождается в бинарный 0/1.
+- **Противоречие методике**: `docs/methodology/03-feature-contract-leakage.md` строка 155: «Parser должен принимать только integer-like записи (1, 1.0) и **отвергать дробные значения**, чтобы ошибка режима проявлялась сразу». План же **молча конвертирует** дробь в int, скрывая ошибку режима вместо её обнаружения. Это прямо запрещённая практика строка 156: «должен отвергать дробные значения».
+- **Дополнительно**: существующий `build_feature_contract` в `ML/fractal_level_feature_builder.py:498` помечает `up_*/dn_*` и т. п. как `live_safe: False`, но поля `strong/break/count/direction` в реальном labeled CSV **могут** быть нормализованы (как `break`), что показывает: план не сверился с фактическим форматом данных, а опирался на целочисленную модель полей.
+- **Почему это критично**: гейт работает на верхнем уровне целиком, и потеря 49% информации поля `break` может сделать набор **ложно FAIL** (сигнала нет), хотя он есть в отброшенной дробной части — обратный случай к «methodology 07b типовая ошибка»: «Отклонять набор по MI-скринингу: он не видит взаимодействия и может "выплеснуть ребёнка с водой"». Здесь же риск через само поле, а не через MI.
+- **Исправление**:
+  1. Убрать `break` из `_INT_FIELDS` в плане (либо не маркировать как int-поле, либо парсить как float и оставлять дробную часть).
+  2. Реализовать **режимный детект**: если поля `direction/strong/count` (эти реально integer-like) встречаются дробными — fail-fast (как требует 03), а не молча trunc.
+  3. Тест `test_live_safe_fields_exclude_future_derived` расширить: проверять, что при подаче нормализованных дробных `break`/`strong` парсер либо报ует ошибку, либо сохраняет дробное значение (в зависимости от выбранного контракта) — но **не молча усредняет до 0/1**.
 
-### Проверка «формула R²-потолка из маргинального MI» (строка 70-72)
+### K2. RandomForest в гейте не использует `class_weight='balanced'` при дисбалансе классов 80/15/5
 
-- **Утверждение 07b:70-72**: «Диагностический R²-потолок из MI ниже лучшего исторического R² target — не reject, а предупреждение».
-- **Spec проверка** (`2026-08-11-mi-upper-bound-design.md:25-28`): `R² <= 1 - 2^(-2·I(features; target))` — формула для **joint MI**, не для `mean marginal MI`.
-- **07b:51-52** явно отмечает: «среднее маргинальное MI — диагностическая величина, **не строгая граница** совместной информации». Согласуется.
-- **Код** (`statistics/mi_upper_bound.py:173`): `r2_ceiling = 1 - 2**(-2 * mean_mi)` — где `mean_mi` — среднее маргинальных MI, **не joint**. Это означает, что `r2_ceiling` в коде — **оценка** снизу для потенциального joint MI (так как joint MI ≥ max маргинальных, но ≤ sumмаргинальных; возможна синергия). Spec:9 explains: «среднее и максимум **маргинальных** MI... интерпретация R²-потолка из неё — диагностическая (см. Ограничения, п. 4)». Согласуется с 07b.
-- **Это подтверждено** в 07b:70-72: «не reject, а предупреждение» — корректно, т.к. `r2_ceiling` диагностический.
+- **Место**: план строки 375–379 (Task 2 Step 3, функция `_make_model`).
+- **Код**:
+  ```python
+  return cls(n_estimators=n_estimators, max_depth=max_depth,
+             n_jobs=n_jobs, random_state=random_state)
+  ```
+- **Суть**: для дискретного таргета `direction_12 = sign(ret_12_dir_atr)` на train получаются классы: `0` (флэт) — 79.56%, `+1` — 14.53%, `-1` — 5.91% (на sample 10 000 строк; на полном train ~44k распределение аналогично). Без `class_weight='balanced'` RF выучит majority-класс и почти не будет предсказывать `-1/+1`, занижая `balanced_accuracy`.
+- **Доказательство**:
+  ```bash
+  ./.venv/bin/python -c "
+  import pandas as pd, numpy as np
+  df = pd.read_csv('DATA/Nero_train_labeled.csv', delimiter=';', nrows=10000)
+  v = pd.to_numeric(df['ret_12_dir_atr'], errors='coerce')
+  s = np.sign(v.dropna())
+  u, c = np.unique(s, return_counts=True)
+  for uu, cc in zip(u, c): print(f'{int(uu):+d}: {cc} ({100*cc/len(s):.2f}%)')
+  "
+  # -1: 591 (5.91%), 0: 7956 (79.56%), +1: 1453 (14.53%)
+  ```
+- **Противоречие методике**: `docs/methodology/07b-predictability-gate.md` строки 41–43: «при дисбалансе классов target добавить `class_weight='balanced'`. Менять значения по умолчанию допускается при обосновании; фактический полный список параметров фиксируется в отчёте и JSON-артефакте». План обязан это добавить или явно обосновать отказ, но не делает ни того, ни другого.
+- **Почему это критично**: без `class_weight='balanced'` гейт на дискретном таргете `direction_*` почти гарантированно даст FAIL даже при наличии слабого сигнала — это ложно-негативный вердикт. В терминах `07b` «Типовые ошибки» строка 147: «Отклонять набор по p ≈ 0.1 на малой выборке без проверки мощности». Здесь даже не проверяется устойчивость по 5 seeds (см. K3).
+- **Исправление**: в `_make_model` для `discrete=True` добавить `class_weight='balanced'` (для RandomForestClassifier). В отчёт и JSON вынести фактические параметры RF (включая `class_weight=None`, если всё же отказ) — `07b п.3 «Фиксация результата»` требует фиксации полного списка.
 
-### Проверка «walk-forward CV по времени» против «shuffle запрещён» (строка 23)
+### K3. Гейт использует один seed вместо минимум 5 при FAIL на малой выборке
 
-- **Утверждение 07b:23**: «walk-forward CV по времени (перемешивание строк запрещено)».
-- **06-temporal-split.md:33**: «Проверить, что shuffle временных строк не применяется» — согласовано.
-- **09-validation-freeze.md не указывает CV для baseline**, но 11-robustness.md:55-69 перечисляет 4 вида walk-forward. См. C3.
+- **Место**: план строки 382–394 (Task 2 Step 3, функция `gate_score`); строки 397–423 (`run_rf_gate`).
+- **Код**: фиксированный `random_state=42` для RF и `random_state + i` для перестановок.
+- **Суть**: методика `07b` строки 118–122: «Если RF-гейт FAIL на малой выборке, это может быть ошибка второго рода: до окончательного reject проверить стабильность — **минимум 5 seeds** и чувствительность к размеру train. Правило: результат устойчив, если **большинство seeds дают одинаковый вердикт**; при смешанной картине — расширить данные гейта или понизить статус до `DIAGNOSTIC_ONLY`».
+- **План**: при FAIL не запускает multi-seed проверку. Указано лишь «Fallback при недостатке мощности» (Task 3 Step 6, строки 587–589) — повтор с `--include-validation`, что является расширением данных, **но не** multi-seed.
+- **Доказательство**: в коде `run_rf_gate` (строки 397–423) нет цикла по нескольким seed'ам RF; методика 07b (строки 118–122) явно требует этот цикл.
+- **Почему это критично**: на выборке с 80% дисбаланса и событийным рядом единственный seed может дать FAIL из-за unlucky-разбиения. Методика предписывает минимум 5 seeds **до** reject — план этого не заложил. Итог — вердикт FAIL может быть следствием одного seed, а не отсутствия сигнала.
+- **Исправление**: добавить шаг после основного прогона — при любом FAIL перезапустить гейт с 5 (или более) seeds RF, зафиксировать распределение вердиктов и раскрыть его в JSON (`verdict_by_seed: {42: FAIL, 7: PASS, ...}`). `gate_score` должен принимать `random_state` и пробегать по ним.
 
-### Проверка «joint-MI в >5-10 измерениях» (строка 53)
+### K4. Тест `test_load_raw_fractal_gate_data_targets_and_dedup` падает на собственной реализации плана
 
-- См. C7. Утверждение **не подтверждается** первоисточниками проекта (spec говорит о 42-мерной ненадёжности из-за объёма данных, не из-за общего правила «>5-10»).
+- **Место**: план строки 131–144 (Task 1 Step 1).
+- **Код теста**:
+  ```python
+  dup = df.iloc[[3]].copy()                      # дубль time -> keep last
+  dup['fav_12_atr'] = 0.99
+  df = pd.concat([df, dup]).reset_index(drop=True)
+  ...
+  assert out['n_raw'] == 11 and out['n_dedup_dropped'] == 1
+  assert out['X'].shape == (10, 1201)
+  assert np.array_equal(out['targets']['direction_12'],
+                        np.sign(np.linspace(-2.0, 2.0, 10)))
+  assert np.allclose(out['targets']['mfe_12'], np.linspace(0.0, 1.0, 10))
+  ```
+- **Суть**: дубликат заменяет строку 3 (с `fav_12_atr = 0.3333...`) на значение `0.99`. После дедупликации с `keep='last'` и сортировки по `time` итоговый массив `mfe_12` = `[0.0, 0.111, 0.222, 0.99, 0.444, ..., 1.0]`, а **не** `np.linspace(0.0, 1.0, 10) = [0.0, 0.111, 0.222, 0.333, ..., 1.0]`. Значит `np.allclose(out['targets']['mfe_12'], np.linspace(0.0, 1.0, 10))` → **assertion False**.
+- **Доказательство** (воспроизведено с реальным кодом плана):
+  ```bash
+  ./.venv/bin/python -c "
+  import pandas as pd, numpy as np
+  n = 10
+  times = pd.date_range('2020-01-01', periods=n, freq='h').strftime('%Y.%m.%d %H:%M')
+  df = pd.DataFrame({'time': times, 'fav_12_atr': np.linspace(0.0, 1.0, n)})
+  dup = df.iloc[[3]].copy(); dup['fav_12_atr'] = 0.99
+  df = pd.concat([df, dup]).reset_index(drop=True)
+  df = df.sort_values('time').drop_duplicates('time', keep='last').reset_index(drop=True)
+  print('mfe_12:', df['fav_12_atr'].tolist())
+  print('Expected linspace:', np.linspace(0.0, 1.0, 10).tolist())
+  print('allclose?', np.allclose(df['fav_12_atr'].values, np.linspace(0.0, 1.0, 10)))
+  "
+  # mfe_12: [0.0, 0.1111, 0.2222, 0.99, 0.4444, 0.5555, 0.6666, 0.7777, 0.8889, 1.0]
+  # Expected linspace: [0.0, 0.1111, 0.2222, 0.3333, 0.4444, ..., 1.0]
+  # allclose? False
+  ```
+  Тест `direction_12` формально проходит (dup сохраняет тот же `ret_12_dir_atr` что и строка 3, дисбаланс `sign` не меняется). Но проверка `mfe_12` упадёт.
+- **Почему это критично**: всё Step 4 Task 1 запускает тесты, ожидая PASS — а одна из ветвей (`mfe_12`) падает по **вине теста**, а не реализации. TDD-цикл ломается: тест не валидирует поведение, а предъявляет к коду **заведомо неверное** ожидание.
+- **Исправление**: в `_make_df` сдублировать в dup **только** row-3 часть, но изменить `fav_12_atr` так, чтобы он **остался в позиции 3** с новым значением; и в тесте ожидать массив с заменой на индексе 3:
+  ```python
+  expected = np.linspace(0.0, 1.0, 10); expected[3] = 0.99
+  assert np.allclose(out['targets']['mfe_12'], expected)
+  ```
 
-### Проверка «проект не закрывать Fractal Stop» (имплицитное утверждение)
+### K5. Тест `test_run_rf_gate_deterministic` нестабилен на `n_jobs=-1`
 
-- Документ 07b не упоминает Fractal Stop — но его критика «FAIL при сильной гипотезе» прямо согласуется с `docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md` (sell +0.0111 < 0.02 порог). Однако в 5.0d XGBoost читался как **baseline screening** (см. spec 5.0d), а не предсказуемость-гейт. Это на будущее.
+- **Место**: план строки 353–357 (Task 2 Step 1).
+- **Код**:
+  ```python
+  a = run_rf_gate(X, y, discrete=False, n_permutations=9, n_folds=3)
+  b = run_rf_gate(X, y, discrete=False, n_permutations=9, n_folds=3)
+  assert a['perm_scores'] == b['perm_scores']
+  ```
+- **Суть**: `_make_model` использует `n_jobs=-1` (план строки 376–379). RandomForest с параллелизмом выполняет суммирование по деревьям в непредсказуемом порядке, что даёт битовую несовместимость между запусками (ULP-различия). `list.__eq__` для `np.float64` битьточно сравнивает биты.
+- **Доказательство** (воспроизведено на контрольном примере):
+  ```bash
+  ./.venv/bin/python -c "
+  import numpy as np, functools
+  from sklearn.ensemble import RandomForestRegressor
+  from sklearn.model_selection import TimeSeriesSplit
+  from sklearn.metrics import r2_score
+  def gs(X, y, n_perm, n_est=10, md=3, nj=-1, rs=42):
+      out = []
+      for tr, te in TimeSeriesSplit(n_splits=2).split(X):
+          m = RandomForestRegressor(n_estimators=n_est, max_depth=md, n_jobs=nj, random_state=rs)
+          m.fit(X[tr], y[tr]); out.append(r2_score(y[te], m.predict(X[te])))
+      return float(np.mean(out))
+  np.random.seed(0); X = np.random.randn(200, 4); y = X[:,0]*2 + np.random.randn(200)*0.1
+  a = []; b = []
+  for i in range(5):
+      rng = np.random.default_rng(42+i); a.append(gs(X, rng.permutation(y), 5))
+  for i in range(5):
+      rng = np.random.default_rng(42+i); b.append(gs(X, rng.permutation(y), 5))
+  print('a == b:', a == b, ' allclose:', np.allclose(a, b))
+  print('a:', a); print('b:', b)
+  "
+  # a == b: False  allclose: True
+  ```
+  Видно: `0.15812468116163242` vs `0.15812468116163253` — разница в 8-й значащей цифре. `a == b` → False, тест упадёт при запуске на CPU с `n_jobs=-1`.
+- **Почему это критично**: детерминизм по seed — обязательная проверка (`07b` требует фиксации параметров, методология 05 требует воспроизводимости). Тест должен падать, если детерминизм **нарушен**, а не на битовой разнице плавающей точки. Это нестабильный flaky-тест, который будет эпизодически падать на CI.
+- **Исправление**: использовать `np.allclose(a['perm_scores'], b['perm_scores'])` или `pytest.approx` вместо `==`. Альтернатива: фиксировать `n_jobs=1` в тестах (тогда `==` проходит стабильно).
 
 ---
 
-## Сводка рекомендаций
+## ВАЖНО
 
-1. **C1 (критично)**: переставить 07b **до** 07 в `docs/methodology/README.md:60-61`.
-2. **C2 (критично)**: реализовать RF-гейт (`statistics/predictability_gate.py` + тесты) либо пометить 07b как `DRAFT`/`planned`.
-3. **C3 (важное)**: указать тип walk-forward CV (минимум `TimeSeriesSplit`) и обязательность verdict по агрегату, не по одному окну.
-4. **C4 (важное)**: явно связать 07b с 03b (какой набор проходит gate: полный или после 03b).
-5. **C5 (важное)**: формализовать полный параметр RF (`class_weight`, `n_jobs`, `min_samples_leaf`) — необходим для class imbalance в direction.
-6. **C6 (важное)**: в MI-отчёте не использовать термины `PASS`/`FAIL` без префикса `mi_screening` или явно пометить «MI verdict ≠ gate verdict».
-7. **C7 (важное)**: убрать «>5-10 измерений»; заменить на конкретику spec (42-мерная ненадёжность, объём данных, top-k ≤5).
-8. **C8 (улучшение)**: согласовать «199» vs «200» перестановок — указать «200 (p_min ≈ 0.005)».
-9. **C9 (улучшение)**: требовать JSON артефакт RF-гейта с сверкой отчёт↔artifact (по 16-reporting-audit.md:97).
-10. **C10 (улучшение)**: указать процедуру коррекции multiple testing (Bonferroni `p < 0.05/N` или понижение статуса).
-11. **C11 (улучшение)**: заменить «XOR-эффект» на русский эквивалент с пояснением.
-12. **C12 (вопрос)**: развязать RF-гейт 07b и RF-фильтр 03b шаг 2 (можно ли переиспользовать прогон).
-13. **C13 (вопрос)**: зафиксировать `min_seeds` (≥5) и правило интерпретации mixed seeds для FAIL.
-14. **C14 (улучшение)**: добавить `decision_time` в обязательные входы 07b.
+### B1. `X[::H]` subsample не независим по барам на событийном ряде
 
-## Мониторинг ошибок
+- **Место**: план строки 459, 545 (Task 3 Step 3).
+- **Код**:
+  ```python
+  sub = run_rf_gate(X[::horizon], y[::horizon], discrete, ...)
+  ```
+- **Суть**: `X[::H]` берёт каждую H-ю **строку** в матрице, но строки — событийные (по 03 и 06-temporal-split строки 69–74: «Интервал между строками непостоянен»). Data имеет 41 363 строки на ~22 года (2004–2026), т.е. ~76 строк/мес или ~0.5 строк/бар H1. `X[::12]` даёт ~3447 строк с интервалом ~12 строк ≈ 6 часов, **а не 12 баров** впереди, как нужно для `ret_12_dir_atr` (12-баровый горизонт).
+- **Доказательство**:
+  ```bash
+  ./.venv/bin/python -c "print(41363/12)"
+  # 3446.9 — далеко от размера, который был бы, если 1 строка = 1 бар (~41363/12 = 3446 строк на H1 = 12 часов)
+  ```
+  Цель subsample по методике 11 (robustness п.3, ремарка про перекрытие): убрать зависимость окон. Но строки в данных не равно-отстоящи, и шаг `H=12` по строкам ≠ шаг `12 баров` по времени. Лишь если бы `time` была равноотстоящим рядом, это работало.
+- **Почему важно**: оценка «robustness к перекрытию горизонтов» в subsample — фактически не решает ту задачу, которую методология 11 требует. Зафиксированный в JSON `subsample_verdict` может быть ложно-успокоительным (если основной гейт PASS, subsample тоже PASS по той же корреляции соседних строк).
+- **Исправление**: разреживать выборку по `time` (бернар дельта-тайм по строкам > H баров), а не по индексу. Или — корректнее — выполнить `block bootstrap` с блоками по дельте времени, а не простой строковый stride. Раскрыть ограничение в отчёте, если оставить как есть.
 
-- **STRUCT**: `docs/methodology/07b-predictability-gate.md` is **untracked** в git (`git status` показал `untracked files`) — новый файл, не закоммичен. Рекомендация: после правок закоммитить.
-- **DOC**: в проекте нет реализации RF-гейта — ссылка 07b на будущий артефакт фактически битая (без явной пометки «planned»). См. C2.
-- **MCP**: не применимо.
+### B2. `ML/mi_upper_bound.py` не существует; план ссылается на несуществующий модуль
+
+- **Место**: план строка 619 (Task 4 Step 2):
+  > «`ML/mi_upper_bound.py::estimate_mi_per_feature` (существующий, проверенный в MI-этапе)»
+- **Суть**: модуль `ML/mi_upper_bound.py` **отсутствует**. Реальный путь — `statistics/mi_upper_bound.py`. Импорт `from ML.mi_upper_bound import ...` упадёт с `ImportError` на Step 2 Task 4.
+- **Доказательство**:
+  ```bash
+  ls ML/mi_upper_bound.py statistics/mi_upper_bound.py
+  # ls: cannot access 'ML/mi_upper_bound.py': No such file or directory
+  # statistics/mi_upper_bound.py
+  ```
+  Также `statistics/mi_upper_bound.py` — **не пакет** (конфликт со stdlib `statistics`, см. `docs/superpowers/plans/2026-08-11-mi-upper-bound.md` строки 11, 117–118): импорт выполняется через `sys.path[0] = statistics/` в runner, либо через `importlib.util.spec_from_file_location` в тестах. План же использует обычный `from ML.mi_upper_bound import ...` который не сработает.
+- **Почему важно**: 함 Task 4 нетестируем без исправления импорта; запуск `--mi-top 20` упадёт. Это прерывает этап MI-диагностики.
+- **Исправление**: заменить импорт на `statistics/mi_upper_bound.py` через `importlib` (как в `tests/test_mi_upper_bound.py`) либо создать совместимый re-export. Можно согласовать с `ML/__init__.py` виlnовка (но `statistics/` остаётся не-пакетом — у него `__init__.py` намеренно не создавался).
+
+### B3. `estimate_mi_per_feature` не возвращает p-value, а план обещает «bits, p-value»
+
+- **Место**: план строка 613 (Task 4 Interfaces).
+- **План**: «ключ `mi_top` в JSON: для каждого PASS-таргета перестановочное MI топ-20 фич по RF-важности (**bits, p-value**)».
+- **Суть**: фактическая сигнатура `statistics/mi_upper_bound.py:181`:
+  ```python
+  def estimate_mi_per_feature(X, y, feature_names, k=5, random_state=42, discrete_target=False, discrete_mask=None) -> pd.DataFrame
+  ```
+  Возвращает DataFrame `[feature, mi_bits]`, б**ез p-value** (нет перестановочного теста — этим занимается только `estimate_mi` для агрегата).
+- **Доказательство**: чтение `statistics/mi_upper_bound.py:181-194`:
+  ```python
+  df = pd.DataFrame({'feature': feature_names, 'mi_bits': scores / np.log(2)})
+  return df.sort_values('mi_bits', ascending=False).reset_index(drop=True)
+  ```
+  Никаких перестановок. Перестановочный p-value есть только в `estimate_mi` (строки 156–165) для среднего по набору.
+- **Почему важно**: следуя плану, исполнитель либо фальсифицирует p-value, либо лишает JSON обещанного раскрытия. Гейт task 4 в варианте плана невыполним как описан.
+- **Исправление**: (а) написать в плане отдельный вызов перестановочного MI для топ-фич по per-feature: для каждой фичи запустить `estimate_mi` с `n_permutations >= 200` (07b строки 87); или (б) убрать обещание p-value из ключа `mi_top` и оставить только bits.Если вариант (а) — учитывать стоимость (200 × 20 = 4000 прогонов RF/MI).
+
+### B4. В плане отсутствует Multiple Testing correction (Бонферрони) при 4 таргетах × 2 прогона
+
+- **Место**: план строки 456, 654 (Task 3 и Task 5); методика `07b` строки 133–136 и `16-reporting-audit.md` строки 22.
+- **Суть**: план гоняет гейт для 4 таргетов (`direction_12`, `mfe_12`, `direction_24`, `mfe_24`) и для каждого повтор на subsample (итого 8 проверок). Методика требует: «Если проверялось несколько наборов (N штук) — раскрыть их число и применить поправку: PASS засчитывается только при p < 0.05/N (Бонферрони); без поправки статус результата не выше `DIAGNOSTIC_ONLY`».
+- **План**: в Task 5 «Multiple Testing Context» раскрытие обещано (строка 654): «4 таргета × (основной + подвыборка) — раскрыть число проверок». Но **в коде runnerTask 3** нет ни коррекции (pass только при `p < 0.05/N`), ни вычисления `n_tests`. Вердикт в JSON просто `PASS`/`FAIL` по одиночному `p_value < 0.05`.
+- **Доказательство**: код `run_rf_gate` (строки 414–419 плана):
+  ```python
+  p_value = (k + 1) / (n_permutations + 1)
+  verdict = 'PASS' if p_value < 0.05 else 'FAIL'
+  ```
+  N — не учитывается. В runner (строки 539–549) так же: `gate = run_rf_gate(...)` без передачи числа одновременных проверок.
+- **Почему важно**: 4 таргета × 2 = 8 проверок, ожидаемое число ложноположительных при p<0.05 без коррекции — 0.4. Возможно получить ≥1 PASS просто по случаю. Без поправки Бонферрони или Холма все PASS-вердикты методологически ограничены `DIAGNOSTIC_ONLY`.
+- **Исправление**: (а) добавить параметр `n_tests` в `run_rf_gate` и `verdict = 'PASS' if p_value < 0.05 / n_tests`; (б) в runner вычислять `n_tests = 4 * 2 = 8` (или 4, если subsample не входит в основной вердикт); (в) в отчёте раскрывать applied correction.
+
+### B5. Указанные планом диапазоны `ret_12_dir_atr` (min≈−11, max≈9.6) расходятся с реальными (−18.06, +19.60)
+
+- **Место**: план строка 55 (Task 1 обязательные проверки).
+- **План**: «`ret_12_dir_atr` … подтверждено: min≈−11, max≈9.6. Если при запуске на реальных данных статистики выходят за эти пределы — **стоп и разбор** (семантика таргетов не подтверждена)».
+- **Доказательство** на реальном `DATA/Nero_train_labeled.csv`:
+  ```bash
+  ./.venv/bin/python -c "
+  import pandas as pd
+  df = pd.read_csv('DATA/Nero_train_labeled.csv', delimiter=';')
+  v = pd.to_numeric(df['ret_12_dir_atr'], errors='coerce').dropna()
+  print(f'min={v.min():.4f} max={v.max():.4f} p1={v.quantile(0.01):.4f} p99={v.quantile(0.99):.4f}')
+  "
+  # min=-18.0630 max=19.5976 p1=-2.5000 p99=5.2237
+  ```
+  Превышение почти вдвое по модулю. Аналогично `ret_24_dir_atr`: min=−22.85, max=+34.41.
+- **Почему важно**: проверка «если выходят за эти пределы — стоп» — срабатывает на **корректных** данных. Исполнитель по плану обязан остановить прогон и начать разбор → ложная тревога. Это противоречит прагматике и тривиально опровергается реальным датасетом.
+- **Исправление**: заменить жёсткие границы на разумные процентили (например, `p1 / p99` или `min/max` из фактического train), либо вообще убрать априорные границы — оставить только sanity-check на `|value| > 100` или не-конечность. В самопроверке Task 1 указать реальные значения min/max через first run, а не априорную оценку.
+
+### B6. Формулировка цели live-safe для `up_*/dn_*` неточна
+
+- **Место**: план строки 53, 173–176, 665.
+- **План**: «поля `up_3..dn_48` и `time` из фрактальных строк исключены (MFE/MAE от момента рождения фрактала — **future-derived относительно рождения уровня**)».
+- **Суть**: `up_*/dn_*` внутри строки `fractalN` — MFE/MAE в окне H баров от момента **рождения уровня N**. Если сам `fractalN` родился в далёком прошлом (его `time` сильно раньше row_time), то его MFE/MAE — уже **историческая** реализованная информация, не future. То есть `up_*/dn_*` future-derived относительно **рождения уровня**, но **не обязательно относительно decision_time** текущей строки.
+- **Противоречие существующему контракту**: `ML/fractal_level_feature_builder.py:498` `build_feature_contract` явно помечает `up_3..dn_48` для `idx > 0` как `available_at: "historical_fractal_state"`, `live_safe: True`, `model_input: True`. То есть контракт уже признаёт их live-safe для старых фракталов. План же исключает **все** updn-поля.
+- **Доказательство**: код `fractal_level_feature_builder.py` строки 476–497 — `is_old_updn = idx > 0 and field in _UPDN_FIELDS`, `available_at = "historical_fractal_state"`, `live_safe = True`, `model_input = True` (кроме embryonic fractal0). План же в `LIVE_SAFE_FRACTAL_FIELDS` (строки 177–180) вообще не включает ни одного `up_*/dn_*`.
+- **Почему важно**: консервативное исключение **всех** updn — безопасно с точки зрения leakage, но может выбросить из входов **именно те исторические метрики уровня** (`up_24`, `dn_24`, …), в которых ранее модели находили слабый сигнал (MI top-features из MI-отчёта — это row-aggregated `row_*`, но в плане гейт смотрит на сырые поля, а не агрегаты). Если FAIL на грубом наборе — п#430 ляется вопрос: связан ли он с отброшенными updn для старых фракталов?
+- **Исправление**: (а) аргументировать выбор «исключить всех updn» **не** как «future-derived относительно рождения уровня», а как «future-derived относительно рождения уровня в режиме риска fresh fractal0» — это сильнее соответствует `03` (строка 138) «допустимы как live-safe только если доказано, что накоплены к моменту строки». (б) Запустить два варианта гейта — без updn (консервативно) и с updn для idx>0 (по existing contractу); раскрыть разницу в отчёте. (в) Или — по меньшей мере — явное раскрытие в отчёте «гейт проверяет консервативный live-safe набор без updn; контракт из fractal_level_feature_builder.py:498 допускает updn для idx>0, но в этом плане не проверяется».
+
+### B7. Не выполнен `sample_size_gate` по каждой временной роли;walk-forward фолдов нет проверки на размер
+
+- **Место**: план строки 382–394 (Task 2 Step 3 `gate_score`); методика `06-temporal-split.md` строки 52–65 и `07b` строки 41–46 (sample_size_gate из 06).
+- **Суть**: `07b` строки 47–49: «число фолдов подобрать по объёму выборки, чтобы размер фолда проходил sample_size_gate из `06-temporal-split.md`; перемешивание строк запрещено». План фиксирует `n_folds=5` без обоснования. `06` строки 59–66: «train_raw_rows >= 1000, train_independent_events >= 300 и минимум 100 наблюдений каждого класса/стороны». На дискретном таргете с классом `+1` 14.5%, `-1` 5.9% (distribution K2) — минимальный класс в TimeSeriesSplit фолде на 41k строк может упасть ниже порога, но эта проверка **не выполнена и не раскрыта**.
+- **Доказательство**: методика 06 строки 67: «Для sequence-моделей и фрактальных профилей **не** привязывать gate к числу input columns или токенов: строки соседних событий не считаются независимыми автоматически. Если gate не пройден: обучение/подбор можно запускать только как `DIAGNOSTIC_ONLY`». В событийных данных соседи не независимы; в `06` строки 69–74 явно: «Интервал между строками непостоянен». План ~41k строк в train рассматривает как ~41k событий — это гипероптимистично.
+- **Почему важно**: без проверки `sample_size_gate` вердикт может быть `RESEARCH_ONLY` или `DIAGNOSTIC_ONLY` по статусу, но план ему назначает `PASS`/`FAIL` как если бы это был канонический гейт.
+- **Исправление**: добавить вычисление `n_train`, `n_per_class` по фолдам; фиксировать в JSON; при непрохождении понижать статус до `DIAGNOSTIC_ONLY` и явно раскрывать в отчёте.
+
+---
+
+## УЛУЧШЕНИЕ
+
+### U1. Перестановка target выполняется по всем строкам, не сохраняя временной сдвиг на+j+nested
+
+- **Место**: план строки 410–413 (Task 2 Step 3 `run_rf_gate`).
+- **Код**:
+  ```python
+  rng = np.random.default_rng(random_state + i)
+  score, _ = gate_score(X, rng.permutation(y), discrete, ...)
+  ```
+- **Суть**: методика `07b` строки 62–64: «Перестановочный тест: тот же RF на target со случайно перемешанными значениями (**временной порядок сохранён**), сравнение скор». `rng.permutation(y)` — перемешивает значения y; временной порядок X сохраняется — это методическая и правильно. Но в событийном ряде соседние строки коррелированы, и однократная перестановка оценивает только слабую «псевдо-H0» — это **улучшение**, не критика.
+- **Исправление**: рассмотреть block permutation (блоки по 10–20 соседних строк) как более консервативный перм-фон, как требует `11-robustness.md` строки 40 и 44: «блоки по 10–20 последовательных сделок».
+
+### U2. Дедупликация по `'time'` работает только если `time` строка ISO-формата — стоит зафиксировать
+
+- **Место**: план строки 239, 243 (Task 1 Step 3 `load_raw_fractal_gate_data`).
+- **Суть**: `sort_values('time')` и `drop_duplicates('time')` — корректны только при лексикографической сортировке, что выполняется для формата `2004.07.06 20:00` (из `DATA/Nero_train_labeled.csv`). Это OK, но не явный контракт: при смене формата `time` сортировка сломается.
+- **Исправление**: добавить assert, что `pd.to_datetime(merged['time'])` не имеет NaT (validate формата), либо convertir в datetime явно перед сортировкой.
+
+### U3. `_make_fractal_str` в тесте заполняет `up_12` как `'3.0'` — это future-derived, но попадает в decorated тест-строку
+
+- **Место**: план строки 88 (Task 1 Step 1 `_make_fractal_str`).
+- **Суть**: функция в тестах строит fractal-строку со `up_12 = 3.0`, что по контракту плана — future-derived; но в `LIVE_SAFE_FRACTAL_FIELDS` это поле исключено (строка 110–111 теста `assert 'up_12' not in LIVE_SAFE_FRACTAL_FIELDS`). Это внутренне консистентно, но **не покрывает** reject-path: парсер `_parse_fractal_row` читает **только** live-safe поля и не проверяет присутствие future-derived в строке. Если во fractal-строке `up_12` окажется не-ноль и из-за ошибки расширения контракта попадёт в матрицу — unnoticed.
+- **Исправление**: добавить assert в `build_fractal_features` (или в denylist-проверке), что `up_*/dn_*` лежат в `FRACTAL_FIELDS` **и** не входят в `LIVE_SAFE_FRACTAL_FIELDS`. Сейчас в `build_fractal_features` это косвенно выполнено (только live-safe поля пишутся), но расширение в будущем может пройти мимо тестов.
+
+### U4. Тест `direction_12` успешно проходит на трёхклассовой метке, но нет теста на 3-х классовость
+
+- **Место**: план строки 325–328 (Task 2 Step 1 `test_gate_score_detects_signal`).
+- **Суть**: `_signal_xy` с `discrete=True` возвращает `np.sign(y_cont)` (домен `{-1, +1}`) — двухклассовая задача. Но в реальных данных класс `0` (флэт) 79.56% (K2). Тесты гейта на `balanced_accuracy` прогоняют только двухклассовый сценарий, не покрывая трёхклассовый (что в production есть).
+- **Исправление**: добавить тест с трёхклассовым `y` (включающий `0`) и проверить, что score вычисляется без исключения.
+
+### U5. Тест `test_build_fractal_features_shape_and_exclusion` проверяет только `'up_'`/`'dn_'` подстроки, не проверяя `time`
+
+- **Место**: план строки 119.
+- **Код**:
+  ```python
+  assert not any('up_' in n or 'dn_' in n for n in names)
+  ```
+- **Суть**: `time` изначально исключено из `LIVE_SAFE_FRACTAL_FIELDS` (стока 110), но проверка `not any('up_' in n or 'dn_' in n for n in names)` НЕ покрывает `time` и не покрывает поля с похожими именами, если появятся (например, `'uptime'` — unlikely, но формально).
+- **Исправление**: прямая проверка `assert not any(n.endswith('_' + f) for f in ('time', 'up_12', 'dn_48', ...))` или сравнение по списку `names` против полного `LIVE_SAFE`-множества.
+
+### U6. `n_folds=5` жёстко занесено в интерфейс — без sample-size обоснования
+
+- **Место**: план строки 298, 398, 527.
+- **Суть**: дефолт `n_folds=5` не обоснован; для TimeSeriesSplit первого фолда train меньше, чем последнего — дисперсия между фолдами может быть высокой. `07b` строки 47–49: «число фолдов подобрать по объёму выборки».
+- **Исправление**:.runners обычно фиксируют `n_folds`, но стоит вычислить min fold size по таблице фолдов и зафиксировать в JSON.
+
+---
+
+## ВОПРОС
+
+### Q1. `fav_12_atr` — это row-based агрегат, а не "прямое futures movement" — что планирует гейт как таргет?
+
+- **Доказательство**: в dataset_description строки 165–181: `fav_N_atr` — «Насколько далеко от входа цена ушла в благоприятную сторону за N баров», с входом = Open t+1 и направлением по `signal` (по умолчанию) или `fractal0.direction` (`use_fractal_dir=True`). Какой именно вариант использует labelled CSV по умолчанию? 
+- **Контекст**: если по умолчанию `signal`-based direction, то `fav_12_atr` фильтруется по `signal ≠ 0`, что уменьшает выборку. Но в `DATA/Nero_train_labeled.csv` заголовок содержит `fav_12_atr` для всех 44159 строк — значит, либо `use_fractal_dir=True`, либо заполнен 0 для строк с `signal=0`. План берёт `fav_12_atr` как есть, без фильтра.
+- **Вопрос**: что именно семантически гейт проверяет на `fav_12_atr`? План строка 669: «`fav_12_atr` vs entry-based Up/Dn — взят row-based таргет из labeled CSV (простота, без OHLC-джойна)», но не раскрывает, какой direction-режим. Это **вопрос** к автору плана: какой direction-режим выбран в labelled CSV? Влияет ли на таргет разница?
+
+### Q2. Почему шаг H=12 subsample, но не embargo? 
+
+- **Доказательство**: таргет `ret_12_dir_atr` использует `Close[t+12]` — будущий горизонт 12 баров. Методика `06-temporal-split.md` строки 34: «Если label horizon пересекает границу split: применить embargo gap ИЛИ письменно доказать, что ни один label/результат не пересекает границу». Гейт не пересекает split (train целиком), но **внутри фолдов** TimeSeriesSplit граница фолдов тоже имеет горизонт 12 — соседние фолды содержат статистически зависимые пары (test-окно фолда i + 12 < train-окно фолда i+1).
+- **Вопрос**: рассматривал ли план embargo в H баров между train и test-окнами фолдов? Если нет — это потенциальная микро-утечка из test-фолда в train-следующего-фолда через target.
+
+### Q3. План строка 240: «`n_dedup_dropped += n_raw - len(df) if False else 0  # считается ниже суммарно» — placeholder остался в коде?
+
+- **Доказательство**: строка-«пейсольder» с `if False` и комментарий строка 266: «`(Строка с if False не нужна — дедупликация считается суммарно после concat; убрать её при реализации.)`». План сам признаёт её присутствие неисправимым; исполнитель должен убрать. Это по plan-style «один недовод» — но это **вопрос** кープому flow: почему план предлагает код с пометкой «убери», а не финальная версия?
+- **Вопрос**: добавить ли в план инструкцию «убрать `if False` строку в Step 3» — неявно ожидается, но это нарушение принципа «код в шагах полный» (план строка 674: «Плейсхолдеров нет; код в шагах полный»). Это внутреннее противоречие.
+
+### Q4. `FRACTAL_FIELDS['time']` — это row-level `time` в тесте, а в живом парсере `time` — это fractal_time?
+
+- **Доказательство**: план строки 77 — `parts[FRACTAL_FIELDS['time']] = '1089140400'` — в `_make_fractal_str` теста это заполнение поля `time` внутри fractal-строки (по `FRACTAL_FIELDS`, `time=0`). В реальной `fractal0`-строке `time` также индекс 0 — UNIX-секунды. Однако `time` исключена из `LIVE_SAFE_FRACTAL_FIELDS` (строка 110: `assert 'time' not in LIVE_SAFE_FRACTAL_FIELDS`), и в парсере `_parse_fractal_row` (строки 199–203) `time` не читается. Это правильно, но: `row-level time` (для сортировки) — отдельная колонка CSV (`time` в заголовке таблицы, не внутри `fractal*`). План неявно их различает. Это не bug, но **вопрос**: проверить, что в `load_raw_fractal_gate_data` `merged['time']` (строка 243) — это именно row-level колонка, а не «time из fractal*.time» — это так по контракту CSV, но тест не покрывает это.
+
+---
+
+## Дополнительные наблюдения
+
+### O1. Конвенция дедупликации подтверждена
+
+План строка 280 ожидает ~6% drop на train. Реально: **6.33%** (2796 из 44159 → 41363 строк). Совпадение — OK. Источник: `docs/reports/2026-08-11-mi-upper-bound.md` строка 54 (дедупликация train 2796 → 6.3%) — консистентно между планом, реальными данными и прошлым MI-этапом.
+
+### O2. `n_perm >= 199` vs 07b «минимум 200 перестановок для MI»
+
+- **Доказательство**: план строка 16: «Перестановок ≥ 199 (разрешение p_min = 1/(199+1) = 0.005)». Методика `07b` строки 87: «перестановочный p-value (минимум 200 перестановок … p_min = 1/(n_perm+1): при 200 перестановках 1/201 ≈ 0.005)». Число **199** даёт `1/200 = 0.005` (та же p_min). Это эквивалентно (199 → p_min=0.005, 200 → p_min≈0.00498), но **文字 формулировка плана** неточна: 07b говорит про MI-скрининг, а план использует 199 для **RF** гейта. Для RF методика отдельно не фиксирует минимум — это неявно заимствовано из MI-раздела. **Совместимо**, но стоит явно раскрыть: «взято 199 по образцу 07b MI-раздела; для RF это произвольный парам之时».
+
+### O3. `git push` запрещён — соответствует AGENTS.md
+
+- План строка 20: «Коммиты локальные; `git push` запрещён». Это прямо совпадает с `AGENTS.md` «`git push` не делать без явной просьбы пользователя». — OK.
+
+### O4. Отчёт по 14 элементам `docs/reports/README.md` — план обещает
+
+- План строка 656: «по шаблону `docs/reports/README.md`, все числа — только из JSON-артефактов». `docs/reports/README.md` строки 25–44 действительно описывают 14 обязательных элементов. План это учитывает. — OK.
+
+### O5. Время основного прогона — оценка «часы» подтверждена
+
+- План строка 585: «Ожидаемое время: часы (200 фитов RF × 4 таргета × 2 с подвыборкой)». Это 1600 фитов RF (100 деревьев × depth=10 каждого) на 41363 строк × 1201 фичам + подвыборка ~3447 × 1201. Эмпирический пересчёт: ~3–10 сек/фит на CPU → 80–270 минут. Оценка «часы» реалистична. — OK.
+
+### O6. Отсутствие `FRACTAL_FIELDS` завершающей точки
+
+- В `ML/fractal_level_feature_builder.py:23-47` `FRACTAL_FIELDS` — **dict** (имя→индекс). План обращается `FRACTAL_FIELDS[name]` (например строка 200); это работает с dict, возвращает int-позицию.Консистентно. — OK.
+
+---
+
+## Сводка критичных замечаний и обязательных исправлений
+
+Перед запуском реализации плана **необходимо** исправить:
+
+1. **K1** — убрать `break` из `_INT_FIELDS` (или реализовать fail-fast на не-integer-like для всех `_INT_FIELDS`); парсер сохраняет дробные значения `break`.
+2. **K2** — добавить `class_weight='balanced'` в `RandomForestClassifier` для дискретного таргета; зафиксировать в JSON.
+3. **K3** — добавить multi-seed (≥5) проверку при FAIL; зафиксировать в JSON распределение вердиктов.
+4. **K4** — исправить тест `test_load_raw_fractal_gate_data_targets_and_dedup`: ожидать `mfe_12` с заменой на индексе 3, а не linspace.
+5. **K5** — заменить `assert a['perm_scores'] == b['perm_scores']` на `np.allclose` или `n_jobs=1` в тестах.
+6. **B1** — использовать разреживание по `time`, а не по индексу, либо раскрыть ограничение в отчёте.
+7. **B2** — исправить импорт `mi_upper_bound` с `ML/` на `statistics/` (через `importlib`).
+8. **B3** — либо реализовать per-feature permutation MI, либо убрать обещание p-value в `mi_top`.
+9. **B4** — применить Multiple Testing correction (Бонферрони при `n_tests = 8`) либо понижать verdict до `DIAGNOSTIC_ONLY`.
+10. **B5** — заменить априорные границы `ret_12_dir_atr` на фактические (или на процентили).
+11. **B7** — вычислить `sample_size_gate` по фолдам и классам; понижать статус при непрохождении.
+
+После этого план становится методологически корректным и реализуемым.
