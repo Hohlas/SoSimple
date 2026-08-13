@@ -137,34 +137,3 @@ Infrastructure: single-rule prototype, batch design, manual runbook — DIAGNOST
 **7.6. Time-only dominance.** Все 11 Fixed11 rules — time_only. No-ML baseline 85.9% ML PF. Time-признаки доминируют.
 
 **7.7. Single-position policy.** 99.2% OPEN_FAILED. Multi-position убыточен.
-
----
-
-## 8. Рекомендации
-
-### Пробовать дальше
-
-**Amplitude-based подходы (высокий приоритет).** Amplitude устойчивее direction (0.34→0.44). Модель предсказывает amplitude, decision layer: торговать если predicted amplitude > threshold. Избежит already-moved.
-
-**MT5 execution loop (высокий приоритет).** Infrastructure готова. Batch selection с multi-position. Forward validation через Strategy Tester — единственный способ.
-
-**Regime-aware модели (средний приоритет).** Breach работал 2017-2022, перестал 2023-2026. Модели с явным учётом regime.
-
-**Limit-order BUY (средний приоритет).** PF=1.53 на spread 0.20. Проверить робастность на разных spread.
-
-### Закрыть окончательно
-
-**Direction-only модели.** Direction от next open непредсказуем (Spearman ~0.0). Все direction-only PF<1.5 на OOS. Already-moved.
-
-**Breach-based trading.** Classification PASS, trading FAIL (PF=0.84–1.015). Regime drift.
-
-**Triple Barrier.** Test PF=1.11–1.28, 2 убыточных года.
-
-**Fractal0 Fixed11.** 11 rules — time_only. Calendar dominance 85.9%. Chronology fix обнулил.
-
-**Take/Skip quality/frequency.** PF=39.74/13.12 — leakage. Live-safe FAIL.
-
-### Приоритеты на следующий квартал
-
-Q3: (1) Amplitude-based модели + decision layer. (2) MT5 batch с multi-position. (3) Forward validation. (4) Regime-aware модели.
-Q4: (1) Limit-order BUY робастность. (2) Multi-position прибыльность. (3) Time-aware модели.
