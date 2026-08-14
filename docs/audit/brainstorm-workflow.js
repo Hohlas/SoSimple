@@ -1,23 +1,24 @@
 export const meta = {
   name: 'brainstorm-workflow',
-  description: 'Брэйншторм новых источников trading edge: 4 параллельных генератора гипотез по векторам поиска → разметка кластеров похожих идей без слияния → по 2 независимых критика на идею → детерминированное слияние вердиктов → синтез итогового списка в docs/audit/brainstorm-filtered.md.',
-  phases: ['Генерация', 'Дедупликация', 'Атака гипотез', 'Синтез', 'Верификация'],
+  description: 'Брэйншторм новых источников trading edge: 4 параллельных генератора гипотез по векторам поиска → разметка кластеров без слияния → спор «автор идеи × критик» на кластер (3 раунда, досрочный выход при признании фатального аргумента) → синтез-арбитр с правом только понижать вердикты → итоговый список в docs/audit/brainstorm-filtered.md.',
+  phases: ['Генерация', 'Кластеры', 'Споры', 'Синтез-арбитр', 'Верификация'],
   // Контрактные ограничения:
   //   - Контекстное окно субагента ~150K. Основной вход каждого агента —
   //     docs/audit/retrospective.md (~2K слов), читается целиком.
   //   - knowledge-rag (search_knowledge) — только точечная проверка фактов;
   //     отчёты docs/reports/ и ML/reports/ целиком не читаются.
-  //   - Одна идея = один критик. Критики не видят оценок друг друга
-  //     (независимые треки) — защита от коррелированных ошибок.
+  //   - Спор идёт на кластер, не на идею: один представитель + заметка о
+  //     соседях по кластеру. Раунды внутри пары последовательны, пары —
+  //     параллельны. Каждый раунд — НОВЫЙ вызов агента с передачей всей
+  //     предыдущей переписки пары в промпте (долгоживущих агентов нет).
+  //   - Анти-сговор: вердикт меняется только под новые аргументы, а не под
+  //     уверенность тона; досрочный выход — по признанию фатального
+  //     аргумента автором, а не по «согласию сторон»; арбитр вправе только
+  //     понижать вердикты критика, не повышать.
 };
 
-// Настройки: число независимых треков критики и минимальное число
-// рецензий на идею (меньше — идея помечается как недооценённая).
-const REVIEWERS_PER_IDEA = 2;
-const MIN_REVIEWS = 2;
-// Потолок числа идей после дедупликации: защита от разрастания фазы 3
-// (критиков = идеи × REVIEWERS_PER_IDEA).
-const MAX_IDEAS_AFTER_DEDUP = 20;
+// Потолок числа кластеров, идущих в споры (стоимость = кластеры × 2–3 вызова).
+const MAX_CLUSTERS = 20;
 
 // ═══════════════════════════════════════════════════════
 // Утилиты
@@ -40,16 +41,20 @@ const parseJson = (raw, label) => {
     const first = cleaned.indexOf('{');
     const last = cleaned.lastIndexOf('}');
     if (first !== -1 && last > first) {
-      return JSON.parse(cleaned.slice(first, last + 1));
+      try {
+        return JSON.parse(cleaned.slice(first, last + 1));
+      } catch (__) { /* переход к стандартизированной ошибке ниже */ }
     }
     throw new Error(label + ': не удалось извлечь JSON');
   }
 };
 
+const ALLOWED_VERDICTS = ['выживает', 'условно', 'убита'];
+
 // ═══════════════════════════════════════════════════════
 // Фаза 1: Генерация (divergence)
 // Параллельные генераторы по векторам поиска. Векторы пересекаются
-// намеренно — пересечения убирает фаза дедупликации.
+// намеренно — пересечения размечает фаза кластеров.
 // ═══════════════════════════════════════════════════════
 
 phase('Генерация');
@@ -111,9 +116,8 @@ trading edge, которые ретроспектива ещё не исключ
 Формат каждой гипотезы (в JSON-полях):
 - name: 2–5 слов.
 - essence: 1–3 предложения.
-- deadend: необязательное поле. Если идея обходит конкретный тупик из
-  ретроспективы (already-moved, regime drift, leakage, малые выборки,
-  low R², time-only dominance и т.д.) — назови его. Если аналога
+- deadend: какой тупик из ретроспективы обходит (already-moved, regime drift,
+  leakage, малые выборки, low R², time-only dominance и т.д.). Если аналога
   в ретроспективе нет — оставь пустым, не притягивай.
 - edge_source: одно предложение — кто платит и почему эффект может быть
   устойчивым; начинай с «[гипотеза] ».
@@ -140,7 +144,12 @@ genResults.forEach((r, i) => {
   try {
     const parsed = parseJson(r, `Генератор «${vectors[i].name}»`);
     const list = Array.isArray(parsed.hypotheses) ? parsed.hypotheses : [];
-    list.forEach(h => { if (h && h.name && h.essence) rawIdeas.push(h); });
+    list.forEach(h => {
+      if (h && h.name && h.essence) {
+        // Нормализация на входе: дальше h.tags используется без защит.
+        rawIdeas.push({ ...h, tags: Array.isArray(h.tags) ? h.tags : [] });
+      }
+    });
   } catch (e) {
     genFailures.push(vectors[i].name);
     log('Не удалось распарсить: ' + e.message);
@@ -157,12 +166,13 @@ if (rawIdeas.length === 0) {
 log(`Сырых гипотез: ${rawIdeas.length}.`);
 
 // ═══════════════════════════════════════════════════════
-// Фаза 2: Разметка кластеров и нормализация
-// Один агент помечает похожие гипотезы кластерами (БЕЗ слияния)
-// и применяет жёсткие запреты, удаляя нарушающие идеи.
+// Фаза 2: Разметка кластеров
+// Агент только нумерует кластеры похожих идей и удаляет нарушающие
+// жёсткий запрет. Формулировки НЕ переписываются и НЕ сливаются:
+// источник истины — rawIdeas, кластер лишь группирует.
 // ═══════════════════════════════════════════════════════
 
-phase('Дедупликация');
+phase('Кластеры');
 
 const rawBlock = rawIdeas
   .map((h, i) => `${i + 1}. ${h.name}
@@ -172,65 +182,75 @@ const rawBlock = rawIdeas
 Теги: ${Array.isArray(h.tags) ? h.tags.join('; ') : ''}`)
   .join('\n\n');
 
-const dedupRaw = await agent(
+const clusterRaw = await agent(
   `Ниже — сырые гипотезы о новых источниках trading edge, собранные
 ${vectors.length} независимыми генераторами (с пересекающимися векторами).
+Ретроспективу перечитывать не нужно.
 
 ${rawBlock}
 
-Твоя задача:
-1. Разметь кластеры: идеи с совпадающим механизмом edge получают один
-   номер кластера (число, начиная с 1). НЕ сливай и НЕ переписывай идеи —
-   каждая формулировка сохраняется как есть. Выбор лучшей версии внутри
-   кластера — работа этапа критики, не твоя.
+Твоя задача — ТОЛЬКО разметка, без переписывания:
+1. Разбей гипотезы на кластеры по совпадению механизма edge (кто платит и
+   почему эффект устойчив) — даже при разной упаковке. Близкие по теме,
+   но разные по механизму идеи — разные кластеры. Одиночные идеи получают
+   свой кластер.
 2. Удали идеи, нарушающие жёсткий запрет: классические индикаторы
    (RSI, MACD, скользящие средние и т.п.) и прочие примитивные отжившие
-   методы. Больше ничего не убивай: новизну по источнику информации
-   проверяет следующий этап, у тебя для этого нет контекста.
+   методы. Больше не удаляй ничего: новизну проверяет спор.
+3. Названия гипотез верни ДОСЛОВНО, как в списке — по ним идёт связка.
 
-Ответь ИСКЛЮЧИТЕЛЬНО валидным JSON без markdown-обёртки.
-items содержит ВСЕ неудалённые идеи, имя в name — в точности как во входе:
-{"items": [{"name":"...","cluster":1}]}`,
-  { phase: 'Дедупликация', label: 'Разметка кластеров' }
+Ответь ИСКЛЮЧИТЕЛЬНО валидным JSON без markdown-обёртки:
+{"items": [{"name": "...", "cluster": 1}], "removed": [{"name": "...", "reason": "..."}]}`,
+  { phase: 'Кластеры', label: 'Разметка кластеров' }
 );
 
-let clustersByName;
+let clusterMap, removedByAgent;
 try {
-  const items = parseJson(dedupRaw, 'Разметка кластеров').items;
-  clustersByName = new Map(
-    (Array.isArray(items) ? items : [])
-      .filter(it => it && it.name)
-      .map(it => [String(it.name), Number(it.cluster) || 0])
+  const parsed = parseJson(clusterRaw, 'Разметка кластеров');
+  clusterMap = new Map(
+    (Array.isArray(parsed.items) ? parsed.items : [])
+      .filter(it => it && it.name && Number.isFinite(Number(it.cluster)))
+      .map(it => [String(it.name), Number(it.cluster)])
   );
+  removedByAgent = Array.isArray(parsed.removed) ? parsed.removed : [];
 } catch (e) {
   log('ОШИБКА: ' + e.message + '. Завершаю.');
   throw e;
 }
-
-// Идеи берутся из rawIdeas (первоисточник фазы 1): дедупликатор возвращает
-// только имена и кластеры, поэтому переписать или «поглотить» формулировку
-// он не может даже теоретически. Идея, чьё имя не вернулось, — удалена
-// по жёсткому запрету.
-const removed = rawIdeas.filter(h => !clustersByName.has(String(h.name))).map(h => h.name);
-let ideas = rawIdeas
-  .filter(h => clustersByName.has(String(h.name)))
-  .map(h => ({ ...h, cluster: clustersByName.get(String(h.name)) }));
-if (removed.length > 0) {
-  log(`Удалено по жёсткому запрету: ${removed.length} — ${removed.join(', ')}.`);
-}
-if (ideas.length === 0) {
+if (clusterMap.size === 0) {
   log('ОШИБКА: разметка не вернула ни одной гипотезы. Завершаю.');
-  throw new Error('No hypotheses after cluster marking');
+  throw new Error('No ideas after cluster marking');
 }
-const clusterSizes = ideas.reduce((acc, h) => { acc[h.cluster] = (acc[h.cluster] || 0) + 1; return acc; }, {});
-const nClusters = Object.keys(clusterSizes).filter(c => c !== '0').length;
-log(`После разметки: ${ideas.length} идей в ${nClusters} кластерах.`);
+if (removedByAgent.length > 0) {
+  log(`Жёсткий запрет: удалено ${removedByAgent.length} — ${removedByAgent.map(r => r.name).join(', ')}.`);
+}
 
-// Сохраняем промежуточный артефакт (Этап 1).
-const ideasMd = `# Сырые гипотезы брэйншторма (после разметки кластеров)
+// Источник истины — rawIdeas: формулировки не могли быть поглощены при слиянии.
+const droppedByMarking = rawIdeas.filter(h => !clusterMap.has(String(h.name))).map(h => h.name);
+if (droppedByMarking.length > 0) {
+  log(`Внимание: разметка потеряла ${droppedByMarking.length} идей: ${droppedByMarking.join(', ')}.`);
+}
+let ideas = rawIdeas
+  .filter(h => clusterMap.has(String(h.name)))
+  .map(h => ({ ...h, cluster: clusterMap.get(String(h.name)) }));
+
+// Группировка по кластерам с сохранением порядка появления.
+const clusters = [];
+const clusterById = new Map();
+ideas.forEach(h => {
+  if (!clusterById.has(h.cluster)) {
+    const c = { id: h.cluster, members: [] };
+    clusterById.set(h.cluster, c);
+    clusters.push(c);
+  }
+  clusterById.get(h.cluster).members.push(h);
+});
+
+// Сохраняем промежуточный артефакт (все идеи, с номерами кластеров).
+const ideasMd = `# Сырые гипотезы брэйншторма (разметка кластеров)
 
 Сгенерировано brainstorm-workflow.js, фаза 2. Ранжирования нет.
-Идеи с одинаковым номером кластера имеют похожий механизм edge.
+Один кластер = один механизм edge.
 
 ${ideas.map(h => `## ${h.name} [кластер ${h.cluster}]
 - Суть: ${h.essence}
@@ -245,222 +265,340 @@ await agent(
 только: «записано, N слов».
 
 ${ideasMd}`,
-  { phase: 'Дедупликация', label: 'Запись brainstorm-ideas.md' }
+  { phase: 'Кластеры', label: 'Запись brainstorm-ideas.md' }
 );
 
-// Потолок числа идей для фазы критики (аудит: стоимость растёт как
-// идеи × REVIEWERS_PER_IDEA). Отброшенные — в лог, файл-артефакт полный.
-if (ideas.length > MAX_IDEAS_AFTER_DEDUP) {
-  const dropped = ideas.slice(MAX_IDEAS_AFTER_DEDUP).map(h => h.name);
-  ideas = ideas.slice(0, MAX_IDEAS_AFTER_DEDUP);
-  log(`Потолок ${MAX_IDEAS_AFTER_DEDUP} идей: отброшено ${dropped.length} — ${dropped.join(', ')}.`);
+// Потолок числа кластеров для фазы споров. Отброшенные уходят в лог И в
+// протокол арбитра — не должны исчезать молча из итогового документа.
+let droppedClusters = [];
+if (clusters.length > MAX_CLUSTERS) {
+  droppedClusters = clusters.slice(MAX_CLUSTERS).map(c => c.members[0].name + (c.members.length > 1 ? ` (+${c.members.length - 1})` : ''));
+  clusters.length = MAX_CLUSTERS;
+  log(`Потолок ${MAX_CLUSTERS} кластеров: отброшено ${droppedClusters.length} — ${droppedClusters.join(', ')}.`);
 }
+log(`Кластеров в спор: ${clusters.length}.`);
 
 // ═══════════════════════════════════════════════════════
-// Фаза 3: Атака гипотез (convergence)
-// REVIEWERS_PER_IDEA независимых критиков на каждую идею.
+// Фаза 3: Споры (автор идеи × критик, на кластер)
+// Раунд 1 — критик атакует. Раунд 2 — автор защищает или признаёт
+// фатальный аргумент (досрочный выход: «убита»). Раунд 3 — критик
+// подводит черту: конспект «за и против» + финальный вердикт для арбитра.
+// Пары параллельны; раунды внутри пары последовательны.
 // ═══════════════════════════════════════════════════════
 
-phase('Атака гипотез');
+phase('Споры');
 
-// Для идей из многоэлементных кластеров показываем критику соседние
-// формулировки: пусть оценит, какая версия механизма сформулирована сильнее.
-const clusterNote = (idea) => {
-  const siblings = ideas.filter(h => h.cluster === idea.cluster && h.name !== idea.name);
-  if (siblings.length === 0) return '';
-  return `В кластере с этой идеей есть похожие формулировки: ${siblings.map(s => `«${s.name}» (${s.essence})`).join('; ')}.
-Учти их при оценке: если одна из версий кластера сформулирована сильнее,
-отметь это в rationale — но оценивай именно данную гипотезу.`;
+const clusterNote = (c) => {
+  if (c.members.length < 2) return '';
+  const others = c.members.slice(1).map(m => `«${m.name}»: ${m.essence}`).join('\n');
+  return `В этом же кластере (тот же механизм edge) есть близкие идеи — спор
+ведётся по самой полной формулировке, но вердикт распространяется на весь кластер:
+${others}
+`;
 };
 
-const reviewJobs = [];
-ideas.forEach((idea, i) => {
-  for (let k = 1; k <= REVIEWERS_PER_IDEA; k++) {
-    reviewJobs.push({ idea, idx: i, track: k });
-  }
-});
-log(`Запускаю ${reviewJobs.length} критиков (${ideas.length} идей × ${REVIEWERS_PER_IDEA} трека)...`);
+const ideaBlock = (h) => `Название: ${h.name}
+Суть: ${h.essence}
+Обходимый тупик: ${h.deadend || 'не указан'}
+Откуда edge: ${h.edge_source}
+Теги: ${Array.isArray(h.tags) ? h.tags.join('; ') : ''}`;
 
-const reviewResults = await parallel(
-  reviewJobs.map(job => () =>
-    agent(
+log(`Запускаю ${clusters.length} споров параллельно (до 3 вызовов на пару)...`);
+
+const debateResults = await parallel(
+  clusters.map(c => async () => {
+    const rep = c.members[0];
+
+    // Раунд 1: критик атакует.
+    const attackRaw = await agent(
       `Ты — критически настроенный рецензент количественных исследований.
-Атакуй гипотезу и убивай слабые. Не защищай идею и не ищи ей оправданий:
-твоя ценность — жёсткий отсев. Других рецензий ты не видишь.
+Твоя задача — атаковать гипотезу и найти её слабые места. Не защищай идею
+и не ищи ей оправданий. Это раунд 1 спора: после твоей атаки автор идеи
+получит слово, затем ты подведёшь черту.
 
 Контекст: проект SoSimple (Forex, personal research). Порог успеха:
-PF ≥ 1.5 на строгом out-of-sample с bootstrap CI (нижняя граница > 1.0).
+PF ≥ 1.3 на строгом out-of-sample с bootstrap CI (нижняя граница > 1.0).
 За ~6 месяцев ни одна система его не прошла.
 
-Вход:
-1. docs/audit/retrospective.md — прочитай ЦЕЛИКОМ. База проверки новизны:
-   секция 2 — пройденные направления, секция 4 — что не работает.
-2. knowledge-rag (search_knowledge) — только точечная проверка фактов,
-   если гипотеза ссылается на результат, которого нет в ретроспективе.
+Вход: прочитай docs/audit/retrospective.md ЦЕЛИКОМ. База проверки новизны —
+секция 2 (пройденные направления) и секция 4 (что не работает).
+knowledge-rag (search_knowledge) — только точечная проверка фактов,
+если гипотеза ссылается на результат, которого нет в ретроспективе.
 
+${clusterNote(c)}
 Гипотеза:
-Название: ${job.idea.name}
-Суть: ${job.idea.essence}
-Обходимый тупик: ${job.idea.deadend || 'не указан'}
-Откуда edge: ${job.idea.edge_source}
-Теги: ${job.idea.tags.join('; ')}
-${clusterNote(job.idea)}
+${ideaBlock(rep)}
 
 Выполни по порядку:
-1. Новизна. Есть ли в ретроспективе (секции 2 и 4) идея с ТЕМ ЖЕ
-   механизмом получения edge? Совпадение темы или слов недостаточно:
-   переупаковка — только если совпадает, ОТКУДА берётся edge.
-   Если переупаковка — verdict "убита", в rationale — точная цитата
-   секции и что именно совпадает. Если механизм другой — идея нова,
-   даже при похожей теме.
+1. Новизна. Найди в ретроспективе (секции 2 и 4) эту идею или аналог с ТЕМ ЖЕ
+   механизмом edge. Совпадение темы или слов — НЕ доказательство: нужна
+   точная цитата из секции, описывающая тот же механизм. Если аналог есть —
+   preliminary_verdict "убита", в retrospective_ref — секция и цитата.
 2. Атака. До трёх самых уязвимых мест (данные, стационарность, исполнение,
    размер выборки, происхождение edge).
 3. Фальсификация. Спроектируй убивающий эксперимент: что проверить, метрика,
-   конкретный порог/число, которое убивает идею. Эксперимент НЕ проводи.
-   Если убивающий тест в рамках проекта не формулируется —
-   falsifiable=false, в falsification — объяснение.
-4. Происхождение edge. Слабый или отсутствующий механизм «кто платит» —
-   добавь в массив tags элемент "спекуляция". Это снижает позицию,
-   но не убивает.
-5. Потенциал. Оцени potential от 1 до 5: правдоподобность устойчивого edge
-   строго по полю «Откуда edge» и своим уязвимостям. 5 — механизм конкретен
-   и устойчив, 1 — механизм не назван или явно неустойчив. Обоснуй одной
-   фразой в potential_why.
-6. Вердикт: "выживает" / "условно" / "убита". Если идея требует доработки,
-   чтобы выжить — «условно» с указанием, чего не хватает.
-   Убивай без сожаления: идея с неустранимым уязвимым местом не проходит.
-   Не дополняй и не улучшай гипотезы.
+   конкретный порог/число, которое убивает идею, стоимость (часы/дни).
+   Эксперимент НЕ проводи. Если убивающий тест в рамках проекта не
+   формулируется — falsifiable=false с объяснением.
 
 Ответь ИСКЛЮЧИТЕЛЬНО валидным JSON без markdown-обёртки:
-{"name": ${JSON.stringify(job.idea.name)},
- "novelty": {"duplicate_of": null, "retrospective_ref": "..."},
+{"novelty": {"duplicate_of": null, "retrospective_ref": null},
  "vulnerabilities": ["...", "..."],
  "falsification": {"test": "...", "metric": "...", "kill_threshold": "...", "cost": "часы/дни", "falsifiable": true},
- "potential": 3,
- "potential_why": "одна фраза",
- "tags": [],
+ "preliminary_verdict": "выживает|условно|убита"}`,
+      { phase: 'Споры', label: `${rep.name} — атака` }
+    );
+
+    let attack;
+    try {
+      attack = parseJson(attackRaw, `Критик «${rep.name}», раунд 1`);
+    } catch (e) {
+      log(`Спор «${rep.name}» не состоялся (раунд 1): ` + e.message);
+      return { cluster: c.id, idea: rep, members: c.members, status: 'no_debate' };
+    }
+
+    // Раунд 2: автор защищает или признаёт фатальный аргумент.
+    const defenseRaw = await agent(
+      `Ты — автор гипотезы ниже. Критик её атаковал. Твоя задача — честная
+защита по существу, НЕ защита любой ценой.
+
+Гипотеза:
+${ideaBlock(rep)}
+
+Атака критика:
+Новизна: ${JSON.stringify(attack.novelty || null)}
+Уязвимости: ${JSON.stringify(attack.vulnerabilities || [])}
+Фальсификация: ${JSON.stringify(attack.falsification || null)}
+Предварительный вердикт: ${attack.preliminary_verdict || 'не указан'}
+
+Правила:
+- Отвечай на каждый аргумент по существу. Не пересказывай суть идеи заново.
+- Если аргумент критика фатален и неустраним (например, точная цитата из
+  ретроспективы о том же механизме edge) — признай это явно: concession=true
+  и укажи, какой именно аргумент принят. Честное признание ценнее плохой защиты.
+- Если критик ссылается на секцию ретроспективы, можешь прочесть эту секцию
+  в docs/audit/retrospective.md, чтобы проверить цитату.
+- Слабый механизм «кто платит» допустимо признать и уточнить, это не фатально.
+- Не выдавай предположения за факты; спекуляции помечай [гипотеза].
+- Ответ — до 200 слов.
+
+Ответь ИСКЛЮЧИТЕЛЬНО валидным JSON без markdown-обёртки:
+{"concession": false, "accepted_arguments": [], "defense": "..."}`,
+      { phase: 'Споры', label: `${rep.name} — защита` }
+    );
+
+    let defense;
+    try {
+      defense = parseJson(defenseRaw, `Автор «${rep.name}», раунд 2`);
+    } catch (e) {
+      // Защита не распарсилась — передаём критику сырой текст, спор не рвём.
+      log(`Защита «${rep.name}» не распарсилась: ` + e.message);
+      defense = {
+        concession: false,
+        accepted_arguments: [],
+        defense: '(технический сбой: ответ автора не распарсен или отсутствует) ' + normalizeResult(defenseRaw),
+      };
+    }
+
+    // Досрочный выход: автор признал фатальный аргумент — раунд 3 не нужен.
+    if (defense.concession === true) {
+      return {
+        cluster: c.id, idea: rep, members: c.members, status: 'conceded',
+        attack, defense,
+        final: {
+          verdict: 'убита',
+          rationale: 'Автор признал фатальный аргумент критика: ' +
+            (Array.isArray(defense.accepted_arguments) ? defense.accepted_arguments.join('; ') : defense.defense || ''),
+          vulnerabilities: attack.vulnerabilities || [],
+          falsification: attack.falsification || null,
+          novelty: attack.novelty || null,
+          potential: null, potential_why: null,
+        },
+      };
+    }
+
+    // Раунд 3: критик подводит черту — конспект «за и против» для арбитра.
+    const finalRaw = await agent(
+      `Ты — тот же критик из раунда 1 (твоя атака воспроизведена ниже). Автор
+идеи ответил на атаку. Подведи черту спора: составь конспект «за и против»
+и вынеси финальный вердикт для независимого арбитра.
+
+Гипотеза:
+${ideaBlock(rep)}
+
+Твоя атака (раунд 1):
+${JSON.stringify(attack)}
+
+Ответ автора (раунд 2):
+${JSON.stringify(defense)}
+
+Правила:
+- Вердикт меняется ТОЛЬКО под новые факты и аргументы из ответа автора —
+  не под уверенность тона и не потому, что автор возражает. Если защита не
+  добавила ничего содержательного — сохрани предварительный вердикт.
+- Не дополняй и не улучшай гипотезу.
+- Уточни фальсификацию, если защита дала новые данные; иначе оставь свою.
+- Потенциал (1–5): правдоподобие устойчивого edge ТОЛЬКО по механизму
+  «кто платит» (поле edge_source) и результатам спора; не выдумывай числа,
+  которых нет в материалах.
+
+Ответь ИСКЛЮЧИТЕЛЬНО валидным JSON без markdown-обёртки:
+{"name": ${JSON.stringify(rep.name)},
+ "pros": ["..."],
+ "cons": ["..."],
+ "novelty": {"duplicate_of": null, "retrospective_ref": null},
+ "vulnerabilities": ["...", "..."],
+ "falsification": {"test": "...", "metric": "...", "kill_threshold": "...", "cost": "часы/дни", "falsifiable": true},
+ "potential": 1,
+ "potential_why": "одно предложение",
  "verdict": "выживает|условно|убита",
  "rationale": "одно предложение"}`,
-      { phase: 'Атака гипотез', label: `${job.idea.name} #${job.track}` }
-    )
-  )
+      { phase: 'Споры', label: `${rep.name} — итог критика` }
+    );
+
+    let final;
+    try {
+      final = parseJson(finalRaw, `Критик «${rep.name}», раунд 3`);
+      if (!ALLOWED_VERDICTS.includes(String(final.verdict))) {
+        throw new Error(`вердикт вне тройки: ${final.verdict}`);
+      }
+    } catch (e) {
+      log(`Спор «${rep.name}» завершён без финала (раунд 3): ` + e.message);
+      return { cluster: c.id, idea: rep, members: c.members, status: 'no_debate', attack, defense };
+    }
+
+    return { cluster: c.id, idea: rep, members: c.members, status: 'debated', attack, defense, final };
+  })
 );
 
-// Группировка рецензий по идее с сохранением связки по индексу job.
-// Вердикт вне тройки «выживает/условно/убита» — брак: рецензия отбрасывается,
-// иначе неизвестный вариант молча превращался бы в «выживает» (аудит, п.2).
-const ALLOWED_VERDICTS = ['выживает', 'условно', 'убита'];
-const reviewsByIdea = ideas.map(() => []);
-const missingReviews = [];
-reviewResults.forEach((r, j) => {
-  const job = reviewJobs[j];
-  if (r == null) { missingReviews.push(job.idea.name); return; }
-  try {
-    const rev = parseJson(r, `Критик ${job.idea.name} #${job.track}`);
-    if (rev && ALLOWED_VERDICTS.includes(String(rev.verdict))) {
-      reviewsByIdea[job.idx].push(rev);
-    } else {
-      missingReviews.push(job.idea.name);
-      log(`Внимание: ${job.idea.name} #${job.track} — вердикт вне тройки (${rev && rev.verdict}), рецензия отброшена.`);
-    }
-  } catch (e) {
-    missingReviews.push(job.idea.name);
-    log('Не удалось распарсить рецензию: ' + e.message);
+// Сборка результатов: связка по индексу, статусы спора.
+const debates = [];
+const noDebates = [];
+debateResults.forEach((d, i) => {
+  if (d == null) {
+    noDebates.push(clusters[i].members[0].name);
+    debates.push({ cluster: clusters[i].id, idea: clusters[i].members[0], members: clusters[i].members, status: 'no_debate' });
+    return;
   }
+  debates.push(d);
 });
-if (missingReviews.length > 0) {
-  log(`Внимание: нет полной рецензии для: ${[...new Set(missingReviews)].join(', ')}.`);
+if (noDebates.length > 0) {
+  log(`Внимание: без полного спора: ${noDebates.join(', ')}.`);
 }
 
-// Детерминированное слияние вердиктов (без отдельного агента):
-//   - любое «убита» — окончательно (консенсус критиков на убийство не нужен);
-//   - любое «условно» при отсутствии «убита» — «условно»;
-//   - все «выживает» — «выживает»;
-//   - ноль рецензий — отдельный статус «без рецензии» (в короткий список
-//     синтеза не допускается, аудит п.3).
-const verdictRank = { 'выживает': 0, 'условно': 1, 'убита': 2, 'без рецензии': 3 };
-const merged = ideas.map((idea, i) => {
-  const reviews = reviewsByIdea[i];
-  const verdicts = reviews.map(r => String(r.verdict));
-  let verdict;
-  if (reviews.length === 0) verdict = 'без рецензии';
-  else if (verdicts.includes('убита')) verdict = 'убита';
-  else if (verdicts.includes('условно')) verdict = 'условно';
-  else verdict = 'выживает';
-  // Флаг falsifiable живёт внутри объекта falsification (аудит, п.1).
-  const hasFalsification = reviews.some(r => r.falsification);
-  const falsifiable = reviews.some(r => r.falsification && r.falsification.falsifiable === false)
-    ? false
-    : hasFalsification;
-  const extraTags = [...new Set(reviews.flatMap(r => (Array.isArray(r.tags) ? r.tags : [])))];
-  // Потенциал — среднее числовых оценок критиков (1–5); нет оценок — null.
-  const pots = reviews.map(r => Number(r.potential)).filter(p => Number.isFinite(p) && p >= 1 && p <= 5);
-  const potential = pots.length > 0 ? Math.round((pots.reduce((a, b) => a + b, 0) / pots.length) * 10) / 10 : null;
+const verdictRank = { 'выживает': 0, 'условно': 1, 'убита': 2, 'без спора': 3 };
+const merged = debates.map(d => {
+  const verdict = d.final && ALLOWED_VERDICTS.includes(String(d.final.verdict))
+    ? String(d.final.verdict)
+    : 'без спора';
+  const pot = d.final ? Number(d.final.potential) : NaN;
   return {
-    ...idea,
+    ...d.idea,
+    cluster: d.cluster,
+    cluster_size: d.members.length,
     verdict,
-    under_reviewed: reviews.length < MIN_REVIEWS,
-    falsifiable,
-    potential,
-    tags: [...new Set([...idea.tags, ...extraTags])],
-    reviews,
+    potential: Number.isFinite(pot) && pot >= 1 && pot <= 5 ? pot : null,
+    potential_why: d.final ? d.final.potential_why || null : null,
+    falsifiable: d.final && d.final.falsification
+      ? d.final.falsification.falsifiable !== false
+      : false,
+    debate: d,
   };
 }).sort((a, b) => (verdictRank[a.verdict] ?? 3) - (verdictRank[b.verdict] ?? 3));
 
-const counts = { выживает: 0, условно: 0, убита: 0, 'без рецензии': 0 };
+const counts = { выживает: 0, условно: 0, убита: 0, 'без спора': 0 };
 merged.forEach(m => { counts[m.verdict] = (counts[m.verdict] || 0) + 1; });
-log(`Вердикты: выживает ${counts['выживает']}, условно ${counts['условно']}, убита ${counts['убита']}, без рецензии ${counts['без рецензии']}.`);
+log(`Вердикты споров: выживает ${counts['выживает']}, условно ${counts['условно']}, убита ${counts['убита']}, без спора ${counts['без спора']}.`);
 
 // ═══════════════════════════════════════════════════════
-// Фаза 4: Синтез итогового документа
+// Фаза 4: Синтез-арбитр
+// Читает протоколы споров и секции 2/4 ретроспективы; вправе только
+// ПОНИЖАТЬ вердикты критиков. Пишет итоговый документ.
 // ═══════════════════════════════════════════════════════
 
-phase('Синтез');
+phase('Синтез-арбитр');
 
-const mergedBlock = merged.map(m => `### ${m.name} [кластер ${m.cluster}]
-Суть: ${m.essence}
-Обходимый тупик: ${m.deadend || 'не указан'}
-Откуда edge: ${m.edge_source}
-Теги: ${m.tags.join('; ')}
-Потенциал (среднее оценок критиков, 1–5): ${m.potential ?? 'нет оценок'}
-Вердикт (по ${m.reviews.length} независимым рецензиям): ${m.verdict}${m.under_reviewed ? ' [недооценена: рецензий меньше минимума]' : ''}${m.falsifiable === false ? ' [нефальсифицируема]' : ''}
-${m.reviews.map((r, k) => `Рецензия ${k + 1}: ${r.rationale || ''}
-  Уязвимости: ${(r.vulnerabilities || []).join('; ')}
-  Потенциал: ${r.potential ?? '—'} (${r.potential_why || 'без обоснования'})
-  Фальсификация: ${r.falsification ? `${r.falsification.test} | метрика: ${r.falsification.metric} | убивает: ${r.falsification.kill_threshold} | стоимость: ${r.falsification.cost}` : 'не задана'}`).join('\n')}`).join('\n\n');
+const fmtFals = (f) => f
+  ? `${f.test} | метрика: ${f.metric} | убивает: ${f.kill_threshold} | стоимость: ${f.cost}${f.falsifiable === false ? ' [нефальсифицируема]' : ''}`
+  : 'не задана';
+
+const protocolBlock = merged.map(m => {
+  const d = m.debate;
+  const head = `### ${m.name} [кластер ${m.cluster}${m.cluster_size > 1 ? `, идей в кластере: ${m.cluster_size}` : ''}]
+${ideaBlock(m)}
+Вердикт критика: ${m.verdict}${m.potential != null ? ` | потенциал: ${m.potential}/5 (${m.potential_why || 'без обоснования'})` : ''}`;
+  if (d.status === 'no_debate') {
+    return head + '\nСПОР НЕ СОСТОЯЛСЯ (ошибка агента). Вердикт: без спора.';
+  }
+  const parts = [head,
+    `Раунд 1 (атака критика):
+  Новизна: ${d.attack && d.attack.novelty ? `аналог: ${d.attack.novelty.duplicate_of || 'не найден'}; ссылка: ${d.attack.novelty.retrospective_ref || 'нет'}` : 'не задана'}
+  Уязвимости: ${d.attack && Array.isArray(d.attack.vulnerabilities) ? d.attack.vulnerabilities.join('; ') : '—'}
+  Фальсификация: ${fmtFals(d.attack && d.attack.falsification)}
+  Предварительный вердикт: ${(d.attack && d.attack.preliminary_verdict) || '—'}`,
+    d.status === 'conceded'
+      ? `Раунд 2 (автор): ПРИЗНАЛ фатальный аргумент — ${Array.isArray(d.defense.accepted_arguments) ? d.defense.accepted_arguments.join('; ') : d.defense.defense || ''}. Спор остановлен досрочно.`
+      : `Раунд 2 (защита автора): ${d.defense.defense || '—'}`,
+  ];
+  if (d.status === 'debated' && d.final) {
+    parts.push(`Раунд 3 (конспект критика):
+  За: ${Array.isArray(d.final.pros) ? d.final.pros.join('; ') : '—'}
+  Против: ${Array.isArray(d.final.cons) ? d.final.cons.join('; ') : '—'}
+  Итог: ${d.final.rationale || ''}`);
+  }
+  return parts.join('\n');
+}).join('\n\n');
 
 await agent(
-  `Ты пишешь итоговый документ брэйншторма по результатам независимой
-критики. Ниже — идеи с вердиктами. Ретроспективу перечитывать не нужно.
+  `Ты — арбитр брэйншторма. Ниже — протоколы споров «автор идеи × критик».
 
-${mergedBlock}
+Вход:
+1. Протоколы споров:
+${protocolBlock}
+
+2. Прочитай в docs/audit/retrospective.md секции 2 и 4 — первоисточник для
+   проверки «убита за переупаковку»: цитата критика должна реально
+   описывать тот же механизм edge.
+${droppedClusters.length > 0 ? `
+3. Кластеры, НЕ ОЦЕНЁННЫЕ из-за потолка стоимости (спор по ним не проводился):
+${droppedClusters.join('; ')}
+` : ''}
+Полномочия арбитра:
+- Ты вправе ПОНИЗИТЬ вердикт критика («выживает» → «условно» → «убита»),
+  если конспект спора или ретроспектива показывают, что критик был мягок.
+- ПОВЫШАТЬ вердикты запрещено: если критик убил идею, она остаётся убитой.
+- Своих оценок потенциала не выдумывай — используй числа критиков как есть.
+- Записи со статусом «без спора» — технический сбой агента, а не свойство
+  идеи: не помечай их [нефальсифицируема] и не выноси по ним суждений.
 
 Напиши файл docs/audit/brainstorm-filtered.md со структурой:
-
 1. Короткий список выживших (вердикт «выживает», при нехватке — добирай из
-   «условно»; всего не более 10), строго по убыванию поля «Потенциал».
-   Своих оценок потенциала не выдумывай — используй только данные из блока.
+   «условно»; всего не более 10), строго по убыванию потенциала.
    Для каждой: суть (1–2 предложения), обходимый тупик, убивающий
    эксперимент с метрикой и порогом, стоимость, потенциал,
    пометки [радикальная]/[спекуляция]/«условно».
-   Идеи одного кластера не дублируй: выбирай версию с высшим потенциалом.
+   Одна идея на кластер: если в итог попали несколько идей одного кластера —
+   оставь версию с высшим потенциалом.
    [нефальсифицируема] — в конец списка с объяснением.
-   Идеи с вердиктом «без рецензии» в короткий список НЕ включай —
-   выведи их отдельным примечанием в конце документа.
+   Идеи со статусом «без спора» в короткий список НЕ включай — выведи их
+   отдельным примечанием в конце документа; туда же добавь кластеры,
+   не оценённые из-за потолка стоимости, с пометкой «не оценивались».
 2. Таблица-сводка: идея | вердикт | потенциал | обходимый тупик |
    убивающий результат | стоимость.
 3. Список убитых: идея | причина | ссылка на секцию ретроспективы,
-   если убита за переупаковку.
+   если убита за переупаковку; «автор признал аргумент» — если досрочно.
+4. Если ты понизил чей-то вердикт — перечисли эти случаи отдельной строкой
+   с обоснованием.
 
 Правила:
 - Не улучшай, не дополняй и не воскрешай убитые идеи.
-- Вердикты и числа из рецензий не выдумывай заново — используй как есть.
+- Числа и цитаты из протоколов не выдумывай заново — используй как есть.
 - Спекуляции помечай [гипотеза].
 
 Используй инструмент Write. После записи НЕ выводи содержимое файла —
-сообщи только: сколько идей выжило, условно, убито — и топ-3 выживших
-кратким списком.`,
-  { phase: 'Синтез', label: 'Итоговый документ' }
+сообщи только: сколько идей выжило, условно, убито, понижено арбитром —
+и топ-3 выживших кратким списком.`,
+  { phase: 'Синтез-арбитр', label: 'Итоговый документ' }
 );
 
 // ═══════════════════════════════════════════════════════
@@ -472,11 +610,14 @@ phase('Верификация');
 
 const verifyResult = await agent(
   `Проверь результат брэйншторма. Используй bash:
-ls -l docs/audit/brainstorm-filtered.md
-и wc -w docs/audit/brainstorm-filtered.md
-Если файл отсутствует или содержит меньше 150 слов — ответь СТРОГО:
-"ABORT: <причина>". Иначе ответь СТРОГО: "OK: <число> слов".`,
-  { phase: 'Верификация', label: 'Assert итогового файла' }
+ls -l docs/audit/brainstorm-filtered.md docs/audit/brainstorm-ideas.md
+wc -w docs/audit/brainstorm-filtered.md docs/audit/brainstorm-ideas.md
+grep -ci "таблица-сводка" docs/audit/brainstorm-filtered.md
+Если хотя бы один файл отсутствует, brainstorm-filtered.md содержит меньше
+150 слов, или grep вернул 0 (нет раздела «Таблица-сводка») — ответь СТРОГО:
+"ABORT: <причина>". Иначе ответь СТРОГО:
+"OK: filtered <число> слов, ideas <число> слов".`,
+  { phase: 'Верификация', label: 'Assert итоговых файлов' }
 );
 
 if (/^ABORT:/i.test(normalizeResult(verifyResult).trim())) {
