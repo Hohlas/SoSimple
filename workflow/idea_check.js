@@ -1,7 +1,7 @@
 export const meta = {
   name: 'idea-check',
-  description: 'Часть 2 брэйншторма: читает docs/audit/brainstorm-raw.json (результат idea-brainstorm) → разметка кластеров без слияния → спор «автор идеи × критик» на кластер (3 раунда, досрочный выход при признании фатального аргумента) → синтез-арбитр с правом только понижать вердикты → итоговый список в docs/audit/brainstorm-filtered.md. Запускать на дешёвой модели.',
-  phases: ['Чтение входа', 'Кластеры', 'Споры', 'Синтез-арбитр', 'Верификация'],
+  description: 'Часть 2 брэйншторма: читает docs/audit/brainstorm-raw.json (результат idea-brainstorm) → фильтр жёсткого запрета → спор «автор идеи × критик» на каждую гипотезу (3 раунда, досрочный выход при признании фатального аргумента) → синтез-арбитр с правом только понижать вердикты → итоговый список в docs/audit/brainstorm-filtered.md. Запускать на дешёвой модели.',
+  phases: ['Чтение входа', 'Фильтр', 'Споры', 'Синтез-арбитр', 'Верификация'],
   // Контрактные ограничения:
   //   - Контекстное окно субагента ~150K. Основной вход каждого агента —
   //     docs/audit/retrospective.md (~2K слов), читается целиком.
@@ -10,10 +10,11 @@ export const meta = {
   //   - Вход — файл docs/audit/brainstorm-raw.json от части 1; скрипт можно
   //     запускать в другой среде (например, opencode), если там доступен
   //     тот же рантайм оркестрации.
-  //   - Спор идёт на кластер, не на идею: один представитель + заметка о
-  //     соседях по кластеру. Раунды внутри пары последовательны, пары —
-  //     параллельны. Каждый раунд — НОВЫЙ вызов агента с передачей всей
-  //     предыдущей переписки пары в промпте (долгоживущих агентов нет).
+  //   - Кластеризации нет: каждая гипотеза спорится индивидуально — итог не
+  //     зависит от случайного слияния идей в группы. Раунды внутри пары
+  //     последовательны, пары — параллельны. Каждый раунд — НОВЫЙ вызов
+  //     агента с передачей всей предыдущей переписки пары в промпте
+  //     (долгоживущих агентов нет).
   //   - Анти-сговор: вердикт меняется только под новые аргументы, а не под
   //     уверенность тона; досрочный выход — по признанию фатального
   //     аргумента автором ПРИ предварительном вердикте критика «убита»
@@ -22,8 +23,8 @@ export const meta = {
   //     критика, не повышать.
 };
 
-// Потолок числа кластеров, идущих в споры (стоимость = кластеры × 2–3 вызова).
-const MAX_CLUSTERS = 20;
+// Потолок числа гипотез, идущих в споры (стоимость = гипотезы × 2–3 вызова).
+const MAX_IDEAS = 40;
 
 // ═══════════════════════════════════════════════════════
 // Утилиты
@@ -94,13 +95,14 @@ if (rawIdeas.length === 0) {
 log(`Загружено гипотез: ${rawIdeas.length}.`);
 
 // ═══════════════════════════════════════════════════════
-// Фаза 2: Разметка кластеров
-// Агент только нумерует кластеры похожих идей и удаляет нарушающие
-// жёсткий запрет. Формулировки НЕ переписываются и НЕ сливаются:
-// источник истины — rawIdeas, кластер лишь группирует.
+// Фаза 2: Фильтр жёсткого запрета
+// Агент только удаляет идеи, нарушающие жёсткий запрет (классические
+// индикаторы и примитивные отжившие методы). Формулировки НЕ
+// переписываются: источник истины — rawIdeas. Кластеризации нет —
+// каждая гипотеза дальше спорится индивидуально.
 // ═══════════════════════════════════════════════════════
 
-phase('Кластеры');
+phase('Фильтр');
 
 const rawBlock = rawIdeas
   .map((h, i) => `${i + 1}. ${h.name}
@@ -110,104 +112,66 @@ const rawBlock = rawIdeas
 Теги: ${Array.isArray(h.tags) ? h.tags.join('; ') : ''}`)
   .join('\n\n');
 
-const clusterRaw = await agent(
+const filterRaw = await agent(
   `Ниже — сырые гипотезы о новых источниках trading edge, собранные
 независимыми генераторами (с пересекающимися векторами).
 Ретроспективу перечитывать не нужно.
 
 ${rawBlock}
 
-Твоя задача — ТОЛЬКО разметка, без переписывания:
-1. Разбей гипотезы на кластеры по совпадению механизма edge (кто платит и
-   почему эффект устойчив) — даже при разной упаковке. Близкие по теме,
-   но разные по механизму идеи — разные кластеры. Одиночные идеи получают
-   свой кластер.
-2. Удали идеи, нарушающие жёсткий запрет: классические индикаторы
+Твоя задача — ТОЛЬКО фильтрация, без переписывания:
+1. Удали идеи, нарушающие жёсткий запрет: классические индикаторы
    (RSI, MACD, скользящие средние и т.п.) и прочие примитивные отжившие
    методы. Больше не удаляй ничего: новизну проверяет спор.
-3. Названия гипотез верни ДОСЛОВНО, как в списке — по ним идёт связка.
+2. Названия гипотез верни ДОСЛОВНО, как в списке — по ним идёт связка.
 
 Ответь ИСКЛЮЧИТЕЛЬНО валидным JSON без markdown-обёртки:
-{"items": [{"name": "...", "cluster": 1}], "removed": [{"name": "...", "reason": "..."}]}`,
-  { phase: 'Кластеры', label: 'Разметка кластеров' }
+{"kept": ["..."], "removed": [{"name": "...", "reason": "..."}]}`,
+  { phase: 'Фильтр', label: 'Фильтр жёсткого запрета' }
 );
 
-let clusterMap, removedByAgent;
+let keptNames, removedByAgent;
 try {
-  const parsed = parseJson(clusterRaw, 'Разметка кластеров');
-  clusterMap = new Map(
-    (Array.isArray(parsed.items) ? parsed.items : [])
-      .filter(it => it && it.name && Number.isFinite(Number(it.cluster)))
-      .map(it => [String(it.name), Number(it.cluster)])
+  const parsed = parseJson(filterRaw, 'Фильтр жёсткого запрета');
+  keptNames = new Set(
+    (Array.isArray(parsed.kept) ? parsed.kept : [])
+      .filter(n => typeof n === 'string')
+      .map(String)
   );
   removedByAgent = Array.isArray(parsed.removed) ? parsed.removed : [];
 } catch (e) {
   log('ОШИБКА: ' + e.message + '. Завершаю.');
   throw e;
 }
-if (clusterMap.size === 0) {
-  log('ОШИБКА: разметка не вернула ни одной гипотезы. Завершаю.');
-  throw new Error('No ideas after cluster marking');
+if (keptNames.size === 0) {
+  log('ОШИБКА: фильтр не вернул ни одной гипотезы. Завершаю.');
+  throw new Error('No ideas after hard-ban filter');
 }
 if (removedByAgent.length > 0) {
   log(`Жёсткий запрет: удалено ${removedByAgent.length} — ${removedByAgent.map(r => r.name).join(', ')}.`);
 }
 
-// Источник истины — rawIdeas: формулировки не могли быть поглощены при слиянии.
-const droppedByMarking = rawIdeas.filter(h => !clusterMap.has(String(h.name))).map(h => h.name);
-if (droppedByMarking.length > 0) {
-  log(`Внимание: разметка потеряла ${droppedByMarking.length} идей: ${droppedByMarking.join(', ')}.`);
-}
-let ideas = rawIdeas
-  .filter(h => clusterMap.has(String(h.name)))
-  .map(h => ({ ...h, cluster: clusterMap.get(String(h.name)) }));
-
-// Группировка по кластерам с сохранением порядка появления.
-const clusters = [];
-const clusterById = new Map();
-ideas.forEach(h => {
-  if (!clusterById.has(h.cluster)) {
-    const c = { id: h.cluster, members: [] };
-    clusterById.set(h.cluster, c);
-    clusters.push(c);
+const droppedByFilter = rawIdeas.filter(h => !keptNames.has(String(h.name))).map(h => h.name);
+if (droppedByFilter.length > removedByAgent.length) {
+  const lost = droppedByFilter.filter(n => !removedByAgent.some(r => r.name === n));
+  if (lost.length > 0) {
+    log(`Внимание: фильтр потерял ${lost.length} идей: ${lost.join(', ')}.`);
   }
-  clusterById.get(h.cluster).members.push(h);
-});
-
-// Сохраняем промежуточный артефакт (все идеи, с номерами кластеров).
-const ideasMd = `# Сырые гипотезы брэйншторма (разметка кластеров)
-
-Сгенерировано idea_brainstorm.js + idea_check.js, фаза кластеров. Ранжирования нет.
-Один кластер = один механизм edge.
-
-${ideas.map(h => `## ${h.name} [кластер ${h.cluster}]
-- Суть: ${h.essence}
-- Обходимый тупик: ${h.deadend || 'не указан'}
-- Откуда edge: ${h.edge_source}
-- Теги: ${h.tags.join('; ')}`).join('\n\n')}
-`;
-
-await agent(
-  `Запиши приведённый ниже текст КАК ЕСТЬ в файл docs/audit/brainstorm-ideas.md
-через инструмент Write. Ничего не добавляй и не редактируй. В ответе сообщи
-только: «записано, N слов».
-
-${ideasMd}`,
-  { phase: 'Кластеры', label: 'Запись brainstorm-ideas.md' }
-);
-
-// Потолок числа кластеров для фазы споров. Отброшенные уходят в лог И в
-// протокол арбитра — не должны исчезать молча из итогового документа.
-let droppedClusters = [];
-if (clusters.length > MAX_CLUSTERS) {
-  droppedClusters = clusters.slice(MAX_CLUSTERS).map(c => c.members[0].name + (c.members.length > 1 ? ` (+${c.members.length - 1})` : ''));
-  clusters.length = MAX_CLUSTERS;
-  log(`Потолок ${MAX_CLUSTERS} кластеров: отброшено ${droppedClusters.length} — ${droppedClusters.join(', ')}.`);
 }
-log(`Кластеров в спор: ${clusters.length}.`);
+const ideas = rawIdeas.filter(h => keptNames.has(String(h.name)));
+
+// Потолок числа гипотез для фазы споров. Отброшенные уходят в лог И в
+// протокол арбитра — не должны исчезать молча из итогового документа.
+let droppedIdeas = [];
+if (ideas.length > MAX_IDEAS) {
+  droppedIdeas = ideas.slice(MAX_IDEAS).map(h => h.name);
+  ideas.length = MAX_IDEAS;
+  log(`Потолок ${MAX_IDEAS} гипотез: отброшено ${droppedIdeas.length} — ${droppedIdeas.join(', ')}.`);
+}
+log(`Гипотез в спор: ${ideas.length}.`);
 
 // ═══════════════════════════════════════════════════════
-// Фаза 3: Споры (автор идеи × критик, на кластер)
+// Фаза 3: Споры (автор идеи × критик, на каждую гипотезу)
 // Раунд 1 — критик атакует. Раунд 2 — автор защищает или признаёт
 // фатальный аргумент (досрочный выход «убита» — только если предварительный
 // вердикт критика тоже «убита»). Раунд 3 — критик подводит черту: конспект
@@ -217,27 +181,16 @@ log(`Кластеров в спор: ${clusters.length}.`);
 
 phase('Споры');
 
-const clusterNote = (c) => {
-  if (c.members.length < 2) return '';
-  const others = c.members.slice(1).map(m => `«${m.name}»: ${m.essence}`).join('\n');
-  return `В этом же кластере (тот же механизм edge) есть близкие идеи — спор
-ведётся по самой полной формулировке, но вердикт распространяется на весь кластер:
-${others}
-`;
-};
-
 const ideaBlock = (h) => `Название: ${h.name}
 Суть: ${h.essence}
 Обходимый тупик: ${h.deadend || 'не указан'}
 Откуда edge: ${h.edge_source}
 Теги: ${Array.isArray(h.tags) ? h.tags.join('; ') : ''}`;
 
-log(`Запускаю ${clusters.length} споров параллельно (до 3 вызовов на пару)...`);
+log(`Запускаю ${ideas.length} споров параллельно (до 3 вызовов на пару)...`);
 
 const debateResults = await parallel(
-  clusters.map(c => async () => {
-    const rep = c.members[0];
-
+  ideas.map(idea => async () => {
     // Раунд 1: критик атакует.
     const attackRaw = await agent(
       `Ты — критически настроенный рецензент количественных исследований.
@@ -254,9 +207,8 @@ PF ≥ 1.3 на строгом out-of-sample с bootstrap CI (нижняя гр�
 knowledge-rag (search_knowledge) — только точечная проверка фактов,
 если гипотеза ссылается на результат, которого нет в ретроспективе.
 
-${clusterNote(c)}
 Гипотеза:
-${ideaBlock(rep)}
+${ideaBlock(idea)}
 
 Выполни по порядку:
 1. Новизна. Найди в ретроспективе (секции 2 и 4) эту идею или аналог с ТЕМ ЖЕ
@@ -275,15 +227,15 @@ ${ideaBlock(rep)}
  "vulnerabilities": ["...", "..."],
  "falsification": {"test": "...", "metric": "...", "kill_threshold": "...", "cost": "часы/дни", "falsifiable": true},
  "preliminary_verdict": "выживает|условно|убита"}`,
-      { phase: 'Споры', label: `${rep.name} — атака` }
+      { phase: 'Споры', label: `${idea.name} — атака` }
     );
 
     let attack;
     try {
-      attack = parseJson(attackRaw, `Критик «${rep.name}», раунд 1`);
+      attack = parseJson(attackRaw, `Критик «${idea.name}», раунд 1`);
     } catch (e) {
-      log(`Спор «${rep.name}» не состоялся (раунд 1): ` + e.message);
-      return { cluster: c.id, idea: rep, members: c.members, status: 'no_debate' };
+      log(`Спор «${idea.name}» не состоялся (раунд 1): ` + e.message);
+      return { idea, status: 'no_debate' };
     }
 
     // Раунд 2: автор защищает или признаёт фатальный аргумент.
@@ -292,7 +244,7 @@ ${ideaBlock(rep)}
 защита по существу, НЕ защита любой ценой.
 
 Гипотеза:
-${ideaBlock(rep)}
+${ideaBlock(idea)}
 
 Атака критика:
 Новизна: ${JSON.stringify(attack.novelty || null)}
@@ -313,15 +265,15 @@ ${ideaBlock(rep)}
 
 Ответь ИСКЛЮЧИТЕЛЬНО валидным JSON без markdown-обёртки:
 {"concession": false, "accepted_arguments": [], "defense": "..."}`,
-      { phase: 'Споры', label: `${rep.name} — защита` }
+      { phase: 'Споры', label: `${idea.name} — защита` }
     );
 
     let defense;
     try {
-      defense = parseJson(defenseRaw, `Автор «${rep.name}», раунд 2`);
+      defense = parseJson(defenseRaw, `Автор «${idea.name}», раунд 2`);
     } catch (e) {
       // Защита не распарсилась — передаём критику сырой текст, спор не рвём.
-      log(`Защита «${rep.name}» не распарсилась: ` + e.message);
+      log(`Защита «${idea.name}» не распарсилась: ` + e.message);
       defense = {
         concession: false,
         accepted_arguments: [],
@@ -336,7 +288,7 @@ ${ideaBlock(rep)}
     // уступок модели-автора, убивающих идею строже, чем её атакующий).
     if (defense.concession === true && attack.preliminary_verdict === 'убита') {
       return {
-        cluster: c.id, idea: rep, members: c.members, status: 'conceded',
+        idea, status: 'conceded',
         attack, defense,
         final: {
           verdict: 'убита',
@@ -357,7 +309,7 @@ ${ideaBlock(rep)}
 и вынеси финальный вердикт для независимого арбитра.
 
 Гипотеза:
-${ideaBlock(rep)}
+${ideaBlock(idea)}
 
 Твоя атака (раунд 1):
 ${JSON.stringify(attack)}
@@ -380,7 +332,7 @@ ${JSON.stringify(defense)}
   которых нет в материалах.
 
 Ответь ИСКЛЮЧИТЕЛЬНО валидным JSON без markdown-обёртки:
-{"name": ${JSON.stringify(rep.name)},
+{"name": ${JSON.stringify(idea.name)},
  "pros": ["..."],
  "cons": ["..."],
  "novelty": {"duplicate_of": null, "retrospective_ref": null},
@@ -390,21 +342,21 @@ ${JSON.stringify(defense)}
  "potential_why": "одно предложение",
  "verdict": "выживает|условно|убита",
  "rationale": "одно предложение"}`,
-      { phase: 'Споры', label: `${rep.name} — итог критика` }
+      { phase: 'Споры', label: `${idea.name} — итог критика` }
     );
 
     let final;
     try {
-      final = parseJson(finalRaw, `Критик «${rep.name}», раунд 3`);
+      final = parseJson(finalRaw, `Критик «${idea.name}», раунд 3`);
       if (!ALLOWED_VERDICTS.includes(String(final.verdict))) {
         throw new Error(`вердикт вне тройки: ${final.verdict}`);
       }
     } catch (e) {
-      log(`Спор «${rep.name}» завершён без финала (раунд 3): ` + e.message);
-      return { cluster: c.id, idea: rep, members: c.members, status: 'no_debate', attack, defense };
+      log(`Спор «${idea.name}» завершён без финала (раунд 3): ` + e.message);
+      return { idea, status: 'no_debate', attack, defense };
     }
 
-    return { cluster: c.id, idea: rep, members: c.members, status: 'debated', attack, defense, final };
+    return { idea, status: 'debated', attack, defense, final };
   })
 );
 
@@ -413,8 +365,8 @@ const debates = [];
 const noDebates = [];
 debateResults.forEach((d, i) => {
   if (d == null) {
-    noDebates.push(clusters[i].members[0].name);
-    debates.push({ cluster: clusters[i].id, idea: clusters[i].members[0], members: clusters[i].members, status: 'no_debate' });
+    noDebates.push(ideas[i].name);
+    debates.push({ idea: ideas[i], status: 'no_debate' });
     return;
   }
   debates.push(d);
@@ -434,9 +386,8 @@ const protocolsMd = `# Протоколы споров брэйншторма
 
 Сгенерировано idea_check.js, фаза споров. Ответы агентов по раундам — дословно (JSON).
 
-${debates.map(d => `## ${d.idea.name} [кластер ${d.cluster}]
+${debates.map(d => `## ${d.idea.name}
 Статус: ${debateStatusLine[d.status] || d.status}
-Идей в кластере: ${d.members.length}${d.members.length > 1 ? ` (${d.members.map(m => m.name).join('; ')})` : ''}
 
 Блок идеи:
 ${ideaBlock(d.idea)}
@@ -470,8 +421,6 @@ const merged = debates.map(d => {
   const pot = d.final ? Number(d.final.potential) : NaN;
   return {
     ...d.idea,
-    cluster: d.cluster,
-    cluster_size: d.members.length,
     verdict,
     potential: Number.isFinite(pot) && pot >= 1 && pot <= 5 ? pot : null,
     potential_why: d.final ? d.final.potential_why || null : null,
@@ -500,7 +449,7 @@ const fmtFals = (f) => f
 
 const protocolBlock = merged.map(m => {
   const d = m.debate;
-  const head = `### ${m.name} [кластер ${m.cluster}${m.cluster_size > 1 ? `, идей в кластере: ${m.cluster_size}` : ''}]
+  const head = `### ${m.name}
 ${ideaBlock(m)}
 Вердикт критика: ${m.verdict}${m.potential != null ? ` | потенциал: ${m.potential}/5 (${m.potential_why || 'без обоснования'})` : ''}`;
   if (d.status === 'no_debate') {
@@ -535,9 +484,9 @@ ${protocolBlock}
 2. Прочитай в docs/audit/retrospective.md секции 2 и 4 — первоисточник для
    проверки «убита за переупаковку»: цитата критика должна реально
    описывать тот же механизм edge.
-${droppedClusters.length > 0 ? `
-3. Кластеры, НЕ ОЦЕНЁННЫЕ из-за потолка стоимости (спор по ним не проводился):
-${droppedClusters.join('; ')}
+${droppedIdeas.length > 0 ? `
+3. Идеи, НЕ ОЦЕНЁННЫЕ из-за потолка стоимости (спор по ним не проводился):
+${droppedIdeas.join('; ')}
 ` : ''}
 Полномочия арбитра:
 - Ты вправе ПОНИЗИТЬ вердикт критика («выживает» → «условно» → «убита»),
@@ -553,11 +502,9 @@ ${droppedClusters.join('; ')}
    Для каждой: суть (1–2 предложения), обходимый тупик, убивающий
    эксперимент с метрикой и порогом, стоимость, потенциал,
    пометки [радикальная]/[спекуляция]/«условно».
-   Одна идея на кластер: если в итог попали несколько идей одного кластера —
-   оставь версию с высшим потенциалом.
    [нефальсифицируема] — в конец списка с объяснением.
    Идеи со статусом «без спора» в короткий список НЕ включай — выведи их
-   отдельным примечанием в конце документа; туда же добавь кластеры,
+   отдельным примечанием в конце документа; туда же добавь идеи,
    не оценённые из-за потолка стоимости, с пометкой «не оценивались».
 2. Таблица-сводка: идея | вердикт | потенциал | обходимый тупик |
    убивающий результат | стоимость.
@@ -586,13 +533,13 @@ phase('Верификация');
 
 const verifyResult = await agent(
   `Проверь результат брэйншторма. Используй bash:
-ls -l docs/audit/brainstorm-filtered.md docs/audit/brainstorm-ideas.md docs/audit/brainstorm-protocols.md
-wc -w docs/audit/brainstorm-filtered.md docs/audit/brainstorm-ideas.md docs/audit/brainstorm-protocols.md
+ls -l docs/audit/brainstorm-filtered.md docs/audit/brainstorm-protocols.md
+wc -w docs/audit/brainstorm-filtered.md docs/audit/brainstorm-protocols.md
 grep -ci "таблица-сводка" docs/audit/brainstorm-filtered.md
 Если хотя бы один файл отсутствует, brainstorm-filtered.md содержит меньше
 150 слов, или grep вернул 0 (нет раздела «Таблица-сводка») — ответь СТРОГО:
 "ABORT: <причина>". Иначе ответь СТРОГО:
-"OK: filtered <число> слов, ideas <число> слов, protocols <число> слов".`,
+"OK: filtered <число> слов, protocols <число> слов".`,
   { phase: 'Верификация', label: 'Assert итоговых файлов' }
 );
 
