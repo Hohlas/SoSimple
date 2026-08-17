@@ -99,7 +99,7 @@ out-of-sample с bootstrap CI (нижняя граница > 1.0) — не до�
 Твой вектор поиска: ${v.name}
 ${v.focus}
 
-Сгенерируй 6–10 гипотез о принципиально новых источниках устойчивого
+Сгенерируй 4–6 гипотез о принципиально новых источниках устойчивого
 trading edge, которые ретроспектива ещё не исключила.
 Количество важнее глубины: эксперименты не проектируй, идеи не ранжируй.
 
@@ -119,8 +119,7 @@ trading edge, которые ретроспектива ещё не исключ
 и прочие примитивные отжившие методы. Не выдавай предположения за факты.
 
 Ответь ИСКЛЮЧИТЕЛЬНО валидным JSON без markdown-обёртки:
-{"hypotheses": [{"name":"...","essence":"...","deadend":"...","edge_source":"...","tags":[]}],
- "vector": "${v.name}"}`,
+{"hypotheses": [{"name":"...","essence":"...","deadend":"...","edge_source":"...","tags":[]}]}`,
       { phase: 'Генерация', label: v.name }
     )
   )
@@ -137,7 +136,7 @@ genResults.forEach((r, i) => {
     list.forEach(h => {
       if (h && h.name && h.essence) {
         // Нормализация на входе: дальше h.tags используется без защит.
-        rawIdeas.push({ ...h, tags: Array.isArray(h.tags) ? h.tags : [] });
+        rawIdeas.push({ ...h, tags: Array.isArray(h.tags) ? h.tags : [], vector: vectors[i].name });
       }
     });
   } catch (e) {
