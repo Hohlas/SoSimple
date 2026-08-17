@@ -10,7 +10,6 @@
 | `retrospective-workflow.js` | Ретроспектива проекта: карта направлений, синтез, верификация фактов | Разведка → Чтение → Синтез → Верификация | любая | `CHANGELOG.md` (Grep-индекс), `docs/reports/`, `ML/reports/` (search_knowledge), `wiki/research/` | `docs/audit/retrospective.md` |
 | `idea_brainstorm.js` | Часть 1 брэйншторма: 4 параллельных генератора гипотез по пересекающимся векторам (4–6 идей на вектор) | Генерация → Запись | сильная | `docs/audit/retrospective.md` | `docs/audit/brainstorm-raw.json` |
 | `idea_check.js` | Часть 2 брэйншторма: фильтр жёсткого запрета, споры автор × критик на каждую гипотезу (3 раунда), синтез-арбитр | Чтение входа → Фильтр → Споры → Арбитр → Верификация | дешёвая | `docs/audit/brainstorm-raw.json`, `docs/audit/retrospective.md` | `docs/audit/brainstorm-protocols.md`, `docs/audit/brainstorm-filtered.md` |
-| `brainstorm-workflow.js` | Монолитный брэйншторм (части 1+2 в одном скрипте, без промежуточного JSON); старая версия — ещё с кластеризацией | Генерация → Кластеры → Споры → Арбитр → Верификация | любая | `docs/audit/retrospective.md` | `docs/audit/brainstorm-ideas.md`, `docs/audit/brainstorm-filtered.md` |
 
 `idea_check.md` — та же процедура, что `idea_check.js`, транслированная под
 opencode (Task / Write / bash / TodoWrite вместо рантайма Qoder).
@@ -24,13 +23,10 @@ retrospective-workflow.js
   docs/audit/retrospective.md
         |
         +---> idea_brainstorm.js ---> docs/audit/brainstorm-raw.json
-        |                                    |
-        |                                    v
-        |                           idea_check.js ---> brainstorm-protocols.md
-        |                                              brainstorm-filtered.md
-        |
-        +---> brainstorm-workflow.js ---> brainstorm-filtered.md
-              (монолитный вариант, без промежуточного JSON)
+                                             |
+                                             v
+                                    idea_check.js ---> brainstorm-protocols.md
+                                                       brainstorm-filtered.md
 ```
 
 ## Использование
