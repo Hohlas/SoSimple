@@ -92,5 +92,5 @@
 ```
 
 ```md
-**Запусти workflow** из скрипта workflow/retrospective-workflow.js
+**Запусти workflow** из этого скрипта
 ```

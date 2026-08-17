@@ -23,20 +23,53 @@ const normalizeResult = (r) => {
   try { return JSON.stringify(r); } catch { return ''; }
 };
 
+// Восстановление обрезанного JSON: обрез может прийтись на середину строки,
+// числа или ключа. Ищем самый длинный префикс, который парсится после
+// достройки незакрытых скобок. O(n^2), но ответы агентов короткие.
+const repairTruncatedJson = (s) => {
+  for (let cut = s.length; cut > 0; cut--) {
+    const prefix = s.slice(0, cut).replace(/[\s,]+$/, '');
+    if (!prefix) continue;
+    const closers = [];
+    let inStr = false;
+    let esc = false;
+    for (const ch of prefix) {
+      if (inStr) {
+        if (esc) esc = false;
+        else if (ch === '\\') esc = true;
+        else if (ch === '"') inStr = false;
+        continue;
+      }
+      if (ch === '"') inStr = true;
+      else if (ch === '{') closers.push('}');
+      else if (ch === '[') closers.push(']');
+      else if ((ch === '}' || ch === ']') && closers.length) closers.pop();
+    }
+    if (inStr) continue; // обрез внутри строки — префикс невалиден
+    try {
+      return JSON.parse(prefix + closers.join(''));
+    } catch { /* пробуем более короткий префикс */ }
+  }
+  throw new Error('не удалось восстановить обрезанный JSON');
+};
+
 const parseJson = (raw, label) => {
   const s = normalizeResult(raw).trim();
   if (!s) throw new Error(label + ': пустой ответ агента');
   const cleaned = s.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
+  const candidates = [cleaned];
+  const first = cleaned.indexOf('{');
+  const last = cleaned.lastIndexOf('}');
+  if (first !== -1 && last > first) candidates.push(cleaned.slice(first, last + 1));
+  for (const c of candidates) {
+    try { return JSON.parse(c); } catch { /* следующая стратегия */ }
+  }
+  // Последняя попытка: ответ мог быть обрезан в произвольном месте.
   try {
-    return JSON.parse(cleaned);
-  } catch (_) {
-    const first = cleaned.indexOf('{');
-    const last = cleaned.lastIndexOf('}');
-    if (first !== -1 && last > first) {
-      try {
-        return JSON.parse(cleaned.slice(first, last + 1));
-      } catch (__) { /* переход к стандартизированной ошибке ниже */ }
-    }
+    const repaired = repairTruncatedJson(first !== -1 ? cleaned.slice(first) : cleaned);
+    log(label + ': ответ обрезан — JSON восстановлен по неполному префиксу.');
+    return repaired;
+  } catch {
     throw new Error(label + ': не удалось извлечь JSON');
   }
 };
