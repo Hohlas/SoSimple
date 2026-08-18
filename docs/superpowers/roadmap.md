@@ -14,40 +14,14 @@
 
 ## ACTIVE
 
-### MT5 entry mechanics / trade-count frozen probe
+### Pair-spread kill-test (idea-01)
 
-Status: entry-mechanics probe plan pending. Fill-rate probe completed — fill rate
-is NOT the primary cause of BATCH_NO_WINNER. Position-ordinal PnL diagnostic
-completed — PF by ordinal analysis in `position_ordinal_pnl.json` (pending
-result interpretation).
+Status: план исполняется (`docs/superpowers/plans/2026-08-17-pair-spread.md`).
+Предрегистрированный двухступенчатый kill-тест парного статистического
+арбитража, RESEARCH_ONLY/DIAGNOSTIC_ONLY, без `locked_test`.
 
-Current facts:
-
-- Fill-rate probe rejected conversion rate as primary cause:
-  OPEN_FAILED is 99.2% single-position policy, not broker no-fill.
-- Median fill_rate=0.094, all 11 eligible candidates < 0.20.
-- 12.5% residual unexplained (saved artifacts lack per-signal linkage).
-- PF > 1.0 for all 11 eligible candidates; BS_p05 < 1.0 for all.
-- `locked_test` remains unopened.
-- Signal timing diagnostics layer добавлен (2026-08-09, `8c2d9ea`):
-  `ML/reports/mt5_execution_loop/diagnostics/signal_timing_check.json` —
-  `checked_signal_files=32, bad_files=0`, `contract=feature_time <= time <
-  feature_available_time <= decision_time`, `latency_bars=0`. Канонический
-  источник для цитирования timing-проверки.
-
-Next action:
-
-1. Create frozen probe plan targeting entry mechanics / trade-count
-   consolidation:
-   - Accept single-position policy as design constraint.
-   - Focus on why PF > 1.0 coexists with BS_p05 < 1.0.
-   - Use only saved batch artifacts for planning.
-   - No MT5 rerun for planning step.
-2. Allowed max verdict for any output: `DIAGNOSTIC_ONLY`.
-3. No threshold, model, profile, side, horizon, entry/exit rule, stop,
-   spread, cost or PnL convention may be selected from the sole output of
-   this stage.
-4. Optionally — use row-level event linkage breakdown to resolve 12.5% residual.
+Next action: исполнение плана по задачам; вердикты — по спеке
+`docs/superpowers/specs/2026-08-17-pair-spread-design.md`.
 
 ---
 
@@ -102,6 +76,34 @@ FX-пар как источник edge вне направленческого �
 ---
 
 ## PARKED Research Directions
+
+### `MT5 entry mechanics / trade-count frozen probe`
+
+Status: entry-mechanics probe plan pending. Fill-rate probe completed — fill rate
+is NOT the primary cause of BATCH_NO_WINNER. Position-ordinal PnL diagnostic
+completed — PF by ordinal analysis in `position_ordinal_pnl.json` (pending
+result interpretation).
+
+Current facts:
+
+- Fill-rate probe rejected conversion rate as primary cause:
+  OPEN_FAILED is 99.2% single-position policy, not broker no-fill.
+- Median fill_rate=0.094, all 11 eligible candidates < 0.20.
+- 12.5% residual unexplained (saved artifacts lack per-signal linkage).
+- PF > 1.0 for all 11 eligible candidates; BS_p05 < 1.0 for all.
+- `locked_test` remains unopened.
+- Signal timing diagnostics layer добавлен (2026-08-09, `8c2d9ea`):
+  `ML/reports/mt5_execution_loop/diagnostics/signal_timing_check.json` —
+  `checked_signal_files=32, bad_files=0`, `contract=feature_time <= time <
+  feature_available_time <= decision_time`, `latency_bars=0`. Канонический
+  источник для цитирования timing-проверки.
+
+Условия возврата:
+
+- создан frozen probe plan по entry mechanics / trade-count consolidation;
+- `locked_test` не используется для нового выбора.
+
+Статус: `PARKED` (вытеснен ACTIVE-треком pair-spread kill-test).
 
 ### `time_only regime interpretation`
 
