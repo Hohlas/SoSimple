@@ -25,9 +25,64 @@ locked_test_policy: не используется — этап RESEARCH_ONLY/DIA
 - Сплит: train 2005-01-01…2022-12-31, test 2023-01-01…конец данных. Ни одна строка test не участвует в оценке β, μ, σ, порогов и издержек.
 - Сигналы считаются по close-спреду, исполнение — по open-спреду следующего бара (секция 4 спеки).
 - В формуле издержек используется `abs(β)` (уточнение реализации: спека подразумевает β>0, но у mul-кроссов OLS может дать отрицательный β).
-- Комиссия = 0; своп для XAUXAG вычитается за ночь удержания до вердикта (раздел 7 спеки).
+- Комиссия = 0; своп для XAUXAG вычитается за ночь удержания до вердикта (раздел 7 спеки). Своп берётся по стороне сделки: side=+1 (long A / short B) платит `swap_long_A + swap_short_B`, side=−1 — `swap_short_A + swap_long_B` (уточнение по аудиту В-6: симметричное приближение отклонено).
+- Нормировка издержек в лог-единицы спреда — по последним ценам TRAIN-окна, не по концу ряда (уточнение по аудиту В-5: снимок спецификаций «сегодня» остаётся вне обоих окон как источник самих величин).
+- Ожидаемая длина блока bootstrap = медианная длительность эпизодов TRAIN (замораживается в screening.json); test-данные для выбора длины блока не используются (уточнение по аудиту В-1).
 - `statistics/pair_spread/` — без `__init__.py`.
 - Вердикты: SURVIVED только при PF ≥ 1.3, BS_p05 > 1.0, N ≥ 100 и ≥ 30 на сторону, EG-p на test ≤ 0.10; иначе KILLED или DIAGNOSTIC_ONLY.
+- Приоритет вердиктов (конвенция по аудиту Q-1): EG-p(test) > 0.10 → KILLED независимо от числа сделок (мощность EG-теста определяется числом баров, не сделок); гейт N < 100 / < 30 на сторону ограничивает только SURVIVED → DIAGNOSTIC_ONLY. Конвенция фиксируется в отчёте.
+
+---
+
+### Task 0: Регистрация трека в roadmap.md (по аудиту Q-2)
+
+**Files:**
+- Modify: `docs/superpowers/roadmap.md`
+
+**Interfaces:**
+- Produces: единственный ACTIVE-трек «pair-spread kill-test» в `docs/superpowers/roadmap.md`; прежний ACTIVE-трек «MT5 entry mechanics» перенесён в PARKED с сохранением текущих фактов (правило 1 роэдмэпа — один ACTIVE-трек).
+
+- [ ] **Step 1: Обновить roadmap.md**
+
+В `docs/superpowers/roadmap.md`:
+1. Секцию `## ACTIVE` заменить блоком:
+
+```markdown
+## ACTIVE
+
+### Pair-spread kill-test (idea-01)
+
+Status: план исполняется (`docs/superpowers/plans/2026-08-17-pair-spread.md`).
+Предрегистрированный двухступенчатый kill-тест парного статистического
+арбитража, RESEARCH_ONLY/DIAGNOSTIC_ONLY, без `locked_test`.
+
+Next action: исполнение плана по задачам; вердикты — по спеке
+`docs/superpowers/specs/2026-08-17-pair-spread-design.md`.
+```
+
+2. Текущий блок «MT5 entry mechanics / trade-count frozen probe» целиком
+   перенести в `## PARKED Research Directions` в конец секции, сменив статус
+   на `PARKED` и добавив условия возврата:
+
+```markdown
+### `MT5 entry mechanics / trade-count frozen probe`
+
+[текущие факты блока ACTIVE сохранить дословно]
+
+Условия возврата:
+
+- создан frozen probe plan по entry mechanics / trade-count consolidation;
+- `locked_test` не используется для нового выбора.
+
+Статус: `PARKED` (вытеснен ACTIVE-треком pair-spread kill-test).
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add docs/superpowers/roadmap.md
+git commit -m "Register pair-spread kill-test as ACTIVE track, park MT5 entry mechanics"
+```
 
 ---
 
@@ -39,17 +94,20 @@ locked_test_policy: не используется — этап RESEARCH_ONLY/DIA
 **Interfaces:**
 - Produces: `statsmodels` в `.venv` (нужен Task 4: `statsmodels.tsa.stattools.coint`).
 
+Примечание (по итогам аудита): на момент доработки плана statsmodels 0.14.6 уже
+установлен в `.venv` аудитором; задача сводится к фиксации в `requirements.txt`.
+
 - [ ] **Step 1: Проверить текущее состояние**
 
 Run: `./.venv/bin/python -c "import statsmodels" ; cat requirements.txt | head -20`
-Expected: ModuleNotFoundError для statsmodels; содержимое requirements.txt видно.
+Expected: импорт проходит (или ModuleNotFoundError — тогда установка на шаге 2); statsmodels в requirements.txt может отсутствовать.
 
-- [ ] **Step 2: Установить и добавить в requirements**
+- [ ] **Step 2: Установить (если нет) и добавить в requirements**
 
 Run:
 ```bash
 ./.venv/bin/pip install statsmodels
-echo "statsmodels" >> requirements.txt
+grep -q '^statsmodels$' requirements.txt || echo "statsmodels" >> requirements.txt
 ./.venv/bin/python -c "from statsmodels.tsa.stattools import coint; print('ok')"
 ```
 Expected: `ok`.
@@ -202,7 +260,7 @@ def check(tf_dir: Path, tf: str) -> list[str]:
         if start > MIN_START:
             problems.append(f'{tf} {sym}: старт {start} позже {MIN_START}')
         if end < MIN_END:
-            problems.append(f'{tf} {tf and sym}: конец {end} раньше {MIN_END}')
+            problems.append(f'{tf} {sym}: конец {end} раньше {MIN_END}')
         if (df['close'] <= 0).any():
             problems.append(f'{tf} {sym}: есть close <= 0')
         years_train = (pd.Timestamp('2022-12-31') - max(start, pd.Timestamp('2005-01-01'))).days / 365.25
@@ -258,6 +316,7 @@ git commit -m "Add data completeness checker for pair-spread stage"
 ```python
 # tests/test_pair_spread_data.py
 import importlib.util
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -266,6 +325,7 @@ import pandas as pd
 _MODULE_PATH = Path(__file__).resolve().parents[1] / 'statistics' / 'pair_spread' / 'pair_data.py'
 _spec = importlib.util.spec_from_file_location('pair_data', _MODULE_PATH)
 pair_data = importlib.util.module_from_spec(_spec)
+sys.modules['pair_data'] = pair_data
 _spec.loader.exec_module(pair_data)
 
 
@@ -312,7 +372,9 @@ def test_build_log_spreads_beta():
     b = pd.Series([1.0, 2.0, 4.0], index=t)
     s = pair_data.build_log_spreads(a, b, beta=1.0)
     assert np.allclose(s, np.log(2.0))
-    s2 = pair_data.build_log_spreads(a, b, beta=2.0)
+    # a = b^2: ln a - 2*ln b = 0 тождественно (исправлено по аудиту К-2.1)
+    a2 = pd.Series([1.0, 4.0, 16.0], index=t)
+    s2 = pair_data.build_log_spreads(a2, b, beta=2.0)
     assert np.allclose(s2, 0.0)
 
 
@@ -422,13 +484,14 @@ git commit -m "Add pair-spread data loading, cross spreads and split constants"
 
 **Interfaces:**
 - Consumes: `pair_data.build_log_spreads` (pd.Series спреда, M5, train-окно); `costs` dict — round-trip стоимость `c` в лог-единицах спреда (считает Task 6 из снимка спецификаций).
-- Produces: `fit_beta(a_log, b_log) -> float` (OLS-наклон на всём train); `engle_granger_pvalue(a_log, b_log) -> float`; `half_life_bars(s) -> float` (`inf`, если rho вне (0,1)); `episode_bounds(z, entry_z) -> list[tuple[int, int]]` (старт — первый бар |z| ≥ entry после бара с |z| < entry; конец — первый бар с |z| ≤ |z_start|/2, «половина возврата»; незавершённые эпизоды не включаются); `spread_mu_sigma(s_train) -> tuple[float, float]`; `screening_metrics(s_train, z_train, times_train, cost_c, thresholds) -> dict`; `verdict_pass(metrics, thresholds) -> tuple[bool, list[str]]`; `@dataclass ScreeningThresholds(coint_p_max=0.05, half_life_min_bars=6, half_life_max_bars=2880, min_episodes_per_year=5.0, entry_z=2.0)`.
+- Produces: `fit_beta(a_log, b_log) -> float` (OLS-наклон на всём train); `engle_granger_pvalue(a_log, b_log) -> float`; `half_life_bars(s) -> float` (`inf`, если rho вне (0,1)); `episode_bounds(z, entry_z) -> list[tuple[int, int]]` (старт — первый бар |z| ≥ entry после бара с |z| < entry; конец — первый бар с |z| ≤ |z_start|/2, «половина возврата»; незавершённые эпизоды не включаются); `spread_mu_sigma(s_train) -> tuple[float, float]`; `screening_metrics(s_train, z_train, cost_c, thresholds) -> dict` — включая `episode_durations_bars` и `median_episode_duration_bars` (аудит В-4: длительности нужны отчёту; аудит В-1: медиана длительности эпизодов TRAIN замораживается в screening.json и служит длиной блока bootstrap); `verdict_pass(metrics, thresholds) -> tuple[bool, list[str]]`; `@dataclass ScreeningThresholds(coint_p_max=0.05, half_life_min_bars=6, half_life_max_bars=2880, min_episodes_per_year=5.0, entry_z=2.0)`.
 
 - [ ] **Step 1: Написать падающие тесты**
 
 ```python
 # tests/test_pair_spread_screening.py
 import importlib.util
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -437,6 +500,7 @@ import pandas as pd
 _MODULE_PATH = Path(__file__).resolve().parents[1] / 'statistics' / 'pair_spread' / 'screening.py'
 _spec = importlib.util.spec_from_file_location('screening', _MODULE_PATH)
 screening = importlib.util.module_from_spec(_spec)
+sys.modules['screening'] = screening  # dataclass-аннотации резолвятся через sys.modules (аудит К-1)
 _spec.loader.exec_module(screening)
 
 
@@ -459,10 +523,12 @@ def test_half_life_known_rho():
     assert abs(hl - (-np.log(2) / np.log(0.99))) / 69.0 < 0.10
 
 
-def test_half_life_random_walk_is_inf():
-    rng = np.random.RandomState(2)
-    s = pd.Series(np.cumsum(rng.randn(5000)))
-    assert screening.half_life_bars(s) == float('inf') or screening.half_life_bars(s) > 1e6
+def test_half_life_antipersistent_is_inf():
+    # чередующийся ряд: rho < 0 -> полураспад не определён (inf), детерминированно.
+    # Примечание (аудит К-2.2): random walk даёт конечный полураспад (OLS rho<1),
+    # от random walk полураспад-гейт не защищает — это делает EG-гейт.
+    s = pd.Series(np.tile([1.0, -1.0], 2500))
+    assert screening.half_life_bars(s) == float('inf')
 
 
 def test_engle_granger_stationary_pair_low_p():
@@ -474,7 +540,8 @@ def test_engle_granger_stationary_pair_low_p():
 
 
 def test_engle_granger_independent_walks_high_p():
-    rng = np.random.RandomState(4)
+    # сид 2 проверен до коммита: p ≈ 0.96 (аудит К-2.3: сид 4 давал p=0.013)
+    rng = np.random.RandomState(2)
     x = np.cumsum(rng.randn(3000))
     y = np.cumsum(rng.randn(3000))
     p = screening.engle_granger_pvalue(y, x)
@@ -503,6 +570,18 @@ def test_spread_mu_sigma():
     mu, sigma = screening.spread_mu_sigma(s)
     assert mu == 2.0
     assert abs(sigma - np.std([1.0, 2.0, 3.0], ddof=1)) < 1e-12
+
+
+def test_screening_metrics_episode_durations():
+    # эпизоды те же, что в test_episode_bounds_basic: (1,3) и (6,7) -> длины 2 и 1
+    idx = pd.date_range('2010-01-01', periods=8, freq='5min')
+    z = pd.Series([0.0, 2.5, 2.6, 1.2, 0.9, 0.1, -2.2, -0.8], index=idx)
+    s = pd.Series(np.linspace(0.0, 0.7, 8), index=idx)
+    m = screening.screening_metrics(s, z, cost_c=0.001,
+                                    thresholds=screening.ScreeningThresholds())
+    assert m['n_episodes'] == 2
+    assert m['episode_durations_bars'] == [2, 1]
+    assert m['median_episode_duration_bars'] == 1.5
 
 
 def test_verdict_all_pass():
@@ -542,7 +621,7 @@ Expected: FAIL (нет модуля).
 # =============================================================================
 # Файл: statistics/pair_spread/screening.py
 # Назначение: ступень 1 kill-теста — метрики скрининга на train (спека, раздел 5)
-# Обновлён: 2026-08-17
+# Обновлён: 2026-08-18
 # Зависимости:
 #   Входные данные: лог-спред train (pair_data), round-trip стоимость c (run_pair_spread)
 #   Выходные данные: dict метрик + вердикт (куда: run_pair_spread.py)
@@ -632,13 +711,19 @@ def screening_metrics(s_train: pd.Series, z_train: pd.Series, cost_c: float,
     ds = s_train.diff().dropna().abs()
     mu = float(s_train.mean())
     devs: list[float] = []
+    durations: list[int] = []
     for start, end in episodes:
         devs.extend(abs(s_train.iloc[start:end + 1] - mu).tolist())
+        durations.append(end - start)
     return {
         'n_episodes': len(episodes),
         'episodes_per_year': len(episodes) / years,
         'p75_abs_ds': float(np.percentile(ds, 75)) if len(ds) else float('nan'),
         'median_episode_deviation': float(np.median(devs)) if devs else 0.0,
+        # длительности эпизодов: артефакт для отчёта (спека разделы 5, 8) и
+        # замороженная длина блока bootstrap (спека раздел 6, аудит В-1/В-4)
+        'episode_durations_bars': durations,
+        'median_episode_duration_bars': float(np.median(durations)) if durations else 0.0,
         'cost_c': float(cost_c),
     }
 
@@ -662,7 +747,7 @@ def verdict_pass(metrics: dict, th: ScreeningThresholds) -> tuple[bool, list[str
 - [ ] **Step 4: Запустить тесты, убедиться что проходят**
 
 Run: `./.venv/bin/python -m pytest tests/test_pair_spread_screening.py -q`
-Expected: PASS (10 тестов). Если `test_episode_bounds_basic` падает на ожидании — сверить семантику с докстрингом (конец по половине возврата), тесты и код должны совпадать; при расхождении править тест под семантику спеки, не наоборот.
+Expected: PASS (11 тестов). Если `test_episode_bounds_basic` падает на ожидании — сверить семантику с докстрингом (конец по половине возврата), тесты и код должны совпадать; при расхождении править тест под семантику спеки, не наоборот.
 
 - [ ] **Step 5: Commit**
 
@@ -680,14 +765,15 @@ git commit -m "Add stage-1 screening metrics for pair-spread kill-test"
 - Test: `tests/test_pair_spread_backtest.py`
 
 **Interfaces:**
-- Consumes: сигнальный ряд z по close (train-нормировка), ряд исполнения s_exec по open следующего бара; времена баров; `round_trip_cost`, `swap_per_night`.
-- Produces: `@dataclass Trade(side: int, entry_i: int, exit_i: int, pnl_gross: float, pnl_net: float, exit_reason: str, nights: int)`; `run_backtest(z, s_exec, times, round_trip_cost, swap_per_night=0.0, entry_z=2.0, stop_z=4.0, timeout_bars=2880) -> list[Trade]` — правила спеки раздела 6: вход при flat и 2 ≤ |z| < 4 на закрытии бара, исполнение на открытии следующего; выход: пересечение z=0 (revert) / |z| ≥ 4 (stop) / таймаут; после stop и timeout повторный вход только после пересечения z = 0; одна позиция; `profit_factor(pnls) -> float`; `stationary_bootstrap_ci(pnls, expected_block_bars_or_trades, n_resamples=10000, quantile=0.05, seed=0) -> float`.
+- Consumes: сигнальный ряд z по close (train-нормировка), ряд исполнения s_exec по open следующего бара; времена баров; `round_trip_cost`, `swap_cost_long`, `swap_cost_short` (по стороне сделки, аудит В-6).
+- Produces: `@dataclass Trade(side: int, entry_i: int, exit_i: int, pnl_gross: float, pnl_net: float, exit_reason: str, nights: int)`; `@dataclass BacktestResult(trades: list[Trade], dropped_open_at_end: int)` — счётчик позиции, открытой на последнем баре и не исполненной (аудит К-2.4/Q-3); `run_backtest(z, s_exec, times, round_trip_cost, swap_cost_long=0.0, swap_cost_short=0.0, entry_z=2.0, stop_z=4.0, timeout_bars=2880) -> BacktestResult` — правила спеки раздела 6: вход при flat и 2 ≤ |z| < 4 на закрытии бара, исполнение на открытии следующего; выход: пересечение z=0 (revert) / |z| ≥ 4 (stop) / таймаут; после stop и timeout повторный вход только после пересечения z = 0; одна позиция; своп начисляется по стороне: side=+1 → `swap_cost_long`, side=−1 → `swap_cost_short`; позиция, сигнал выхода которой выпал на последний бар, в `trades` не попадает и считается в `dropped_open_at_end`; `profit_factor(pnls) -> float`; `stationary_bootstrap_ci(pnls, expected_block, n_resamples=10000, quantile=0.05, seed=0) -> float`.
 
 - [ ] **Step 1: Написать падающие тесты**
 
 ```python
 # tests/test_pair_spread_backtest.py
 import importlib.util
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -696,6 +782,7 @@ import pandas as pd
 _MODULE_PATH = Path(__file__).resolve().parents[1] / 'statistics' / 'pair_spread' / 'backtest.py'
 _spec = importlib.util.spec_from_file_location('backtest', _MODULE_PATH)
 backtest = importlib.util.module_from_spec(_spec)
+sys.modules['backtest'] = backtest  # dataclass-аннотации резолвятся через sys.modules (аудит К-1)
 _spec.loader.exec_module(backtest)
 
 
@@ -707,7 +794,7 @@ def test_basic_revert_trade():
     # z: 0, 2.5 (сигнал), 2.6, 0.5, -0.1 (пересечение нуля на баре 4)
     z = np.array([0.0, 2.5, 2.6, 0.5, -0.1, 0.0])
     s = np.array([10.0, 10.0, 10.4, 10.3, 10.0, 10.0])  # исполнение по open-спреду
-    trades = backtest.run_backtest(z, s, _times(6), round_trip_cost=0.1)
+    trades = backtest.run_backtest(z, s, _times(6), round_trip_cost=0.1).trades
     assert len(trades) == 1
     t = trades[0]
     assert t.side == -1                    # z>=2 -> short спреда
@@ -720,8 +807,9 @@ def test_basic_revert_trade():
 def test_no_entry_in_stop_zone():
     z = np.array([0.0, 4.5, 4.6, 0.0])
     s = np.array([10.0, 10.0, 10.1, 10.0])
-    trades = backtest.run_backtest(z, s, _times(4), round_trip_cost=0.0)
-    assert trades == []
+    result = backtest.run_backtest(z, s, _times(4), round_trip_cost=0.0)
+    assert result.trades == []
+    assert result.dropped_open_at_end == 0
 
 
 def test_stop_exit_blocks_reentry_until_zero_cross():
@@ -730,7 +818,7 @@ def test_stop_exit_blocks_reentry_until_zero_cross():
     # возврат и закрытие второго трейда на баре 7
     z = np.array([0.0, 2.5, 4.5, 2.6, -0.1, -2.5, -0.5, 0.1, 0.2])
     s = np.array([10.0, 10.0, 10.5, 10.6, 10.2, 9.8, 9.8, 9.9, 10.0])
-    trades = backtest.run_backtest(z, s, _times(9), round_trip_cost=0.0)
+    trades = backtest.run_backtest(z, s, _times(9), round_trip_cost=0.0).trades
     assert len(trades) == 2
     assert trades[0].exit_reason == 'stop'
     assert trades[1].side == 1             # z<=-2 -> long спреда (после пересечения нуля)
@@ -743,7 +831,7 @@ def test_timeout_exit():
     z[1] = 2.5
     z[2:2882] = 2.1    # держится в зоне, нуля не пересекает
     s = np.full(n, 10.0)
-    trades = backtest.run_backtest(z, s, _times(n), round_trip_cost=0.0)
+    trades = backtest.run_backtest(z, s, _times(n), round_trip_cost=0.0).trades
     assert len(trades) == 1
     assert trades[0].exit_reason == 'timeout'
     # сигнал на баре 1, удержание 2880 баров, исполнение выхода на баре 1+2880+1
@@ -751,32 +839,64 @@ def test_timeout_exit():
 
 
 def test_one_position_no_pyramiding():
+    # завершающий бар 0.0 даёт исполнимый выход по возврату (аудит К-2.4)
+    z = np.array([0.0, 2.5, 2.6, 2.7, 0.1, -0.1, 0.0])
+    s = np.full(7, 10.0)
+    result = backtest.run_backtest(z, s, _times(7), round_trip_cost=0.0)
+    assert len(result.trades) == 1
+    assert result.dropped_open_at_end == 0
+
+
+def test_open_position_at_end_dropped_and_counted():
+    # тот же сценарий без завершающего бара: сигнал выхода на последнем баре
+    # исполнить негде — сделка не входит в trades, но подсчитана (аудит К-2.4/Q-3)
     z = np.array([0.0, 2.5, 2.6, 2.7, 0.1, -0.1])
     s = np.full(6, 10.0)
-    trades = backtest.run_backtest(z, s, _times(6), round_trip_cost=0.0)
-    assert len(trades) == 1
+    result = backtest.run_backtest(z, s, _times(6), round_trip_cost=0.0)
+    assert result.trades == []
+    assert result.dropped_open_at_end == 1
 
 
 def test_no_entry_on_last_bar():
     z = np.array([0.0, 2.5])   # сигнал на последнем баре — исполнять негде
     s = np.array([10.0, 10.0])
-    trades = backtest.run_backtest(z, s, _times(2), round_trip_cost=0.0)
-    assert trades == []
+    result = backtest.run_backtest(z, s, _times(2), round_trip_cost=0.0)
+    assert result.trades == []
+    assert result.dropped_open_at_end == 0
 
 
-def test_nights_and_swap():
-    # удержание через 2 календарные ночи
+def test_nights_and_swap_short_side():
+    # удержание через 2 календарные ночи; z=+2.5 -> side=-1 -> swap_cost_short (аудит В-6)
     n = 3 * 288   # 3 суток по 288 баров M5
     z = np.zeros(n)
     z[1] = 2.5
-    z[2:] = 0.9    # без пересечения нуля -> таймаут не раньше; но нуля нет => timeout
+    z[2:] = 0.9    # без пересечения нуля -> выход по таймауту
     times = pd.date_range('2023-01-02', periods=n, freq='5min').to_numpy()
     s = np.full(n, 10.0)
     trades = backtest.run_backtest(z, s, times, round_trip_cost=0.0,
-                                   swap_per_night=0.05, timeout_bars=2 * 288)
+                                   swap_cost_long=0.99, swap_cost_short=0.05,
+                                   timeout_bars=2 * 288).trades
     assert len(trades) == 1
+    assert trades[0].side == -1
     assert trades[0].nights == 2
     assert abs(trades[0].pnl_net - (trades[0].pnl_gross - 2 * 0.05)) < 1e-12
+
+
+def test_nights_and_swap_long_side():
+    # z=-2.5 -> side=+1 -> swap_cost_long (аудит В-6)
+    n = 3 * 288
+    z = np.zeros(n)
+    z[1] = -2.5
+    z[2:] = -0.9
+    times = pd.date_range('2023-01-02', periods=n, freq='5min').to_numpy()
+    s = np.full(n, 10.0)
+    trades = backtest.run_backtest(z, s, times, round_trip_cost=0.0,
+                                   swap_cost_long=0.07, swap_cost_short=0.99,
+                                   timeout_bars=2 * 288).trades
+    assert len(trades) == 1
+    assert trades[0].side == 1
+    assert trades[0].nights == 2
+    assert abs(trades[0].pnl_net - (trades[0].pnl_gross - 2 * 0.07)) < 1e-12
 
 
 def test_profit_factor():
@@ -805,19 +925,21 @@ Expected: FAIL (нет модуля).
 # Файл: statistics/pair_spread/backtest.py
 # Назначение: ступень 2 kill-теста — симулятор z-score правила (спека, раздел 6)
 #             + stationary bootstrap BS_p05 (методология 09)
-# Обновлён: 2026-08-17
+# Обновлён: 2026-08-18
 # Зависимости:
 #   Входные данные: z по close (train-нормировка), s_exec по open, времена, издержки
-#   Выходные данные: list[Trade], PF, BS_p05 (куда: run_pair_spread.py)
+#   Выходные данные: BacktestResult(trades, dropped_open_at_end), PF, BS_p05
+#                    (куда: run_pair_spread.py)
 # Конвенция исполнения: сигнал на закрытии бара i -> исполнение на открытии i+1.
 # =============================================================================
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
-__all__ = ['Trade', 'profit_factor', 'run_backtest', 'stationary_bootstrap_ci']
+__all__ = ['BacktestResult', 'Trade', 'profit_factor', 'run_backtest',
+           'stationary_bootstrap_ci']
 
 ENTRY_Z = 2.0
 STOP_Z = 4.0
@@ -835,6 +957,14 @@ class Trade:
     nights: int
 
 
+@dataclass
+class BacktestResult:
+    trades: list[Trade] = field(default_factory=list)
+    # позиция, открытая на конец данных: сигнал выхода на последнем баре
+    # исполнить негде — сделка не учитывается в PF, но подсчитывается (аудит К-2.4/Q-3)
+    dropped_open_at_end: int = 0
+
+
 def _nights_between(times, i_entry, i_exit) -> int:
     d0 = times[i_entry].astype('datetime64[D]')
     d1 = times[i_exit].astype('datetime64[D]')
@@ -842,13 +972,17 @@ def _nights_between(times, i_entry, i_exit) -> int:
 
 
 def run_backtest(z: np.ndarray, s_exec: np.ndarray, times: np.ndarray,
-                 round_trip_cost: float, swap_per_night: float = 0.0,
+                 round_trip_cost: float,
+                 swap_cost_long: float = 0.0, swap_cost_short: float = 0.0,
                  entry_z: float = ENTRY_Z, stop_z: float = STOP_Z,
-                 timeout_bars: int = TIMEOUT_BARS) -> list[Trade]:
+                 timeout_bars: int = TIMEOUT_BARS) -> BacktestResult:
+    """swap_cost_long/short — стоимость ночи удержания (положительная — издержка,
+    отрицательная — кэрри-доход) для сделки side=+1 и side=-1 соответственно
+    (аудит В-6: своп комбинированной позиции зависит от стороны)."""
     z = np.asarray(z, dtype=float)
     s_exec = np.asarray(s_exec, dtype=float)
     n = len(z)
-    trades: list[Trade] = []
+    result = BacktestResult()
     need_zero_cross = False
     pos = None  # dict: side, entry_bar (бар сигнала), exec_i, entry_sign
 
@@ -868,9 +1002,10 @@ def run_backtest(z: np.ndarray, s_exec: np.ndarray, times: np.ndarray,
                 exec_exit = i + 1
                 gross = pos['side'] * (s_exec[exec_exit] - s_exec[pos['exec_i']])
                 nights = _nights_between(times, pos['exec_i'], exec_exit)
-                net = gross - round_trip_cost - swap_per_night * nights
-                trades.append(Trade(pos['side'], pos['exec_i'], exec_exit,
-                                    gross, net, reason, nights))
+                swap = swap_cost_long if pos['side'] > 0 else swap_cost_short
+                net = gross - round_trip_cost - swap * nights
+                result.trades.append(Trade(pos['side'], pos['exec_i'], exec_exit,
+                                           gross, net, reason, nights))
                 pos = None
                 need_zero_cross = reason in ('stop', 'timeout')
                 continue
@@ -888,7 +1023,9 @@ def run_backtest(z: np.ndarray, s_exec: np.ndarray, times: np.ndarray,
                     'exec_i': i + 1,
                     'entry_sign': 1.0 if z[i] > 0 else -1.0,
                 }
-    return trades
+    if pos is not None:
+        result.dropped_open_at_end = 1
+    return result
 
 
 def profit_factor(pnls) -> float:
@@ -928,7 +1065,7 @@ def stationary_bootstrap_ci(pnls, expected_block: float, n_resamples: int = 1000
 - [ ] **Step 4: Запустить тесты, убедиться что проходят**
 
 Run: `./.venv/bin/python -m pytest tests/test_pair_spread_backtest.py -q`
-Expected: PASS (9 тестов).
+Expected: PASS (11 тестов).
 
 - [ ] **Step 5: Commit**
 
@@ -946,19 +1083,21 @@ git commit -m "Add stage-2 z-score backtester and stationary bootstrap for pair-
 - Test: `tests/test_pair_spread_runner.py`
 
 **Interfaces:**
-- Consumes: `pair_data` (Task 3), `screening` (Task 4), `backtest` (Task 5), файлы Task 2 (`MT/MQL4/Files/M5/*_OHLC.csv`, `MT/MQL4/Files/pair_spread_costs_snapshot.csv`).
-- Produces: `DATA/pair_spread/screening.json`, `DATA/pair_spread/backtest.json`; `build_costs(snapshot_csv_path) -> dict` (symbol → `{'spread_price': float, 'point': float, 'swap_long': float, 'swap_short': float}`); `round_trip_cost_c(spread_a_price, spread_b_price, price_a, price_b, beta) -> float` = `2*(spreadA/priceA + abs(beta)*spreadB/priceB)`; `main()` — полный прогон двух ступеней.
+- Consumes: `pair_data` (Task 3), `screening` (Task 4), `backtest` (Task 5), файлы Task 2 (`MT/MQL4/Files/M5/*_OHLC.csv`, `MT/MQL4/Files/H1/*_OHLC.csv` — независимый H1-срез брокера, аудит В-2; `MT/MQL4/Files/pair_spread_costs_snapshot.csv`).
+- Produces: `DATA/pair_spread/screening.json`, `DATA/pair_spread/backtest.json`, `DATA/pair_spread/backtest_stress2x.json` (при `--stress-costs 2.0`; базовый артефакт не перезаписывается — аудит В-3); `build_costs(snapshot_csv_path) -> dict` (symbol → `{'spread_price': float, 'point': float, 'swap_long': float, 'swap_short': float}`); `round_trip_cost_c(spread_a_price, spread_b_price, price_a, price_b, beta) -> float` = `2*(spreadA/priceA + abs(beta)*spreadB/priceB)`; `stress_cost_c(cost_c, factor) -> float`; `pair_verdict(metrics) -> str` — EG-p(test) > 0.10 → KILLED первым гейтом, затем N-гейт → DIAGNOSTIC_ONLY, затем PF/BS (конвенция Q-1); цены для нормировки издержек — последние close TRAIN-окна (аудит В-5); своп XAUXAG по стороне сделки (аудит В-6); `backtest.json` содержит `dropped_open_at_end` и `expected_block_bars` по каждой паре; `main()` — полный прогон двух ступеней, аргумент `--stress-costs FLOAT` (1.0 = базовый прогон).
 
 - [ ] **Step 1: Написать падающие тесты (на чистые функции руннера)**
 
 ```python
 # tests/test_pair_spread_runner.py
 import importlib.util
+import sys
 from pathlib import Path
 
 _MODULE_PATH = Path(__file__).resolve().parents[1] / 'statistics' / 'pair_spread' / 'run_pair_spread.py'
 _spec = importlib.util.spec_from_file_location('run_pair_spread', _MODULE_PATH)
 runner = importlib.util.module_from_spec(_spec)
+sys.modules['run_pair_spread'] = runner
 _spec.loader.exec_module(runner)
 
 
@@ -980,6 +1119,11 @@ def test_round_trip_cost_c_uses_abs_beta():
     assert abs(c - 2 * (0.0001 + 0.0001)) < 1e-12
 
 
+def test_stress_cost_c():
+    assert abs(runner.stress_cost_c(0.001, 2.0) - 0.002) < 1e-15
+    assert runner.stress_cost_c(0.001, 1.0) == 0.001
+
+
 def test_pair_verdict_gates():
     base = {'pf': 1.5, 'bs_p05': 1.05, 'n_trades': 150, 'n_per_side_min': 60,
             'eg_p_test': 0.02}
@@ -989,6 +1133,8 @@ def test_pair_verdict_gates():
     assert runner.pair_verdict(dict(base, eg_p_test=0.2)) == 'KILLED'
     assert runner.pair_verdict(dict(base, n_trades=80)) == 'DIAGNOSTIC_ONLY'
     assert runner.pair_verdict(dict(base, n_per_side_min=20)) == 'DIAGNOSTIC_ONLY'
+    # приоритет (аудит Q-1): слом коинтеграции убивает даже при малом N
+    assert runner.pair_verdict(dict(base, n_trades=40, eg_p_test=0.9)) == 'KILLED'
 ```
 
 - [ ] **Step 2: Запустить, убедиться что падают**
@@ -1002,15 +1148,18 @@ Expected: FAIL (нет модуля).
 # =============================================================================
 # Файл: statistics/pair_spread/run_pair_spread.py
 # Назначение: оркестратор двух ступеней kill-теста pair-spread; JSON-артефакты
-# Обновлён: 2026-08-17
+# Обновлён: 2026-08-18
 # Зависимости:
 #   Входные данные:
 #     - MT/MQL4/Files/M5/*_OHLC.csv, MT/MQL4/Files/H1/*_OHLC.csv (Task 2)
 #     - MT/MQL4/Files/pair_spread_costs_snapshot.csv (Task 2)
 #   Выходные данные:
-#     - DATA/pair_spread/screening.json, DATA/pair_spread/backtest.json
+#     - DATA/pair_spread/screening.json, DATA/pair_spread/backtest.json,
+#       DATA/pair_spread/backtest_stress2x.json (при --stress-costs 2.0)
 #   Внутренние зависимости: pair_data, screening, backtest (тот же каталог)
-# Использование: ./.venv/bin/python statistics/pair_spread/run_pair_spread.py [--stage 1|2|all]
+# Использование:
+#   ./.venv/bin/python statistics/pair_spread/run_pair_spread.py [--stage 1|2|all]
+#   [--stress-costs 2.0]
 # Примечания: все пороги заморожены спекой 2026-08-17; изменения после запуска
 #   только документированным решением.
 # =============================================================================
@@ -1027,10 +1176,9 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from pair_data import (CANDIDATES, TEST_START, TRAIN_END, build_log_spreads,
-                       load_ohlc_csv, resample_to_h1)
+                       load_ohlc_csv)
 from screening import (ScreeningThresholds, engle_granger_pvalue, fit_beta,
-                       half_life_bars, screening_metrics, spread_mu_sigma,
-                       verdict_pass)
+                       half_life_bars, screening_metrics, verdict_pass)
 from backtest import profit_factor, run_backtest, stationary_bootstrap_ci
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -1060,11 +1208,19 @@ def round_trip_cost_c(spread_a_price: float, spread_b_price: float,
     return 2.0 * (spread_a_price / price_a + abs(beta) * spread_b_price / price_b)
 
 
+def stress_cost_c(cost_c: float, factor: float) -> float:
+    """Стресс-множитель издержек (методология 12: обязательный стресс 2x)."""
+    return cost_c * factor
+
+
 def pair_verdict(m: dict) -> str:
-    if m['n_trades'] < 100 or m['n_per_side_min'] < 30:
-        return 'DIAGNOSTIC_ONLY'
+    # Приоритет (аудит Q-1): слом коинтеграции на test убивает независимо от
+    # PF и числа сделок (мощность EG-теста определяется барами, не сделками).
+    # Гейт N ограничивает только SURVIVED (методология 06).
     if m['eg_p_test'] > 0.10:
         return 'KILLED'
+    if m['n_trades'] < 100 or m['n_per_side_min'] < 30:
+        return 'DIAGNOSTIC_ONLY'
     if m['pf'] >= 1.3 and m['bs_p05'] > 1.0:
         return 'SURVIVED'
     return 'KILLED'
@@ -1088,8 +1244,12 @@ def _stage1_for_tf(legs: dict[str, pd.DataFrame], costs: dict, tf: str) -> dict:
         s = build_log_spreads(a_close, b_close, beta)
         s_train = s[s.index <= TRAIN_END]
         z_train = (s_train - s_train.mean()) / s_train.std(ddof=1)
+        # нормировка издержек — последние цены TRAIN, не test (аудит В-5)
+        a_train_close = a_close[train_mask.to_numpy()]
+        b_train_close = b_close[train_mask.to_numpy()]
         cost_c = round_trip_cost_c(costs[sym_a]['spread_price'], costs[sym_b]['spread_price'],
-                                   float(a_close.iloc[-1]), float(b_close.iloc[-1]), beta)
+                                   float(a_train_close.iloc[-1]),
+                                   float(b_train_close.iloc[-1]), beta)
         metrics = screening_metrics(s_train, z_train, cost_c, THRESHOLDS)
         metrics.update({
             'beta': beta,
@@ -1106,7 +1266,8 @@ def _stage1_for_tf(legs: dict[str, pd.DataFrame], costs: dict, tf: str) -> dict:
     return {'tf': tf, 'thresholds': vars(THRESHOLDS), 'candidates': results}
 
 
-def _stage2(legs_m5: dict[str, pd.DataFrame], screening_out: dict, costs: dict) -> dict:
+def _stage2(legs_m5: dict[str, pd.DataFrame], screening_out: dict, costs: dict,
+            cost_factor: float = 1.0) -> dict:
     results = {}
     for name, m in screening_out['candidates'].items():
         if not m['pass']:
@@ -1124,25 +1285,34 @@ def _stage2(legs_m5: dict[str, pd.DataFrame], screening_out: dict, costs: dict) 
         z_test = ((s_sig - mu) / sigma).to_numpy()[test_mask.to_numpy()]
         s_test = s_exec.to_numpy()[test_mask.to_numpy()]
         times = idx.to_numpy()[test_mask.to_numpy()]
-        cost_c = m['cost_c']
-        swap = 0.0
+        cost_c = stress_cost_c(m['cost_c'], cost_factor)
+        swap_cost_long = swap_cost_short = 0.0
         if name == 'XAUXAG':
-            # своп обеих ног за ночь удержания комбинированной позиции (раздел 7 спеки)
-            swap = abs(costs[sym_a]['swap_long'] + costs[sym_a]['swap_short']) \
-                 + abs(costs[sym_b]['swap_long'] + costs[sym_b]['swap_short'])
-        trades = run_backtest(z_test, s_test, times, cost_c, swap_per_night=swap)
+            # своп комбинированной позиции зависит от стороны (аудит В-6, спека раздел 7).
+            # MT5 swap_long/swap_short — знаковый доход за ночь; стоимость = -доход.
+            # side=+1: long ноги A / short ноги B; side=-1: наоборот.
+            swap_cost_long = -(costs[sym_a]['swap_long'] + costs[sym_b]['swap_short'])
+            swap_cost_short = -(costs[sym_a]['swap_short'] + costs[sym_b]['swap_long'])
+        result = run_backtest(z_test, s_test, times, cost_c,
+                              swap_cost_long=swap_cost_long,
+                              swap_cost_short=swap_cost_short)
+        trades = result.trades
         pnls = [t.pnl_net for t in trades]
         sides = [t.side for t in trades]
         n_long = sum(1 for x in sides if x > 0)
         n_short = len(sides) - n_long
-        durations = [t.exit_i - t.entry_i for t in trades]
-        expected_block = float(np.median(durations)) if durations else 1.0
+        # длина блока bootstrap — медианная длительность эпизодов TRAIN,
+        # заморожена в screening.json (спека раздел 6, аудит В-1)
+        expected_block = float(m['median_episode_duration_bars']) or 1.0
         results[name] = {
             'n_trades': len(trades),
             'n_per_side_min': min(n_long, n_short),
+            'dropped_open_at_end': result.dropped_open_at_end,
             'pf': profit_factor(pnls),
             'pf_gross': profit_factor([t.pnl_gross for t in trades]),
             'bs_p05': stationary_bootstrap_ci(pnls, expected_block, n_resamples=10000, seed=0),
+            'expected_block_bars': expected_block,
+            'cost_factor': cost_factor,
             'eg_p_test': engle_granger_pvalue(
                 np.log(a_c.loc[idx[test_mask.to_numpy()]].to_numpy(dtype=float)),
                 np.log(b_c.loc[idx[test_mask.to_numpy()]].to_numpy(dtype=float))),
@@ -1150,7 +1320,8 @@ def _stage2(legs_m5: dict[str, pd.DataFrame], screening_out: dict, costs: dict) 
                              for r in ('revert', 'stop', 'timeout')},
             'pnl_by_reason': {r: float(sum(t.pnl_net for t in trades if t.exit_reason == r))
                               for r in ('revert', 'stop', 'timeout')},
-            'swap_per_night': swap,
+            'swap_cost_long': swap_cost_long,
+            'swap_cost_short': swap_cost_short,
         }
         results[name]['verdict'] = pair_verdict(results[name])
     return results
@@ -1159,6 +1330,9 @@ def _stage2(legs_m5: dict[str, pd.DataFrame], screening_out: dict, costs: dict) 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--stage', choices=['1', '2', 'all'], default='all')
+    ap.add_argument('--stress-costs', type=float, default=1.0,
+                    help='множитель round-trip издержек (методология 12: стресс 2x); '
+                         'пишет отдельный артефакт backtest_stress<F>x.json')
     args = ap.parse_args()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     costs = build_costs(COSTS_CSV)
@@ -1166,7 +1340,9 @@ def main() -> int:
 
     if args.stage in ('1', 'all'):
         legs_m5 = _load_legs(M5_DIR)
-        legs_h1 = {s: resample_to_h1(df) for s, df in legs_m5.items()}
+        # H1 — независимая агрегация брокера (экспорт MT5, Task 2),
+        # не ресемплинг M5 (аудит В-2, спека раздел 3.3)
+        legs_h1 = _load_legs(H1_DIR)
         out_m5 = _stage1_for_tf(legs_m5, costs, 'M5')
         out_h1 = _stage1_for_tf(legs_h1, costs, 'H1')
         payload = {'M5': out_m5, 'H1': out_h1}
@@ -1181,10 +1357,13 @@ def main() -> int:
 
     screening_out = json.loads(screening_path.read_text())['M5']
     legs_m5 = _load_legs(M5_DIR)
-    stage2 = _stage2(legs_m5, screening_out, costs)
-    backtest_path = OUT_DIR / 'backtest.json'
+    stage2 = _stage2(legs_m5, screening_out, costs, cost_factor=args.stress_costs)
+    if args.stress_costs == 1.0:
+        backtest_path = OUT_DIR / 'backtest.json'
+    else:
+        backtest_path = OUT_DIR / f'backtest_stress{args.stress_costs:g}x.json'
     backtest_path.write_text(json.dumps(stage2, indent=2))
-    print(f'Stage 2 -> {backtest_path}')
+    print(f'Stage 2 (cost x{args.stress_costs:g}) -> {backtest_path}')
     for name, r in stage2.items():
         print(f"  {name}: {r['verdict']} PF={r['pf']:.2f} BS_p05={r['bs_p05']:.2f} N={r['n_trades']}")
     return 0
@@ -1197,7 +1376,7 @@ if __name__ == '__main__':
 - [ ] **Step 4: Запустить тесты, убедиться что проходят**
 
 Run: `./.venv/bin/python -m pytest tests/test_pair_spread_runner.py -q`
-Expected: PASS (3 теста).
+Expected: PASS (4 теста).
 
 - [ ] **Step 5: Прогнать весь набор тестов этапа**
 
@@ -1237,7 +1416,55 @@ Expected: таблица `[M5] CANDIDATE: PASS/KILL(reasons)` и `[H1] ...`; ф�
 
 Если по данным `screening.json` медианная длительность эпизодов близка к 1 бару M5 (≈5 минут) у большинства кандидатов — зафиксировать в отчёте триггер тиковой диагностики (раздел 3.3 спеки); саму тиковую диагностику в этом этапе не запускать.
 
-- [ ] **Step 5: Commit артефакта**
+- [ ] **Step 5: Диагностика структурных сдвигов (аудит У-3, спека §4/§5)**
+
+Одноразовый диагностический прогон (в репо не сохраняется, вывод — в отчёт):
+устойчивость β между половинами train по каждому кандидату и поведение спреда
+EURCHF вокруг снятия пола SNB (15.01.2015).
+
+```bash
+./.venv/bin/python - <<'PY'
+import importlib.util, sys
+from pathlib import Path
+import numpy as np
+import pandas as pd
+
+def load(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+pd_mod = load('pair_data', 'statistics/pair_spread/pair_data.py')
+scr = load('screening', 'statistics/pair_spread/screening.py')
+syms = ('AUDUSD', 'NZDUSD', 'USDCAD', 'EURUSD', 'GBPUSD', 'USDCHF', 'XAUUSD', 'XAGUSD')
+legs = {s: pd_mod.load_ohlc_csv(f'MT/MQL4/Files/M5/{s}_OHLC.csv') for s in syms}
+train_end = pd_mod.TRAIN_END
+for name, cand in pd_mod.CANDIDATES.items():
+    a, b = cand['legs']
+    ca = legs[a]['close'][legs[a].index <= train_end]
+    cb = legs[b]['close'][legs[b].index <= train_end]
+    la, lb = np.log(ca), np.log(cb)
+    mid = la.index[len(la) // 2]
+    b1 = scr.fit_beta(la[la.index <= mid], lb[lb.index <= mid])
+    b2 = scr.fit_beta(la[la.index > mid], lb[lb.index > mid])
+    print(f'{name}: beta_half1={b1:.4f} beta_half2={b2:.4f}')
+eu, ch = legs['EURUSD']['close'], legs['USDCHF']['close']
+e_tr, c_tr = eu[eu.index <= train_end], ch[ch.index <= train_end]
+beta = scr.fit_beta(np.log(e_tr), np.log(c_tr))
+s = pd_mod.build_log_spreads(eu, ch, beta)
+w = s[(s.index >= '2014-12-01') & (s.index <= '2015-02-28')]
+print('EURCHF SNB 12/2014-02/2015: bars =', len(w),
+      'max |ds| bar-to-bar =', float(w.diff().abs().max()))
+PY
+```
+
+Expected: вывод β по двум половинам train для 7 кандидатов и статистика спреда
+EURCHF в окне SNB. Интерпретация — диагностическая (не гейт): расхождение β
+между половинами и скачок спреда EURCHF фиксируются в отчёте (раздел 8 спеки).
+
+- [ ] **Step 6: Commit артефакта**
 
 ```bash
 git add DATA/pair_spread/screening.json
@@ -1249,21 +1476,28 @@ git commit -m "Freeze stage-1 screening results for pair-spread candidates"
 ### Task 8: Запуск ступени 2, отчёт и decision memo
 
 **Files:**
-- Создаются: `DATA/pair_spread/backtest.json`, `docs/reports/2026-08-XX-pair-spread.md` (XX — дата запуска).
+- Создаются: `DATA/pair_spread/backtest.json`, `DATA/pair_spread/backtest_stress2x.json`, `docs/reports/2026-08-XX-pair-spread.md` (XX — дата запуска).
 
 - [ ] **Step 1: Запустить ступень 2 (только если ступень 1 дала ≥ 1 PASS)**
 
 Run: `./.venv/bin/python statistics/pair_spread/run_pair_spread.py --stage 2`
 Expected: таблица вердиктов `SURVIVED/KILLED/DIAGNOSTIC_ONLY` с PF/BS_p05/N; `DATA/pair_spread/backtest.json`. Если ступень 1 не дала ни одного PASS — шаг пропускается, тема убита на ступени 1 (раздел 8 спеки).
 
+- [ ] **Step 1b: Стресс издержек 2x (методология 12, аудит В-3)**
+
+Run: `./.venv/bin/python statistics/pair_spread/run_pair_spread.py --stage 2 --stress-costs 2.0`
+Expected: `DATA/pair_spread/backtest_stress2x.json`; базовый `backtest.json` не перезаписан. Аргумент `--stress-costs` реализован в Task 6; никаких код-фиксов на этом шаге не допускается.
+
 - [ ] **Step 2: Написать отчёт этапа**
 
 `docs/reports/<дата>-pair-spread.md` со структурой по методологии 16 и разделу 8 спеки:
 - таблица метрик скрининга по всем 7 парам × {M5, H1} (включая убитые, с причинами);
-- вердикты ступени 2: PF gross/net, BS_p05, PnL по причинам выхода (revert/stop/timeout отдельно), годовые срезы PF по test-окну;
-- распределение длительности эпизодов;
-- стресс издержек 2x (повторить ступень 2 с удвоенным cost_c — через поле `--stress-costs 2.0`; если аргумент не реализован в Task 6, добавить его при исполнении этого шага как единственный допустимый код-фикс этапа);
-- оговорки: режимный перелом 2023 (раздел 6 спеки), множественность 7 кандидатов (раздел 9), ограничение спред-снимка (раздел 7);
+- вердикты ступени 2: PF gross/net, BS_p05, PnL по причинам выхода (revert/stop/timeout отдельно), `dropped_open_at_end` по каждой паре, годовые срезы PF по test-окну;
+- распределение длительности эпизодов (из screening.json);
+- стресс издержек 2x: вердикты по `backtest_stress2x.json` рядом с базовыми;
+- диагностика структурных сдвигов из Task 7 Step 5 (β по половинам train, EURCHF SNB-окно);
+- конвенция приоритета вердиктов (Q-1): EG-kill первичен, N-гейт ограничивает только SURVIVED;
+- оговорки: режимный перелом 2023 (раздел 6 спеки), множественность 7 кандидатов (раздел 9), ограничение спред-снимка (раздел 7), сайзинг при β<0 — `abs(β)` (аудит У-5, для будущего production-контура);
 - вердикт по классу: убита / есть SURVIVED / мощность недостаточна (раздел 8 спеки).
 
 - [ ] **Step 3: Полные тесты**
@@ -1282,7 +1516,7 @@ Expected: не хуже baseline (1605 passed, 1 failed pre-existing `test_mql_t
 - [ ] **Step 6: Commit**
 
 ```bash
-git add DATA/pair_spread/backtest.json docs/reports/
+git add DATA/pair_spread/backtest.json DATA/pair_spread/backtest_stress2x.json docs/reports/
 git commit -m "Add pair-spread kill-test results and stage report"
 ```
 
@@ -1297,4 +1531,23 @@ git commit -m "Add pair-spread kill-test results and stage report"
 - Раздел 7 (издержки, комиссия 0, своп XAUXAG, стресс 2x): Task 6 (build_costs, swap в _stage2), Task 8 Step 2 (стресс).
 - Раздел 8 (артефакты, gross/net, причины выхода): Task 6, Task 8.
 - Раздел 9 (предрегистрация, множественность): пороги заморожены в коде Task 4/6; оговорка множественности — в отчёте (Task 8 Step 2).
-- Типы/имена: `fit_beta`, `engle_granger_pvalue`, `half_life_bars`, `episode_bounds`, `spread_mu_sigma`, `screening_metrics`, `verdict_pass`, `run_backtest`, `profit_factor`, `stationary_bootstrap_ci`, `build_costs`, `round_trip_cost_c`, `pair_verdict` — согласованы между задачами.
+- Типы/имена: `fit_beta`, `engle_granger_pvalue`, `half_life_bars`, `episode_bounds`, `spread_mu_sigma`, `screening_metrics`, `verdict_pass`, `run_backtest`, `profit_factor`, `stationary_bootstrap_ci`, `build_costs`, `round_trip_cost_c`, `stress_cost_c`, `pair_verdict`, `BacktestResult` — согласованы между задачами.
+
+## Доработки по аудиту 2026-08-18 (`docs/superpowers/audit.md`)
+
+- К-1: все 4 тестовых файла регистрируют модуль в `sys.modules` до `exec_module` (иначе `@dataclass` падает на Python 3.10).
+- К-2: исправлены 4 контрольных примера (`test_build_log_spreads_beta` — a=b²; `test_half_life_antipersistent_is_inf` вместо random walk; EG-тест независимых рядов — сид 2, p≈0.96; `test_one_position_no_pyramiding` — добавлен завершающий бар) + новый `test_open_position_at_end_dropped_and_counted`.
+- В-1/В-4: длительности эпизодов train в `screening_metrics`, медиана — длина блока bootstrap (замораживается в screening.json).
+- В-2: H1-срез читается из `MT/MQL4/Files/H1/` (независимый экспорт брокера), не ресемплинг M5.
+- В-3: `--stress-costs` в Task 6 + отдельный артефакт `backtest_stress2x.json` (Task 8 Step 1b).
+- В-5: нормировка издержек по последним ценам TRAIN.
+- В-6: своп XAUXAG по стороне сделки (`swap_cost_long`/`swap_cost_short`).
+- У-1: интерфейс `screening_metrics` приведён к 4 аргументам.
+- У-2: f-строка check_data.py исправлена.
+- У-3: Task 7 Step 5 — диагностика β по половинам train и EURCHF SNB-окна.
+- У-5: оговорка сайзинга `abs(β)` — в Global Constraints и отчёте.
+- Q-1: конвенция приоритета вердиктов — в Global Constraints, `pair_verdict` и отчёт.
+- Q-2: Task 0 — регистрация трека в roadmap.md.
+- Q-3: `dropped_open_at_end` в `BacktestResult` и `backtest.json`.
+- Отклонено: У-4 (векторизация bootstrap) — аудит сам помечает неблокирующим; корректность текущей реализации подтверждена тестами.
+- Проверка: весь код плана извлечён и прогнан — 31 тест PASS (до фиксов: 23 passed, 4 failed + 2 файла не загружались).
