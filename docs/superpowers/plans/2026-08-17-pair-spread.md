@@ -133,6 +133,10 @@ git commit -m "Add statsmodels dependency for pair-spread screening"
 - Consumes: MT5-терминал пользователя с открытой историей символов.
 - Produces: CSV вида `time;open;high;low;close;volume` (время серверное, формат `YYYY.MM.DD HH:MM`) для 8 символов × 2 таймфрейма; снимок спецификаций (спред/своп/point). Эти файлы читают Task 3 и Task 6.
 
+Примечание: оба MQL5-скрипта проверены компиляцией через MetaEditor64
+(локальная установка MT5, wine-prefix `~/.mt5`) 2026-08-18: 0 ошибок,
+0 предупреждений у каждого.
+
 - [ ] **Step 1: Написать ExportOHLC.mq5**
 
 ```mql5
