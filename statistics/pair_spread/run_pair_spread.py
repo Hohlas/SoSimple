@@ -4,7 +4,7 @@
 # Обновлён: 2026-08-18
 # Зависимости:
 #   Входные данные:
-#     - MT/MQL4/Files/M5/*_OHLC.csv, MT/MQL4/Files/H1/*_OHLC.csv (Task 2)
+#     - MT/MQL4/Files/<SYM>_<TF>_OHLC.csv (flat-раскладка экспорта MT5, Task 2)
 #     - MT/MQL4/Files/pair_spread_costs_snapshot.csv (Task 2)
 #   Выходные данные:
 #     - DATA/pair_spread/screening.json, DATA/pair_spread/backtest.json,
@@ -35,9 +35,8 @@ from screening import (ScreeningThresholds, engle_granger_pvalue, fit_beta,
 from backtest import profit_factor, run_backtest, stationary_bootstrap_ci
 
 ROOT = Path(__file__).resolve().parents[2]
-M5_DIR = ROOT / 'MT' / 'MQL4' / 'Files' / 'M5'
-H1_DIR = ROOT / 'MT' / 'MQL4' / 'Files' / 'H1'
-COSTS_CSV = ROOT / 'MT' / 'MQL4' / 'Files' / 'pair_spread_costs_snapshot.csv'
+DATA_DIR = ROOT / 'MT' / 'MQL4' / 'Files'
+COSTS_CSV = DATA_DIR / 'pair_spread_costs_snapshot.csv'
 OUT_DIR = ROOT / 'DATA' / 'pair_spread'
 
 THRESHOLDS = ScreeningThresholds()  # заморожено спекой
@@ -79,9 +78,9 @@ def pair_verdict(m: dict) -> str:
     return 'KILLED'
 
 
-def _load_legs(tf_dir: Path) -> dict[str, pd.DataFrame]:
+def _load_legs(tf: str) -> dict[str, pd.DataFrame]:
     symbols = sorted({s for c in CANDIDATES.values() for s in c['legs']})
-    return {s: load_ohlc_csv(tf_dir / f'{s}_OHLC.csv') for s in symbols}
+    return {s: load_ohlc_csv(DATA_DIR / f'{s}_{tf}_OHLC.csv') for s in symbols}
 
 
 def _stage1_for_tf(legs: dict[str, pd.DataFrame], costs: dict, tf: str) -> dict:
@@ -93,21 +92,20 @@ def _stage1_for_tf(legs: dict[str, pd.DataFrame], costs: dict, tf: str) -> dict:
         train_mask = a_close.index <= TRAIN_END
         a_log = np.log(a_close.to_numpy(dtype=float))
         b_log = np.log(b_close.to_numpy(dtype=float))
-        beta = fit_beta(a_log[train_mask.to_numpy()], b_log[train_mask.to_numpy()])
+        beta = fit_beta(a_log[train_mask], b_log[train_mask])
         s = build_log_spreads(a_close, b_close, beta)
         s_train = s[s.index <= TRAIN_END]
         z_train = (s_train - s_train.mean()) / s_train.std(ddof=1)
         # нормировка издержек — последние цены TRAIN, не test (аудит В-5)
-        a_train_close = a_close[train_mask.to_numpy()]
-        b_train_close = b_close[train_mask.to_numpy()]
+        a_train_close = a_close[train_mask]
+        b_train_close = b_close[train_mask]
         cost_c = round_trip_cost_c(costs[sym_a]['spread_price'], costs[sym_b]['spread_price'],
                                    float(a_train_close.iloc[-1]),
                                    float(b_train_close.iloc[-1]), beta)
         metrics = screening_metrics(s_train, z_train, cost_c, THRESHOLDS)
         metrics.update({
             'beta': beta,
-            'coint_p': engle_granger_pvalue(a_log[train_mask.to_numpy()],
-                                            b_log[train_mask.to_numpy()]),
+            'coint_p': engle_granger_pvalue(a_log[train_mask], b_log[train_mask]),
             'half_life_bars': half_life_bars(s_train),
             'mu_train': float(s_train.mean()),
             'sigma_train': float(s_train.std(ddof=1)),
@@ -135,9 +133,9 @@ def _stage2(legs_m5: dict[str, pd.DataFrame], screening_out: dict, costs: dict,
         idx = s_sig.index.intersection(s_exec.index)
         s_sig, s_exec = s_sig.loc[idx], s_exec.loc[idx]
         test_mask = idx >= TEST_START
-        z_test = ((s_sig - mu) / sigma).to_numpy()[test_mask.to_numpy()]
-        s_test = s_exec.to_numpy()[test_mask.to_numpy()]
-        times = idx.to_numpy()[test_mask.to_numpy()]
+        z_test = ((s_sig - mu) / sigma).to_numpy()[test_mask]
+        s_test = s_exec.to_numpy()[test_mask]
+        times = idx.to_numpy()[test_mask]
         cost_c = stress_cost_c(m['cost_c'], cost_factor)
         swap_cost_long = swap_cost_short = 0.0
         if name == 'XAUXAG':
@@ -167,8 +165,8 @@ def _stage2(legs_m5: dict[str, pd.DataFrame], screening_out: dict, costs: dict,
             'expected_block_bars': expected_block,
             'cost_factor': cost_factor,
             'eg_p_test': engle_granger_pvalue(
-                np.log(a_c.loc[idx[test_mask.to_numpy()]].to_numpy(dtype=float)),
-                np.log(b_c.loc[idx[test_mask.to_numpy()]].to_numpy(dtype=float))),
+                np.log(a_c.loc[idx[test_mask]].to_numpy(dtype=float)),
+                np.log(b_c.loc[idx[test_mask]].to_numpy(dtype=float))),
             'exit_reasons': {r: sum(1 for t in trades if t.exit_reason == r)
                              for r in ('revert', 'stop', 'timeout')},
             'pnl_by_reason': {r: float(sum(t.pnl_net for t in trades if t.exit_reason == r))
@@ -192,10 +190,10 @@ def main() -> int:
     screening_path = OUT_DIR / 'screening.json'
 
     if args.stage in ('1', 'all'):
-        legs_m5 = _load_legs(M5_DIR)
+        legs_m5 = _load_legs('M5')
         # H1 — независимая агрегация брокера (экспорт MT5, Task 2),
         # не ресемплинг M5 (аудит В-2, спека раздел 3.3)
-        legs_h1 = _load_legs(H1_DIR)
+        legs_h1 = _load_legs('H1')
         out_m5 = _stage1_for_tf(legs_m5, costs, 'M5')
         out_h1 = _stage1_for_tf(legs_h1, costs, 'H1')
         payload = {'M5': out_m5, 'H1': out_h1}
@@ -209,7 +207,7 @@ def main() -> int:
             return 0
 
     screening_out = json.loads(screening_path.read_text())['M5']
-    legs_m5 = _load_legs(M5_DIR)
+    legs_m5 = _load_legs('M5')
     stage2 = _stage2(legs_m5, screening_out, costs, cost_factor=args.stress_costs)
     if args.stress_costs == 1.0:
         backtest_path = OUT_DIR / 'backtest.json'

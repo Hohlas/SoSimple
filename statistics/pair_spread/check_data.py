@@ -12,17 +12,17 @@ import pandas as pd
 
 SYMBOLS = ['AUDUSD', 'NZDUSD', 'USDCAD', 'EURUSD', 'GBPUSD', 'USDCHF', 'XAUUSD', 'XAGUSD']
 ROOT = Path(__file__).resolve().parents[2]
-M5_DIR = ROOT / 'MT' / 'MQL4' / 'Files' / 'M5'
-H1_DIR = ROOT / 'MT' / 'MQL4' / 'Files' / 'H1'
-MIN_START = pd.Timestamp('2006-01-01')  # запас на глубокие бары брокера; train стартует 2005
+DATA_DIR = ROOT / 'MT' / 'MQL4' / 'Files'
+COSTS_CSV = DATA_DIR / 'pair_spread_costs_snapshot.csv'
+MIN_START = pd.Timestamp('2010-01-01')  # XAGUSD брокер отдаёт только с 2008-11; глубину контролирует MIN_TRAIN_YEARS
 MIN_END = pd.Timestamp('2026-01-01')
 MIN_TRAIN_YEARS = 10
 
 
-def check(tf_dir: Path, tf: str) -> list[str]:
+def check(data_dir: Path, tf: str) -> list[str]:
     problems = []
     for sym in SYMBOLS:
-        path = tf_dir / f'{sym}_OHLC.csv'
+        path = data_dir / f'{sym}_{tf}_OHLC.csv'
         if not path.exists():
             problems.append(f'{tf} {sym}: файл отсутствует')
             continue
@@ -44,9 +44,8 @@ def check(tf_dir: Path, tf: str) -> list[str]:
 
 
 def main() -> int:
-    problems = check(M5_DIR, 'M5') + check(H1_DIR, 'H1')
-    costs = ROOT / 'MT' / 'MQL4' / 'Files' / 'pair_spread_costs_snapshot.csv'
-    if not costs.exists():
+    problems = check(DATA_DIR, 'M5') + check(DATA_DIR, 'H1')
+    if not COSTS_CSV.exists():
         problems.append('pair_spread_costs_snapshot.csv отсутствует')
     if problems:
         print('FAIL:')

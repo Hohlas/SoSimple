@@ -40,7 +40,12 @@ def fit_beta(a_log: np.ndarray | pd.Series, b_log: np.ndarray | pd.Series) -> fl
 
 
 def engle_granger_pvalue(a_log: np.ndarray | pd.Series, b_log: np.ndarray | pd.Series) -> float:
-    _, p, _ = coint(np.asarray(a_log, dtype=float), np.asarray(b_log, dtype=float), trend='c')
+    # autolag='bic' + maxlag=20: прагматичный выбор для M5-рядов в сотни тысяч
+    # баров. BIC состоятелен и сильнее штрафует за лаги (быстрее сходимость).
+    # maxlag=20 покрывает горизонт реакции ~100 мин; больше — избыточно для
+    # скрининговой диагностики коинтеграции. Фиксируется в отчёте этапа.
+    _, p, _ = coint(np.asarray(a_log, dtype=float), np.asarray(b_log, dtype=float),
+                    trend='c', method='aeg', autolag='bic', maxlag=20)
     return float(p)
 
 

@@ -14,14 +14,28 @@
 
 ## ACTIVE
 
-### Pair-spread kill-test (idea-01)
+_(нет активного трека — pair-spread kill-test закрыт 2026-08-27 по отчёту
+`docs/reports/2026-08-27-pair-spread.md`: все 7 кандидатов убиты на Stage 1,
+decision `close`. Следующий ACTIVE-трек определяется решением пользователя:
+идея 2 роэдмэпа — OCO-стрэддл, или другой приоритет.)_
 
-Status: план исполняется (`docs/superpowers/plans/2026-08-17-pair-spread.md`).
-Предрегистрированный двухступенчатый kill-тест парного статистического
-арбитража, RESEARCH_ONLY/DIAGNOSTIC_ONLY, без `locked_test`.
+---
 
-Next action: исполнение плана по задачам; вердикты — по спеке
-`docs/superpowers/specs/2026-08-17-pair-spread-design.md`.
+## CLOSED
+
+### Pair-spread kill-test (idea-01) — KILLED 2026-08-27
+
+План: `docs/superpowers/plans/2026-08-17-pair-spread.md`.
+Отчёт: `docs/reports/2026-08-27-pair-spread.md`.
+Ветка: `feature/idea-01-pair-spread`.
+
+Итог: предрегистрированный двухступенчатый kill-тест парного статистического
+арбитража на Forex (лог-спред, OLS-β, z-score mean-reversion, RESEARCH_ONLY)
+завершён на ступени 1 — все 7 пар (AUDNZD, AUDCAD, NZDCAD, EURGBP, EURCHF,
+GBPCHF, XAUXAG) убиты на train 2005–2022 по M5 и H1. Stage 2 не запускалась.
+
+Decision: `close` — тема парного статистического арбитража данного класса
+закрыта; переход к идее 2 роэдмэпа (OCO-стрэддл) или другому приоритету.
 
 ---
 

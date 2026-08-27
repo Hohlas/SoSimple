@@ -1,0 +1,365 @@
+{
+  "M5": {
+    "tf": "M5",
+    "thresholds": {
+      "coint_p_max": 0.05,
+      "half_life_min_bars": 6.0,
+      "half_life_max_bars": 2880.0,
+      "min_episodes_per_year": 5.0,
+      "entry_z": 2.0
+    },
+    "candidates": {
+      "AUDNZD": {
+        "n_episodes": 2,
+        "episodes_per_year": 0.08531885073580939,
+        "p75_abs_ds": 0.0003922840835711497,
+        "median_episode_deviation": 0.1280536686919308,
+        "episode_durations_bars": [
+          9082,
+          190201
+        ],
+        "median_episode_duration_bars": 99641.5,
+        "cost_c": 5.871615411976692e-05,
+        "beta": 0.9324694115550178,
+        "coint_p": 0.28258403485838246,
+        "half_life_bars": 31362.278994271717,
+        "mu_train": 0.10776376444375543,
+        "sigma_train": 0.07305138067404052,
+        "pass": false,
+        "kill_reasons": [
+          "EG p 0.2826 > 0.05",
+          "half-life 31362.3 \u0432\u043d\u0435 [6.0, 2880.0]",
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.09 < 5.0"
+        ]
+      },
+      "AUDCAD": {
+        "n_episodes": 9,
+        "episodes_per_year": 0.3838899918252949,
+        "p75_abs_ds": 0.00044337257444260203,
+        "median_episode_deviation": 0.11404578505987864,
+        "episode_durations_bars": [
+          8824,
+          29598,
+          9561,
+          6513,
+          55896,
+          28779,
+          39341,
+          8753,
+          22721
+        ],
+        "median_episode_duration_bars": 22721.0,
+        "cost_c": 4.76905261273266e-05,
+        "beta": -1.242947672005614,
+        "coint_p": 0.0022744576442568472,
+        "half_life_bars": 18764.768601473163,
+        "mu_train": -0.020193171993479662,
+        "sigma_train": 0.06110674786759225,
+        "pass": false,
+        "kill_reasons": [
+          "half-life 18764.8 \u0432\u043d\u0435 [6.0, 2880.0]",
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.38 < 5.0"
+        ]
+      },
+      "NZDCAD": {
+        "n_episodes": 4,
+        "episodes_per_year": 0.16870669745958428,
+        "p75_abs_ds": 0.0004801920860577624,
+        "median_episode_deviation": 0.19351863247722312,
+        "episode_durations_bars": [
+          111599,
+          15303,
+          1485,
+          40176
+        ],
+        "median_episode_duration_bars": 27739.5,
+        "cost_c": 4.7079479008826976e-05,
+        "beta": -1.0543004336997892,
+        "coint_p": 0.22337083688556092,
+        "half_life_bars": 45565.75030315712,
+        "mu_train": -0.19386996807657275,
+        "sigma_train": 0.10464186381533874,
+        "pass": false,
+        "kill_reasons": [
+          "EG p 0.2234 > 0.05",
+          "half-life 45565.8 \u0432\u043d\u0435 [6.0, 2880.0]",
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.17 < 5.0"
+        ]
+      },
+      "EURGBP": {
+        "n_episodes": 1,
+        "episodes_per_year": 0.04272929340196537,
+        "p75_abs_ds": 0.0002691968490580454,
+        "median_episode_deviation": 0.23634685959282517,
+        "episode_durations_bars": [
+          223919
+        ],
+        "median_episode_duration_bars": 223919.0,
+        "cost_c": 2.7558279316374516e-05,
+        "beta": 0.5365791713770114,
+        "coint_p": 0.6469480727079249,
+        "half_life_bars": 168616.34181966822,
+        "mu_train": -0.06035892485611477,
+        "sigma_train": 0.11473742956701809,
+        "pass": false,
+        "kill_reasons": [
+          "EG p 0.6469 > 0.05",
+          "half-life 168616.3 \u0432\u043d\u0435 [6.0, 2880.0]",
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.04 < 5.0"
+        ]
+      },
+      "EURCHF": {
+        "n_episodes": 1,
+        "episodes_per_year": 0.04282448118185016,
+        "p75_abs_ds": 0.00024109432210188408,
+        "median_episode_deviation": 0.2246743412054034,
+        "episode_durations_bars": [
+          69510
+        ],
+        "median_episode_duration_bars": 69510.0,
+        "cost_c": 3.600245927062843e-05,
+        "beta": -0.4001378039548892,
+        "coint_p": 0.8825910626680905,
+        "half_life_bars": 258469.52671714462,
+        "mu_train": 0.20919825884681267,
+        "sigma_train": 0.110988842196761,
+        "pass": false,
+        "kill_reasons": [
+          "EG p 0.8826 > 0.05",
+          "half-life 258469.5 \u0432\u043d\u0435 [6.0, 2880.0]",
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.04 < 5.0"
+        ]
+      },
+      "GBPCHF": {
+        "n_episodes": 2,
+        "episodes_per_year": 0.08564896236370032,
+        "p75_abs_ds": 0.00033765867206775324,
+        "median_episode_deviation": 0.25752520857878924,
+        "episode_durations_bars": [
+          83275,
+          27210
+        ],
+        "median_episode_duration_bars": 55242.5,
+        "cost_c": 2.4059145037472237e-05,
+        "beta": 0.17393058920628848,
+        "coint_p": 0.7193904423145442,
+        "half_life_bars": 170501.73538616684,
+        "mu_train": 0.411172833807558,
+        "sigma_train": 0.13375884819982237,
+        "pass": false,
+        "kill_reasons": [
+          "EG p 0.7194 > 0.05",
+          "half-life 170501.7 \u0432\u043d\u0435 [6.0, 2880.0]",
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.09 < 5.0"
+        ]
+      },
+      "XAUXAG": {
+        "n_episodes": 3,
+        "episodes_per_year": 0.21223126089482858,
+        "p75_abs_ds": 0.00039696452995308107,
+        "median_episode_deviation": 0.21814907292347208,
+        "episode_durations_bars": [
+          7685,
+          27526,
+          62815
+        ],
+        "median_episode_duration_bars": 27526.0,
+        "cost_c": 0.0012234842906773738,
+        "beta": 0.5059304833037689,
+        "coint_p": 0.5943570533253939,
+        "half_life_bars": 79431.35215961412,
+        "mu_train": 5.721187572788329,
+        "sigma_train": 0.13514631861142173,
+        "pass": false,
+        "kill_reasons": [
+          "EG p 0.5944 > 0.05",
+          "half-life 79431.4 \u0432\u043d\u0435 [6.0, 2880.0]",
+          "cost 0.001223 > P75|ds| 0.000397",
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.21 < 5.0"
+        ]
+      }
+    }
+  },
+  "H1": {
+    "tf": "H1",
+    "thresholds": {
+      "coint_p_max": 0.05,
+      "half_life_min_bars": 6.0,
+      "half_life_max_bars": 2880.0,
+      "min_episodes_per_year": 5.0,
+      "entry_z": 2.0
+    },
+    "candidates": {
+      "AUDNZD": {
+        "n_episodes": 3,
+        "episodes_per_year": 0.10377403163178331,
+        "p75_abs_ds": 0.001015499627127714,
+        "median_episode_deviation": 0.12773422468125206,
+        "episode_durations_bars": [
+          760,
+          15953,
+          671
+        ],
+        "median_episode_duration_bars": 760.0,
+        "cost_c": 5.847687039572669e-05,
+        "beta": 0.924875383647015,
+        "coint_p": 0.27845258653266425,
+        "half_life_bars": 4727.122324523998,
+        "mu_train": 0.10541060066004534,
+        "sigma_train": 0.07250399699885587,
+        "pass": false,
+        "kill_reasons": [
+          "EG p 0.2785 > 0.05",
+          "half-life 4727.1 \u0432\u043d\u0435 [6.0, 2880.0]",
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.10 < 5.0"
+        ]
+      },
+      "AUDCAD": {
+        "n_episodes": 10,
+        "episodes_per_year": 0.33700867318693484,
+        "p75_abs_ds": 0.0013317624444179332,
+        "median_episode_deviation": 0.11691066205175496,
+        "episode_durations_bars": [
+          225,
+          526,
+          802,
+          2782,
+          933,
+          515,
+          4372,
+          2467,
+          3272,
+          1080
+        ],
+        "median_episode_duration_bars": 1006.5,
+        "cost_c": 4.741711199831523e-05,
+        "beta": -1.2244338443808027,
+        "coint_p": 0.002583485506315888,
+        "half_life_bars": 2050.4240164163534,
+        "mu_train": -0.022217823070856558,
+        "sigma_train": 0.06234411347753868,
+        "pass": false,
+        "kill_reasons": [
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.34 < 5.0"
+        ]
+      },
+      "NZDCAD": {
+        "n_episodes": 3,
+        "episodes_per_year": 0.10377403163178331,
+        "p75_abs_ds": 0.0014472112938899162,
+        "median_episode_deviation": 0.1917754600573247,
+        "episode_durations_bars": [
+          10736,
+          123,
+          3384
+        ],
+        "median_episode_duration_bars": 3384.0,
+        "cost_c": 4.745250814550579e-05,
+        "beta": -1.0795595421462896,
+        "coint_p": 0.26653282672689455,
+        "half_life_bars": 5322.665417869624,
+        "mu_train": -0.19138049605637972,
+        "sigma_train": 0.10593017731935825,
+        "pass": false,
+        "kill_reasons": [
+          "EG p 0.2665 > 0.05",
+          "half-life 5322.7 \u0432\u043d\u0435 [6.0, 2880.0]",
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.10 < 5.0"
+        ]
+      },
+      "EURGBP": {
+        "n_episodes": 1,
+        "episodes_per_year": 0.033744456762749446,
+        "p75_abs_ds": 0.00085207317681954,
+        "median_episode_deviation": 0.23643123818123038,
+        "episode_durations_bars": [
+          18129
+        ],
+        "median_episode_duration_bars": 18129.0,
+        "cost_c": 2.7452562808956097e-05,
+        "beta": 0.5301847498510471,
+        "coint_p": 0.6300243045676246,
+        "half_life_bars": 15305.90689538672,
+        "mu_train": -0.061070447231023985,
+        "sigma_train": 0.11516103411695881,
+        "pass": false,
+        "kill_reasons": [
+          "EG p 0.6300 > 0.05",
+          "half-life 15305.9 \u0432\u043d\u0435 [6.0, 2880.0]",
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.03 < 5.0"
+        ]
+      },
+      "EURCHF": {
+        "n_episodes": 2,
+        "episodes_per_year": 0.038471666315567726,
+        "p75_abs_ds": 0.0007570440648201754,
+        "median_episode_deviation": 0.22317720021127532,
+        "episode_durations_bars": [
+          493,
+          5974
+        ],
+        "median_episode_duration_bars": 3233.5,
+        "cost_c": 3.729436784750106e-05,
+        "beta": -0.42999251925783877,
+        "coint_p": 0.3469849977743131,
+        "half_life_bars": 10547.960124757787,
+        "mu_train": 0.21333080392777995,
+        "sigma_train": 0.11025079699669127,
+        "pass": false,
+        "kill_reasons": [
+          "EG p 0.3470 > 0.05",
+          "half-life 10548.0 \u0432\u043d\u0435 [6.0, 2880.0]",
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.04 < 5.0"
+        ]
+      },
+      "GBPCHF": {
+        "n_episodes": 2,
+        "episodes_per_year": 0.06748891352549889,
+        "p75_abs_ds": 0.0011371309347227715,
+        "median_episode_deviation": 0.2575250419031885,
+        "episode_durations_bars": [
+          7150,
+          2299
+        ],
+        "median_episode_duration_bars": 4724.5,
+        "cost_c": 2.3903628190513352e-05,
+        "beta": 0.17033675038991564,
+        "coint_p": 0.6081579789552736,
+        "half_life_bars": 12870.770902364759,
+        "mu_train": 0.4117544337174448,
+        "sigma_train": 0.13160255616986613,
+        "pass": false,
+        "kill_reasons": [
+          "EG p 0.6082 > 0.05",
+          "half-life 12870.8 \u0432\u043d\u0435 [6.0, 2880.0]",
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.07 < 5.0"
+        ]
+      },
+      "XAUXAG": {
+        "n_episodes": 3,
+        "episodes_per_year": 0.21223126089482858,
+        "p75_abs_ds": 0.0011891689289347251,
+        "median_episode_deviation": 0.2191493779978786,
+        "episode_durations_bars": [
+          737,
+          2243,
+          5281
+        ],
+        "median_episode_duration_bars": 2243.0,
+        "cost_c": 0.0012226599584861419,
+        "beta": 0.5055011137537272,
+        "coint_p": 0.6270850955637208,
+        "half_life_bars": 8167.038522264131,
+        "mu_train": 5.7200811279101975,
+        "sigma_train": 0.13577994457157727,
+        "pass": false,
+        "kill_reasons": [
+          "EG p 0.6271 > 0.05",
+          "half-life 8167.0 \u0432\u043d\u0435 [6.0, 2880.0]",
+          "cost 0.001223 > P75|ds| 0.001189",
+          "\u044d\u043f\u0438\u0437\u043e\u0434\u043e\u0432/\u0433\u043e\u0434 0.21 < 5.0"
+        ]
+      }
+    }
+  }
+}

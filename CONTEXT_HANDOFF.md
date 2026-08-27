@@ -2,47 +2,53 @@
 
 ## Current Active State
 
-- active track: `predictability research / amplitude-ветка` (этап MI Upper Bound закрыт 2026-08-12)
-- latest report: `docs/reports/2026-08-11-mi-upper-bound.md`
-- latest plan (исполнен): `docs/superpowers/plans/2026-08-11-mi-upper-bound.md`
-- latest spec: `docs/superpowers/specs/2026-08-11-mi-upper-bound-design.md`
-- MI-артефакты: `ML/reports/mi_upper_bound.json`, `mi_upper_bound_k10.json`, `mi_upper_bound_k15.json`; `ML/plots/mi_per_feature.png`, `mi_rolling.png`; код `statistics/mi_upper_bound.py`, `statistics/run_mi_upper_bound.py`
-- MT5-трек отложен: `docs/superpowers/plans/2026-08-03-mt5-multi-position-closeout.md` (исполнен 2026-08-07), `docs/superpowers/plans/2026-08-03-mt5-per-magic-multiplexing.md` (pending; очерёдность: сначала per-magic после closeout — closeout уже исполнен)
+- **active track**: нет — pair-spread kill-test (idea-01) закрыт 2026-08-27 (decision `close`)
+- latest report: `docs/reports/2026-08-27-pair-spread.md`
+- latest plan (исполнен): `docs/superpowers/plans/2026-08-17-pair-spread.md`
+- latest spec: `docs/superpowers/specs/2026-08-17-pair-spread-design.md`
+- ветка: `feature/idea-01-pair-spread` (не замёрджена в `main`)
+- артефакты: `DATA/pair_spread/screening.json`; код `statistics/pair_spread/{pair_data,screening,backtest,run_pair_spread,check_data}.py` (31 тест PASS)
 
 ## Decision
 
-MI Upper Bound (`research_scan`, `RESEARCH_ONLY`):
+Pair-spread kill-test (`RESEARCH_ONLY`, `close`):
 
-- Amplitude следующего бара предсказуема: MI 0.010–0.022 bits, permutation p=0.005 на train и validation; диагностический потолок R² ≈ 0.014–0.030.
-- Direction на validation НЕ подтверждена (p=0.229; robustness по k пограничный: p=0.025–0.23); доля класса 0 нестабильна между split'ами (train 3.8%, validation 0.3%).
-- Потолок кратно ниже legacy R² 0.084–0.18 → наиболее вероятное объяснение разрыва — leakage future-derived входов legacy-моделей (ретроспектива 2.6); сравнение ориентировочное (другие горизонты/входы).
-- Rolling MI 2004–2026 стабилен → regime drift в информации признаков не обнаружен (самостоятельный результат относительно ретроспективы 6.3).
-- Принято: фокус следующих веток — amplitude; маргинальный потолок — не строгая joint-граница; fold-CI и rolling — метрики стабильности, в вердикте не участвуют.
+- Все 7 пар-кандидатов (AUDNZD, AUDCAD, NZDCAD, EURGBP, EURCHF, GBPCHF, XAUXAG) убиты на Stage 1 (скрининг на train 2005–2022) по M5 и H1.
+- EG-тест (autolag='bic', maxlag=20) уверенно не отвергает H₀ коинтеграции для 6/7 пар (p 0.22–0.88); AUDCAD формально коинтегрирован (p=0.002), но half-life 18 765 M5-баров (~65 суток) и 0.38 эпизода/год делают пару неоперациональной.
+- β нестабильна между половинами train: drift 7–332% (GBPCHF — смена знака).
+- EURCHF в окне SNB 12.2014–02.2015: структурный сдвиг спреда (диапазон 0.155 log-единиц), но не единственная причина провала EG.
+- Stage 2 пропущена (нет ни одного PASS). Decision: **тема парного статистического арбитража данного класса закрыта**.
 
 MT5 (`DIAGNOSTIC_ONLY`, отложен): single-position policy блокирует 99.2% OPEN_FAILED; fill rate — не причина `BATCH_NO_WINNER`; timing-контракт `feature_time <= time < feature_available_time <= decision_time`; `InpMT5_MaxPositions=1` — канонический режим.
 
+MI Upper Bound (закрыт 2026-08-12): amplitude следующего бара предсказуема (MI 0.01–0.02 bits, p=0.005), direction — нет (p=0.229). Фокус следующих веток — amplitude.
+
 ## Current Diagnostic Facts
 
-- MI (k=5, bits): train direction 0.0041 (p=0.005) / amplitude 0.0222 (p=0.005); validation direction 0.0027 (p=0.229) / amplitude 0.0102 (p=0.005).
-- Fold-CI на validation смещён вверх (конечновыборочное смещение KSG на фолдах ~898 строк) — только метрика стабильности.
-- Топ-признаки: `row_strong_share_*` (оба таргета), `session_hour` важен для amplitude; группа time не доминирует.
-- `statistics/data_contract_smoke_check.py` устарел: FAIL по `target_*_H6_val` (колонки нет ни в одном labeled CSV) — отдельная задача на починку.
-- MT5: `ML/reports/mt5_execution_loop/batch/batch_summary.json` — `BATCH_NO_WINNER`; `diagnostics/signal_timing_check.json` — 32/32, `bad_files=0`; `diagnostics/position_ordinal_pnl.json` — PF по ordinal для max=64 пилота.
+- Screening.json: ни одной PASS-пары по 5 гейтам (EG p, half-life, episodes/year, cost<P75|Δs|, median deviation>cost). Согласованность M5↔H1 по pass/kill полная.
+- Episode counts: 1–9 эпизодов за 18 лет на M5 (AUDCAD максимум 9). Это не торговые эпизоды, а макро-режимы.
+- XAGUSD брокер отдаёт только с 2008-11-07: train XAUXAG ~14 лет вместо 18 (MIN_TRAIN_YEARS=10 проходит).
+- Pragmatic EG: `autolag='bic'`, `maxlag=20` (дефолт AIC с `maxlag~100` на 500k M5-барах считался десятки минут и 40GB RAM). Вердикт от выбора не зависит.
+- Pre-existing test failure: `test_mql_telemetry_params_csv_contract.py::test_tester_ini_selects_telemetry_backtest_row` (дрейф tester .ini, к pair-spread отношения не имеет).
 
 ## Do Not Do
 
-- Не трактовать маргинальный MI-потолок как строгую границу R² и не делать торговых выводов из research_only результата («прибыльно», «готово», «можно запускать» запрещены).
-- Не строить sign-стратегии на direction по итогам этого этапа; не выбирать k по robustness (k=5 зафиксирован до запуска).
-- Не открывать `locked_test` для выбора; не выбирать нового winner из MT5-диагностик; не пускать `latency_bars>0` в дефолтный batch-отбор.
+- Не пытаться «спасти» pair-spread идею пересмотром порогов, окон или состава пар — тема закрыта по предрегистрированному протоколу. Переоткрытие требует нового плана и отдельной идеи.
+- Не трактовать AUDCAD EG p=0.002 как намёк на работоспособность: half-life и эпизоды/год убивают пару независимо.
+- Не смешивать MI Upper Bound (amplitude PASS, direction FAIL) с pair-spread (оба закрыты независимо).
+- Не открывать `locked_test` для нового выбора winner без frozen protocol.
+- Не делать торговых выводов из RESEARCH_ONLY/DIAGNOSTIC_ONLY результатов.
 
 ## Next Step
 
-1. MI: probe joint MI (npeet, пониженная размерность, топ-признаки по MI) с замороженными условиями по методологии 00; далее — amplitude-ветка моделей (таргет amplitude, live-safe 42 признака).
-2. Починить `statistics/data_contract_smoke_check.py` (устаревшие колонки `target_*_H6_val`).
-3. MT5 при возобновлении: план per-magic multiplexing (после исполненного closeout), max verdict `DIAGNOSTIC_ONLY`.
+1. Определить следующий ACTIVE-трек: идея 2 роэдмэпа (OCO-стрэддл) или другой приоритет (`docs/superpowers/roadmap.md`, секция NEXT_AFTER_MT5_HYGIENE).
+2. Опционально: замёрджить `feature/idea-01-pair-spread` в `main` (код стабилен, 31 тест PASS, 6 коммитов).
+3. MI: probe joint MI (npeet, пониженная размерность, топ-признаки по MI) с замороженными условиями; далее amplitude-ветка моделей.
+4. Починить `statistics/data_contract_smoke_check.py` (устаревшие колонки `target_*_H6_val`).
+5. MT5 при возобновлении: план per-magic multiplexing (после исполненного closeout), max verdict `DIAGNOSTIC_ONLY`.
 
 ## Verification
 
-- `./.venv/bin/python -m pytest tests/test_mi_upper_bound.py -q` → 8 passed.
-- Числа отчёта сверены с JSON-артефактами аудитом 2026-08-12 (расхождение отчёт ↔ артефакт отсутствует).
-- Полный `./.venv/bin/python -m pytest tests/ -q` → 1605 passed, 1 failed: `test_mql_telemetry_params_csv_contract.py::test_tester_ini_selects_telemetry_backtest_row` (pre-existing дрейф tester `.ini`: `BackTest=0` вместо `BackTest=2`; к MI-этапу отношения не имеет).
+- `./.venv/bin/python -m pytest tests/test_pair_spread_*.py -q` → 31 passed.
+- Полный `./.venv/bin/python -m pytest tests/ -q` → 1636 passed, 1 failed (pre-existing `test_mql_telemetry_params_csv_contract.py`; к этапу отношения не имеет).
+- Stage 1 скрининг воспроизводим: `./.venv/bin/python statistics/pair_spread/run_pair_spread.py --stage 1` → `DATA/pair_spread/screening.json` (12 280 байт).
