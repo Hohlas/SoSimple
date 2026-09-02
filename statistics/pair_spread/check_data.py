@@ -14,7 +14,9 @@ SYMBOLS = ['AUDUSD', 'NZDUSD', 'USDCAD', 'EURUSD', 'GBPUSD', 'USDCHF', 'XAUUSD',
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / 'MT' / 'MQL4' / 'Files'
 COSTS_CSV = DATA_DIR / 'pair_spread_costs_snapshot.csv'
-MIN_START = pd.Timestamp('2010-01-01')  # XAGUSD брокер отдаёт только с 2008-11; глубину контролирует MIN_TRAIN_YEARS
+MIN_START = pd.Timestamp('2010-01-01')  # XAGUSD брокер отдаёт только с 2008-11;
+                                         # 2010 выбран круглым порогом с запасом;
+                                         # реальную глубину контролирует MIN_TRAIN_YEARS=10
 MIN_END = pd.Timestamp('2026-01-01')
 MIN_TRAIN_YEARS = 10
 

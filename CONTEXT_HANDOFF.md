@@ -15,7 +15,7 @@ Pair-spread kill-test (`RESEARCH_ONLY`, `close`):
 
 - Все 7 пар-кандидатов (AUDNZD, AUDCAD, NZDCAD, EURGBP, EURCHF, GBPCHF, XAUXAG) убиты на Stage 1 (скрининг на train 2005–2022) по M5 и H1.
 - EG-тест (autolag='bic', maxlag=20) уверенно не отвергает H₀ коинтеграции для 6/7 пар (p 0.22–0.88); AUDCAD формально коинтегрирован (p=0.002), но half-life 18 765 M5-баров (~65 суток) и 0.38 эпизода/год делают пару неоперациональной.
-- β нестабильна между половинами train: drift 7–332% (GBPCHF — смена знака).
+- β нестабильна между половинами train: drift 7–332% (GBPCHF — 4.3× рост модуля при сохранении знака; пулированный β полного train противоположен по знаку обеим половинам).
 - EURCHF в окне SNB 12.2014–02.2015: структурный сдвиг спреда (диапазон 0.155 log-единиц), но не единственная причина провала EG.
 - Stage 2 пропущена (нет ни одного PASS). Decision: **тема парного статистического арбитража данного класса закрыта**.
 
@@ -42,7 +42,7 @@ MI Upper Bound (закрыт 2026-08-12): amplitude следующего бар�
 ## Next Step
 
 1. Определить следующий ACTIVE-трек: идея 2 роэдмэпа (OCO-стрэддл) или другой приоритет (`docs/superpowers/roadmap.md`, секция NEXT_AFTER_MT5_HYGIENE).
-2. Опционально: замёрджить `feature/idea-01-pair-spread` в `main` (код стабилен, 31 тест PASS, 6 коммитов).
+2. Опционально: замёрджить `feature/idea-01-pair-spread` в `main` (код стабилен, 31 тест PASS, 13 коммитов опережают `main`).
 3. MI: probe joint MI (npeet, пониженная размерность, топ-признаки по MI) с замороженными условиями; далее amplitude-ветка моделей.
 4. Починить `statistics/data_contract_smoke_check.py` (устаревшие колонки `target_*_H6_val`).
 5. MT5 при возобновлении: план per-magic multiplexing (после исполненного closeout), max verdict `DIAGNOSTIC_ONLY`.
