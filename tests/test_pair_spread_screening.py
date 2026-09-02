@@ -117,3 +117,27 @@ def test_verdict_kills_on_each_gate():
         m = dict(base, **{key: bad})
         ok, reasons = screening.verdict_pass(m, th)
         assert not ok and len(reasons) >= 1
+
+
+def test_screening_metrics_empty_input_raises():
+    idx = pd.date_range('2010-01-01', periods=0, freq='5min')
+    s = pd.Series([], index=idx, dtype=float)
+    z = pd.Series([], index=idx, dtype=float)
+    try:
+        screening.screening_metrics(s, z, cost_c=0.001,
+                                    thresholds=screening.ScreeningThresholds())
+        assert False, "expected ValueError"
+    except ValueError as e:
+        assert "empty" in str(e).lower()
+
+
+def test_screening_metrics_length_mismatch_raises():
+    idx = pd.date_range('2010-01-01', periods=5, freq='5min')
+    s = pd.Series(np.ones(5), index=idx)
+    z = pd.Series(np.ones(4), index=idx[:4])
+    try:
+        screening.screening_metrics(s, z, cost_c=0.001,
+                                    thresholds=screening.ScreeningThresholds())
+        assert False, "expected ValueError"
+    except ValueError as e:
+        assert "mismatch" in str(e).lower()

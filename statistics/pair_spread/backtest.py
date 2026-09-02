@@ -58,6 +58,13 @@ def run_backtest(z: np.ndarray, s_exec: np.ndarray, times: np.ndarray,
     (аудит В-6: своп комбинированной позиции зависит от стороны)."""
     z = np.asarray(z, dtype=float)
     s_exec = np.asarray(s_exec, dtype=float)
+    times = np.asarray(times)
+    if len(z) == 0:
+        raise ValueError("run_backtest: z is empty")
+    if len(s_exec) != len(z):
+        raise ValueError(f"run_backtest: length mismatch s_exec={len(s_exec)} vs z={len(z)}")
+    if len(times) != len(z):
+        raise ValueError(f"run_backtest: length mismatch times={len(times)} vs z={len(z)}")
     n = len(z)
     result = BacktestResult()
     need_zero_cross = False

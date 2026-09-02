@@ -1452,7 +1452,7 @@ def load(name, path):
 pd_mod = load('pair_data', 'statistics/pair_spread/pair_data.py')
 scr = load('screening', 'statistics/pair_spread/screening.py')
 syms = ('AUDUSD', 'NZDUSD', 'USDCAD', 'EURUSD', 'GBPUSD', 'USDCHF', 'XAUUSD', 'XAGUSD')
-legs = {s: pd_mod.load_ohlc_csv(f'MT/MQL4/Files/M5/{s}_OHLC.csv') for s in syms}
+legs = {s: pd_mod.load_ohlc_csv(f'MT/MQL4/Files/{s}_M5_OHLC.csv') for s in syms}
 train_end = pd_mod.TRAIN_END
 for name, cand in pd_mod.CANDIDATES.items():
     a, b = cand['legs']

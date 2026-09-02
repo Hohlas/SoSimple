@@ -2,6 +2,7 @@
 # Файл: statistics/pair_spread/check_data.py
 # Назначение: проверка полноты экспорта M5/H1 перед запуском этапа
 # Использование: ./.venv/bin/python statistics/pair_spread/check_data.py
+# Метод: потоковое чтение чанками (usecols=['time','close']) для памяти
 # =============================================================================
 from __future__ import annotations
 
@@ -19,29 +20,57 @@ MIN_START = pd.Timestamp('2010-01-01')  # XAGUSD брокер отдаёт то�
                                          # реальную глубину контролирует MIN_TRAIN_YEARS=10
 MIN_END = pd.Timestamp('2026-01-01')
 MIN_TRAIN_YEARS = 10
+CHUNKSIZE = 200_000
+
+
+def check_file(path: Path, sym: str, tf: str) -> list[str]:
+    problems = []
+    if not path.exists():
+        problems.append(f'{tf} {sym}: файл отсутствует')
+        return problems
+
+    start = None
+    end = None
+    has_bad_close = False
+    rows = 0
+
+    for chunk in pd.read_csv(path, sep=';', usecols=['time', 'close'], chunksize=CHUNKSIZE):
+        t = pd.to_datetime(chunk['time'], format='%Y.%m.%d %H:%M')
+        if start is None:
+            start = t.min()
+        else:
+            start = min(start, t.min())
+        if end is None:
+            end = t.max()
+        else:
+            end = max(end, t.max())
+        if (chunk['close'] <= 0).any():
+            has_bad_close = True
+        rows += len(chunk)
+
+    if start is None:
+        problems.append(f'{tf} {sym}: файл пуст')
+        return problems
+
+    if start > MIN_START:
+        problems.append(f'{tf} {sym}: старт {start} позже {MIN_START}')
+    if end < MIN_END:
+        problems.append(f'{tf} {sym}: конец {end} раньше {MIN_END}')
+    if has_bad_close:
+        problems.append(f'{tf} {sym}: есть close <= 0')
+    years_train = (pd.Timestamp('2022-12-31') - max(start, pd.Timestamp('2005-01-01'))).days / 365.25
+    if years_train < MIN_TRAIN_YEARS:
+        problems.append(
+            f'{tf} {sym}: train-окно {years_train:.1f} лет < {MIN_TRAIN_YEARS}'
+        )
+    return problems
 
 
 def check(data_dir: Path, tf: str) -> list[str]:
     problems = []
     for sym in SYMBOLS:
         path = data_dir / f'{sym}_{tf}_OHLC.csv'
-        if not path.exists():
-            problems.append(f'{tf} {sym}: файл отсутствует')
-            continue
-        df = pd.read_csv(path, sep=';')
-        t = pd.to_datetime(df['time'], format='%Y.%m.%d %H:%M')
-        start, end = t.min(), t.max()
-        if start > MIN_START:
-            problems.append(f'{tf} {sym}: старт {start} позже {MIN_START}')
-        if end < MIN_END:
-            problems.append(f'{tf} {sym}: конец {end} раньше {MIN_END}')
-        if (df['close'] <= 0).any():
-            problems.append(f'{tf} {sym}: есть close <= 0')
-        years_train = (pd.Timestamp('2022-12-31') - max(start, pd.Timestamp('2005-01-01'))).days / 365.25
-        if years_train < MIN_TRAIN_YEARS:
-            problems.append(
-                f'{tf} {sym}: train-окно {years_train:.1f} лет < {MIN_TRAIN_YEARS}'
-            )
+        problems.extend(check_file(path, sym, tf))
     return problems
 
 

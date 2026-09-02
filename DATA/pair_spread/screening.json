@@ -1,4 +1,26 @@
 {
+  "diagnostics": {
+    "beta_halves_m5": {
+      "AUDNZD": {"beta_half1": 0.952, "beta_half2": 1.337, "drift_pct": 40.0},
+      "AUDCAD": {"beta_half1": -1.199, "beta_half2": -1.277, "drift_pct": 7.0},
+      "NZDCAD": {"beta_half1": -1.157, "beta_half2": -0.802, "drift_pct": 31.0},
+      "EURGBP": {"beta_half1": 1.047, "beta_half2": 0.684, "drift_pct": 35.0},
+      "EURCHF": {"beta_half1": -0.921, "beta_half2": -1.384, "drift_pct": 50.0},
+      "GBPCHF": {"beta_half1": -0.300, "beta_half2": -1.295, "drift_pct": 332.0},
+      "XAUXAG": {"beta_half1": 0.534, "beta_half2": 0.734, "drift_pct": 37.0}
+    },
+    "eurchf_snb_window": {
+      "bars": 17488,
+      "mean": 0.143,
+      "std": 0.050,
+      "min": 0.054,
+      "max": 0.210,
+      "max_abs_delta_s": 0.029,
+      "window_start": "2014-12-01",
+      "window_end": "2015-02-28",
+      "note": "Структурный сдвиг среднего и волатильности при снятии пола SNB; EG-p без 2015 года остаётся >0.3"
+    }
+  },
   "M5": {
     "tf": "M5",
     "thresholds": {

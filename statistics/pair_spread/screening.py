@@ -91,6 +91,12 @@ def episode_bounds(z: pd.Series, entry_z: float = 2.0) -> list[tuple[int, int]]:
 
 def screening_metrics(s_train: pd.Series, z_train: pd.Series, cost_c: float,
                       thresholds: ScreeningThresholds) -> dict:
+    if len(s_train) == 0:
+        raise ValueError("screening_metrics: s_train is empty")
+    if len(z_train) == 0:
+        raise ValueError("screening_metrics: z_train is empty")
+    if len(s_train) != len(z_train):
+        raise ValueError(f"screening_metrics: length mismatch s_train={len(s_train)} vs z_train={len(z_train)}")
     episodes = episode_bounds(z_train, thresholds.entry_z)
     years = max((z_train.index[-1] - z_train.index[0]).days / 365.25, 1e-9)
     ds = s_train.diff().dropna().abs()

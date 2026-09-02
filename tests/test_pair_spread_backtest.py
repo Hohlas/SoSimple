@@ -138,3 +138,22 @@ def test_stationary_bootstrap_ci_bounds():
     lo = backtest.stationary_bootstrap_ci(pnls, expected_block=10, n_resamples=500, seed=7)
     pf = backtest.profit_factor(pnls)
     assert 0.0 < lo <= pf
+
+
+def test_run_backtest_empty_input_raises():
+    try:
+        backtest.run_backtest(np.array([]), np.array([]), np.array([]), round_trip_cost=0.1)
+        assert False, "expected ValueError"
+    except ValueError as e:
+        assert "empty" in str(e).lower()
+
+
+def test_run_backtest_length_mismatch_raises():
+    z = np.array([0.0, 2.5, -0.1, 0.0])
+    s_exec = np.array([10.0, 10.0, 10.5])
+    times = np.array([1, 2, 3, 4])
+    try:
+        backtest.run_backtest(z, s_exec, times, round_trip_cost=0.1)
+        assert False, "expected ValueError"
+    except ValueError as e:
+        assert "mismatch" in str(e).lower()
