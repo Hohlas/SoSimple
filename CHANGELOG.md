@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-08-27] — Pair-Spread Kill-Test (idea-01) (FAIL)
+- **report**: `docs/reports/2026-08-27-pair-spread.md`
+- **topics**: `pair-spread`, `statistical-arbitrage`, `kill-test`, `cointegration`, `engle-granger`, `z-score`, `stationary-bootstrap`
+- **summary**: Предрегистрированный двухступенчатый kill-тест парного статистического арбитража (лог-спред, OLS-β, z-score mean-reversion, RESEARCH_ONLY) завершён досрочно на ступени 1: все 7 кандидатов (AUDNZD, AUDCAD, NZDCAD, EURGBP, EURCHF, GBPCHF, XAUXAG) убиты на train 2005–2022 по M5 и H1. Stage 2 не запускалась. EG-тест (autolag='bic', maxlag=20) уверенно не отвергает H₀ для 6 из 7 пар; AUDCAD формально коинтегрирован (p=0.002), но half-life 65 суток и 0.38 эпизода/год делают пару неоперациональной. β нестабильна между половинами train (drift 7–332%).
+- **artifacts**: `DATA/pair_spread/screening.json`, `statistics/pair_spread/{pair_data,screening,backtest,run_pair_spread,check_data}.py`, `MT/MQL5/Scripts/{ExportOHLC,ExportSymbolSpecs}.mq5`, `tests/test_pair_spread_*.py` (31 тест PASS)
+- **decision**: `close` — тема парного статистического арбитража данного класса закрыта. ACTIVE-трек роэдмэпа переведён в CLOSED. Следующий ACTIVE — по решению пользователя (идея 2: OCO-стрэддл).
+- **notes**: XAGUSD брокер отдаёт только с 2008-11-07 (train XAUXAG ~14 лет вместо 18). Дефолт EG (AIC, maxlag~100) на 500k M5-барах непрактичен — прагматично изменён на BIC/maxlag=20; вердикт от этого не зависит (p далеко от порога).
+
 ## [2026-08-11] — MI Upper Bound: информационный потолок XAUUSD H1 (RESEARCH_ONLY)
 - **report**: `docs/reports/2026-08-11-mi-upper-bound.md`
 - **topics**: `mutual-information`, `ksg`, `r2-ceiling`, `live-safe`, `regime-drift`, `amplitude`

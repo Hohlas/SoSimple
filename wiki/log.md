@@ -907,3 +907,8 @@
 
 - Ingested closed stage `docs/reports/2026-08-11-mi-upper-bound.md` (MI Upper Bound, RESEARCH_ONLY): created `wiki/research/mi-upper-bound.md` and `wiki/concepts/mi-upper-bound.md`; updated `wiki/index.md` (Research + Concepts rows).
 - Key synthesis: amplitude предсказуема (p=0.005 на train/val), direction нет (p=0.229 на val); диагностический R²-потолок 0.006–0.030 кратно ниже legacy R² (0.03–0.18); rolling MI стабилен 2004–2026; fold-CI — стабильность, не доверительный интервал.
+
+# 2026-08-27
+
+- Ingested closed stage `docs/reports/2026-08-27-pair-spread.md` (Pair-Spread Kill-Test idea-01, FAIL): created `wiki/research/pair-spread-kill-test.md`; added row to `wiki/index.md`. Decision `close` — тема парного стат. арбитража данного класса (лог-спред, OLS-β, z-score mean-reversion) закрыта; все 7 кандидатов убиты на Stage 1 по M5 и H1, Stage 2 пропущена.
+- Key synthesis: EG-тест (autolag=bic, maxlag=20) не отвергает H₀ коинтеграции для 6/7 пар; AUDCAD (p=0.002) неоперационален по half-life (65 суток) и эпизодам/год (0.38); β нестабильна между половинами train (drift 7–332%); класс инструментов не обладает mean-reversion свойством для торговли лог-спредом.
