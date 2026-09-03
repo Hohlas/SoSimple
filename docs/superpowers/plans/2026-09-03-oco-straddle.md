@@ -16,15 +16,15 @@ exit_decisions: Stage A KILL (медианный already-moved ≥0.5 или pay
 locked_test_policy: не используется — этап RESEARCH_ONLY / DIAGNOSTIC_ONLY. locked_test остаётся not_opened (ML/reports/entry_based_movement_filter_freeze.json:99,122). Любой результат с PnL/PF на val_eval/low_n_disclosure — не кандидат до нового проверочного цикла с отдельным frozen OCO-правилом (методология 00-research-management, A4-verdicts).
 ```
 
-> **Холодный старт для агента без истории диалога:** Проект SoSimple — 150+ проваленных экспериментов с PF≥1.3, главное узкое место — конверсия амплитудного сигнала в прибыль после издержек (2.11: 57% движения уже случилось к моменту сигнала, 2.12: спред 0.8 режет PF 3.27→1.32 и хронология fill убила locked-кандидата). Заморожен один movement-фильтр (`ML/reports/entry_based_movement_filter_freeze.json` → verdict `FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN`, `locked_test=not_opened`). Его правило: `profile=simple_combined`, `model=extra_trees_small`, `horizon=H3`, `target=max(entry_up_H, entry_dn_H)`, `top_fraction=0.05`, `seeds=[42,43,44]`, `score_agg=median`, `split: train≤2020 / val_select=2021-2023 / val_eval=2023-2025 / low_n_disclosure=2026`. Правило — batch-сегментация: в каждом батче берутся топ-5% по `score`. Это не фиксированный live-порог. Пороги по split лежат в `score_cutoffs.csv` (train 7.77 / val_select 9.02 / val_eval 14.31). Для OCO-теста окна — это строки `scores.csv` где `selected=true`. Ожидаемый OOS для OCO: `val_eval` (333 окна, 6646 строк, 2023-2025) как primary, `low_n_disclosure` (59 окон, 2026) как disclosure. Сигнал `selected` доступен в момент решения (`pre_entry_decision`, `available_at_decision_time=true`). Амплитудный OCO-стрэддл выставляет на `next_open` после сигнала два стопа на расстояниях `±d·ATR` (`d ∈ {0.25,0.5,1.0}`) с OCO-отменой второй ноги и держит позицию H3/H6 баров (трейлинг как в Qoder-протоколе, но предрегистрирован). Издержки: canonical спред 0.4 (в пунктах цены / ATR-единицах — фиксируется в плане до запуска), stress 0.8, slippage 0.2, комиссия 0. Внутрибаровая хронология fill — неразрешённый блокер проекта (2.12) — мандатно требует пессимистичного предвыбранного контракта. Этот план — исследовательский kill-тест, не торговый кандидат.
+> **Холодный старт для агента без истории диалога:** Проект SoSimple — 150+ проваленных экспериментов с PF≥1.3, главное узкое место — конверсия амплитудного сигнала в прибыль после издержек (2.11: 57% движения уже случилось к моменту сигнала, 2.12: спред 0.8 режет PF 3.27→1.32 и хронология fill убила locked-кандидата). Заморожен один movement-фильтр (`ML/reports/entry_based_movement_filter_freeze.json` → verdict `FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN`, `locked_test=not_opened`). Его правило: `profile=simple_combined`, `model=extra_trees_small`, `horizon=H3`, `target=max(entry_up_H, entry_dn_H)`, `top_fraction=0.05`, `seeds=[42,43,44]`, `score_agg=median`, `split: train≤2020 / val_select=2021-2023 / val_eval=2023-2025 / low_n_disclosure=2026`. Правило — batch-сегментация: в каждом батче берутся топ-5% по `score`. Это не фиксированный live-порог. Пороги по split лежат в `score_cutoffs.csv` (train 7.77 / val_select 9.02 / val_eval 14.31). Для OCO-теста окна — это строки `scores.csv` где `selected=true`. Ожидаемый OOS для OCO: `val_eval` (333 окна, 6646 строк, 2023-2025) как primary, `low_n_disclosure` (59 окон, 2026) как disclosure. Сигнал `selected` доступен в момент решения (`pre_entry_decision`, `available_at_decision_time=true`). Амплитудный OCO-стрэддл выставляет на `next_open` после сигнала два стопа на расстояниях `±d·ATR` (`d ∈ {0.5,1.0,1.5}` — по просьбе пользователя, `0.25` слишком мало) с OCO-отменой второй ноги. Размещение ног — два варианта (диверсификация): `от текущей цены close[t] ± d·ATR` и `от границ коридора (max high / min low коридора N баров) ± d·ATR`. Выходы — `fixed H3/H6`, `fixed SL/TP 1–3 ATR`, `trailing = SL` (подтягивается за ценой, см. Task 4). Издержки: canonical спред `0.4`, stress `0.8` для проверки прочности (не для перебора), slippage `0.2`, комиссия `0`. Внутрибаровая хронология fill — неразрешённый блокер проекта (`2.12`) — мандатно требует пессимистичного контракта и `M1/M5` lower-timeframe diagnostic вместо тиков (по уточнению пользователя). План — исследовательский kill-тест, не торговый кандидат. Дополнительно: (а) дневной `топ-5%` вариант — отбор топ-5% `score` внутри каждых календарных суток (в дополнение к глобальному `топ-5% per split`), (б) обратная стратегия «затишье перед бурей» — `краткий ATR < долгий ATR / x`, где `x` выбирается статистикой так, чтобы ситуаций было достаточно (см. Task 2); те же варианты размещения стопов.
 
 ## Global Constraints
 
 - Python только `./.venv/bin/python`; тесты `./.venv/bin/python -m pytest <файл> -q`; зависимости не добавлять без фиксации в `requirements.txt`.
 - Все числа — заморожены этим планом до первого прогона Stage A/B; изменение после просмотра PnL — только документированным решением (методология 00, A3: автовыбор 2.4/2.12 убил кандидатов).
 - Сплит OCO-теста: frozen movement-фильтр уже зафиксирован (`train ≤2020`, `val_select 2021-2023` — выбор правила, `val_eval 2023-2025` — primary OOS для OCO, `low_n_disclosure 2026` — disclosure). Ни одна строка test-OOS не участвует в переоценке β/μ/σ/порогов. `locked_test` не открывается.
-- Execution contract фиксируется до запуска: тип входа — `STOP` (BUY STOP / SELL STOP), цена входа — триггер `entry ± d·ATR` на следующем баре после сигнала, исполнение по триггер-цене + неблагоприятный сдвиг `spread/2 + slippage` (если OHLC — mid), отмена второй ноги OCO в тот же бар, выход — истечение окна H3/H6 (или трейлинг-выход если предзарегистрирован), `next-bar` / `same-bar` хронология — предвыбранный пессимистичный контракт.
-- Canonical spread — главный gate (методология 12); zero-spread — только `DIAGNOSTIC_ONLY` для геометрии; stress-гриды обязательны.
+- Execution contract фиксируется до запуска: тип входа — `STOP` (BUY STOP / SELL STOP), цена входа — триггер `entry ± d·ATR` (`d ∈ {0.5,1.0,1.5}`) на следующем баре после сигнала, исполнение по триггер-цене + неблагоприятный сдвиг `spread/2 + slippage` (если OHLC — mid), отмена второй ноги OCO в тот же бар. Два варианта размещения: `от close[t]` и `от границ коридора (max high / min low за N=20 баров)`. Выход — `fixed H3/H6` или `fixed SL/TP ∈ [1,3] ATR` или `trailing = SL` (трейлинг подтягивается за экстремумом на расстоянии `SL`, см. пояснение в Task 4). `next-bar` / `same-bar` хронология — предвыбранный пессимистичный контракт с `M1/M5` lower-timeframe diagnostic.
+- Canonical spread `0.4` — главный gate (методология 12); stress `0.8` — проверка прочности после выбора прибыльной комбинации, не отдельный перебор для вердикта; zero-spread — только `DIAGNOSTIC_ONLY` для геометрии.
 - `statistics/oco_straddle/` — без `__init__.py`.
 - Sample size gate (методология 06): `val_eval` выбранных окон 333 уже известен; для OCO сделок gate `N≥100` (для вердикта SURVIVED) и минимум 50 окон/год уже проверены в freeze-гейте; Stage B дополнительно требует что сделки покрывают ≥3 месяца (иначе `DIAGNOSTIC_ONLY`).
 - Verdict-статусы — по A4: `RESEARCH_ONLY` максимум для этого этапа; `candidate/production_candidate/confirmed` запрещены без нового проверочного цикла.
@@ -234,8 +234,8 @@ git commit -m "Add frozen movement filter loader for OCO straddle (idea-02)"
 - Test: `tests/test_oco_straddle_check_data.py`
 
 **Interfaces:**
-- Consumes: `DATA/Nero_train_labeled.csv` etc. (если используется для ATR) + `MT/MQL4/Files/XAUUSD_*OHLC.csv` или `MT/MQL4/Files/H1/*.csv` (OHLC для исполнения), `ML/reports/entry_based_movement_filter_freeze_scores.csv` (время окон).
-- Produces: `check_oco_data() -> dict` с `time_alignment_rate`, `atr_missing_rate`, `gap_hours`, `coverage_per_split`; `validate_entry_time_contract(df) -> list[str]` (проверка `feature_time <= signal_time < feature_available_time <= decision_time <= entry_open`); CLI-отчёт `DATA/oco_straddle/data_check.json`.
+- Consumes: `DATA/Nero_train_labeled.csv` etc. (если используется для ATR) + `MT/MQL4/Files/XAUUSD_*OHLC.csv` или `MT/MQL4/Files/H1/*.csv` (OHLC для исполнения), `ML/reports/entry_based_movement_filter_freeze_scores.csv` (время окон), OHLC с `ATR_short` (`fractal_atr` / `ATR 14`) и `ATR_long` (`ATR` / `Atr.Slow`).
+- Produces: `check_oco_data() -> dict` с `time_alignment_rate`, `atr_missing_rate`, `gap_hours`, `coverage_per_split`; `validate_entry_time_contract(df) -> list[str]` (проверка `feature_time <= signal_time < feature_available_time <= decision_time <= entry_open`); `atr_ratio_stats(ratio_series) -> dict[x, {share, N}]` где `ratio = ATR_long / ATR_short`, перебор `x ∈ {1.5,2.0,2.5,3.0}` и выбор `x` где `share 5–20%` и `N≥300` на `val_eval` (для «затишья»); `compute_daily_top5_coverage(scores_df) -> dict` (покрытие дневного топ-5% по годам); CLI-отчёт `DATA/oco_straddle/data_check.json`.
 
 **Методология:** `01-raw-data-inventory` (источник, формат, producer, момент доступности полей), `03-feature-contract-leakage` (feature contract, future-derived, online mismatch), `02-data-pipeline` (эмбарго, нормализация построчно), `06-temporal-split` (embargo 24h уже в freeze-config). Если `check_data.py` из pair-spread уже есть — переиспользовать паттерн потоковой проверки.
 
@@ -284,8 +284,9 @@ Expected: FAIL.
 ```python
 # statistics/oco_straddle/check_data.py
 from __future__ import annotations
-import json
+import json, math
 from pathlib import Path
+import numpy as np
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -318,13 +319,28 @@ def check_oco_data() -> dict:
     for split in ["train","val_select","val_eval","low_n_disclosure"]:
         sub = scores[scores["split"] == split]
         cov[split] = {"total_n": int(len(sub)), "selected_n": int((sub["selected"]==True).sum())}
+    # дневной топ-5% покрытие
+    scores["date"] = pd.to_datetime(scores["time"]).dt.date
+    daily_cov = {}
+    for date, grp in scores.groupby("date"):
+        n = len(grp)
+        k = max(1, int(math.ceil(0.05 * n))) if n >= 20 else 0
+        daily_cov[str(date)] = {"n": n, "k": k}
     # найти первый существующий OHLC
     ohlc_path = next((p for p in OHLC_CANDIDATES if p.exists()), None)
-    res = {"coverage": cov, "ohlc_path": str(ohlc_path) if ohlc_path else None}
+    res = {"coverage": cov, "daily_top5_sample": {"dates": len(daily_cov), "avg_k": float(sum(v["k"] for v in daily_cov.values())/len(daily_cov)) if daily_cov else 0}, "ohlc_path": str(ohlc_path) if ohlc_path else None}
     if ohlc_path:
         ohlc = pd.read_csv(ohlc_path, sep=";" if ohlc_path.suffix==".csv" and ";" in ohlc_path.read_text()[:500] else ",")
         res["ohlc_rows"] = int(len(ohlc))
-        # нормализовать колонки time/open/high/low/close/ATR если есть
+        # ATR ratio для «затишья»: короткий ATR (ATR 14 / fractal_atr) vs долгий (Atr.Slow / ATR)
+        # если оба столбца есть — считаем ratio = long/short и перебор x_grid
+        if "ATR" in ohlc.columns and "fractal_atr" in ohlc.columns:
+            ratio = (ohlc["ATR"] / ohlc["fractal_atr"]).replace([np.inf, -np.inf], np.nan).dropna()
+            x_grid = [1.5, 2.0, 2.5, 3.0]
+            res["quiet_stats"] = {str(x): {"share": float((ratio > x).mean()), "N_val_eval_est": int((ratio > x).mean() * cov.get("val_eval", {}).get("total_n", 6646))} for x in x_grid}
+            # выбрать x где share 5-20% и N≥300
+            candidates = [x for x in x_grid if 0.05 <= (ratio > x).mean() <= 0.20]
+            res["quiet_recommended_x"] = min(candidates, key=lambda x: abs((ratio > x).mean() - 0.10)) if candidates else None
     return res
 
 if __name__ == "__main__":
@@ -360,8 +376,8 @@ git commit -m "Add OCO data-check: OHLC alignment and ATR coverage"
 - Test: `tests/test_oco_straddle_stage_a.py`
 
 **Interfaces:**
-- Consumes: `frozen_loader.load_selected_windows(split_filter="val_eval")` (окна), OHLC (open/high/low/close, ATR), `DATA/Nero_*` если нужно для фрактальных цен (опционально).
-- Produces: `compute_already_moved(rows, ohlc, horizons=(3,6)) -> pd.DataFrame` (колонки `already_up_share`, `already_dn_share`, `share_already_abs_over_50pct` как в `docs/reports/2026-07-02-regression-updn-already-moved-audit.md:77-83`); `idealized_payoff(row, ohlc_window, d_grid=(0.25,0.5,1.0), spread=0.4, slippage=0.2) -> dict[d, payoff]` где `payoff = max(0, max_high - (entry + d·ATR) , (entry - d·ATR) - min_low) - spread - slippage`; `summarize_stage_a(df) -> dict` с медианой доли, долей ≥50%/100%, медианным payoff по каждой `d`; `stage_a_kill(metrics) -> (killed: bool, reasons: list)`.
+- Consumes: `frozen_loader.load_selected_windows(split_filter="val_eval")` (окна) — глобальный топ-5% + дневной топ-5% вариант, OHLC (open/high/low/close, ATR), `DATA/Nero_*` если нужно для фрактальных цен (опционально), статистика `ATR_short / ATR_long` для обратной стратегии.
+- Produces: `compute_already_moved(rows, ohlc, horizons=(3,6)) -> pd.DataFrame` (колонки `already_up_share`, `already_dn_share`, `share_already_abs_over_50pct` как в `docs/reports/2026-07-02-regression-updn-already-moved-audit.md:77-83`); `idealized_payoff(row, ohlc_window, d_grid=(0.5,1.0,1.5), spread=0.4, slippage=0.2, placement="close" | "corridor") -> dict[d, payoff]` где `payoff = max(0, max_high - (entry + d·ATR) , (entry - d·ATR) - min_low) - spread - slippage`; `summarize_stage_a(df) -> dict` с медианой доли, долей ≥50%/100%, медианным payoff по каждой `d` и каждому `placement`; `stage_a_kill(metrics) -> (killed: bool, reasons: list)`. Дополнительно: `compute_daily_top5_windows(scores_df) -> DataFrame` (топ-5% внутри каждых календарных суток) и `compute_quiet_windows(ohlc, atr_short_col, atr_long_col, x_grid) -> dict[x, DataFrame]` для обратной стратегии.
 
 **Методология:** `06b-oracle-preflight` (проверка потолка: идеализированный payoff при идеальном знании будущих high/low внутри окна — это oracle-диагностика, не ML), `05-eda-data-quality` (распределение already-moved), `07b-predictability-gate` (если сигнал только описывает прошлое — Spearman≈0 — то после входа payoff≈0). Если подходящего раздела для OCO-payoff нет — обосновать как комбинацию 06b + 12-costs без обучения.
 
@@ -428,10 +444,10 @@ from __future__ import annotations
 import math
 import pandas as pd, numpy as np
 
-D_GRID = (0.25, 0.5, 1.0)
+D_GRID = (0.5, 1.0, 1.5)
 SPREAD_CANON = 0.4
 SLIPPAGE = 0.2
-SPREAD_STRESS = 0.8
+SPREAD_STRESS = 0.8  # не для перебора kill-версий, а для проверки прочности после выбора (см. Task 6)
 
 def idealized_payoff_for_row(row: dict, window: pd.DataFrame, d: float, spread: float = SPREAD_CANON, slippage: float = SLIPPAGE) -> dict:
     entry = float(row["entry"])
@@ -506,13 +522,17 @@ git commit -m "Add OCO Stage A: idealized payoff and already-moved diagnostic"
 - Test: `tests/test_oco_straddle_stage_b.py`
 
 **Interfaces:**
-- Consumes: `frozen_loader.load_selected_windows("val_eval")`, OHLC-ряды, `stage_a.D_GRID`, cost-модель.
-- Produces: `@dataclass OcoTrade(entry_time, exit_time, side, entry_price, exit_price, pnl_gross, pnl_net, exit_reason, d, spread_mode)`; `run_oco_backtest(windows, ohlc, d, spread, slippage, horizon_bars, fill_contract) -> list[OcoTrade]`; `profit_factor(pnls) -> float`; `stationary_bootstrap_ci(pnls, expected_block, n_resamples=10000, seed=0) -> float` (BS_p05); `yearly_pf(trades) -> dict[year, PF]`; `compare_vs_baseline(oco_pf, baseline_pf) -> dict` (дельта, bootstrap CI).
+- Consumes: `frozen_loader.load_selected_windows("val_eval")` (глобальный топ-5% + дневной топ-5% + окна «затишья»), OHLC-ряды `M1/M5` для проверки внутрибаровой хронологии, `stage_a.D_GRID=(0.5,1.0,1.5)`, cost-модель, сетка выходов `SL/TP 1–3 ATR` и `trailing = SL`.
+- Produces: `@dataclass OcoTrade(entry_time, exit_time, side, entry_price, exit_price, pnl_gross, pnl_net, exit_reason, d, placement, sl, tp, exit_mode, spread_mode)`; `run_oco_backtest(windows, ohlc, d, placement, sl, tp, exit_mode, spread, slippage, fill_contract) -> list[OcoTrade]`; `profit_factor(pnls) -> float`; `stationary_bootstrap_ci(pnls, expected_block, n_resamples=10000, seed=0) -> float` (BS_p05); `yearly_pf(trades) -> dict[year, PF]`; `compare_vs_baseline(oco_pf, baseline_pf) -> dict` (дельта, bootstrap CI).
 
 **Execution contract (предрегистрирован, пессимистичный):**
-- OHLC трактуется как mid; спред — `full bid-ask spread` как неблагоприятный сдвиг: для BUY STOP `fill = trigger + spread/2 + slippage`, для SELL STOP `fill = trigger - spread/2 - slippage` (методология 12: SL-триггер по исполнимой стороне).
-- Сигнал на закрытии бара `t` → ордера выставляются на `open[t+1]` на уровнях `close[t] ± d·ATR[t]`; внутрибаровой порядок на баре исполнения: `SL first` (пессимистичный, как в pair-spread timeout/stop). Если бар `t+1` одновременно касается обеих триггер-цен (расширение через оба стопа) — считается chạm обоих, но OCO отменяет вторую ногу по правилу «первый триггер по high/low порядку внутри бара»: если `high` и `low` оба бьют — применяется `fill_contract = "pessimistic_whipsaw_loss"` (первый триггер даёт убыток, второй отменяется, но убыток фиксируется). Это делает Stage A optimistic, Stage B пессимистичным — требуемая вилка.
-- Выход: `timeout` через `H` баров после входа (H=3 или 6) на `open[t+1+H]` по mid-цене (без дополнительного спреда кроме выхода: выход — маркет, платится `spread/2` повторно). Альтернативный предзарегистрированный выход `trail ATR 0.2` из Qoder — фиксируется как отдельный параметр `exit_mode ∈ {"fixed_H","trail_0_2"}`; для kill-теста primary — `fixed_H=3` (H3).
+- OHLC трактуется как `mid`; спред — `full bid-ask spread` как неблагоприятный сдвиг: для `BUY STOP` `fill = trigger + spread/2 + slippage`, для `SELL STOP` `fill = trigger - spread/2 - slippage` (методология 12: SL-триггер по исполнимой стороне).
+- Сигнал на закрытии бара `t` → ордера выставляются на `open[t+1]` на уровнях: (а) `close[t] ± d·ATR[t]` или (б) `corridor_high[t] + d·ATR[t]` / `corridor_low[t] - d·ATR[t]` где `corridor` = `max high / min low` за `N=20` баров до `t` (два варианта размещения, перебираются). Внутрибаровой порядок на баре исполнения — `SL first` (пессимистичный) с проверкой по `M1/M5` нижнему таймфрейму: если `M1/M5` свечи внутри `H1` бара показывают порядок касаний, используется он; если младший таймфрейм тоже ambiguous или свечей нет — `pessimistic_whipsaw_loss` (первый триггер — убыточный, вторая нога отменяется). Это делает Stage A optimistic, Stage B пессимистичным — требуемая вилка.
+- Выход — три режима (диверсификация по просьбе пользователя, перебор 1–3 ATR):
+  - `fixed_H`: `timeout` через `H=3` или `H=6` баров после входа на `open[t+1+H]` (маркет-выход, платится `spread/2` повторно),
+  - `fixed_SL_TP`: `SL ∈ {1.0,1.5,2.0,3.0} ATR`, `TP ∈ {1.0,1.5,2.0,3.0} ATR` от цены входа; касание `SL/TP` проверяется по `high/low` (с `M1/M5` уточнением); `double-touch` внутри бара — `SL first` пессимистично,
+  - `trailing`: `trailing = SL` (по определению пользователя). Пояснение: `SL` — начальная дистанция от входа до стопа; `trailing` — дистанция от текущего экстремума цены до подтянутого стопа. Когда `trailing < SL` — стоп подтягивается ближе к цене (более тесный трейлинг); когда `trailing = SL` — стоп подтягивается на том же расстоянии что и начальный стоп (консервативный трейлинг). Для проверки достаточно `trailing = SL`, отдельные `trailing < SL` варианты не перебираются, чтобы не удваивать сетку.
+- Вердикт: перебирается любая прибыльная комбинация `d × placement × SL/TP/trailing/H` на `val_eval`; лучшая по `PF net` на `canonical spread 0.4` затем проверяется `backtest` + robustness (yearly, `BS_p05` stationary, `effective_profit_years`). `Stress spread 0.8` — не отдельный перебор для вердикта, а проверка прочности выбранного winner (методология 12).
 - Одна позиция одновременно; пирамидинг запрещён.
 
 **Методология:** `12-backtest-costs` (gross/net раздельно, spread grid 1x/2x, slippage, requote/missed как допуск <5%, time+ATR baseline), `11-robustness` (yearly PF, `effective_profit_years`, `BS_p05` через stationary bootstrap — iid bootstrap запрещён, `profit concentration` пакетом), `06-temporal-split` (sample_size_gate), `06b-oracle-preflight` (если oracle Stage A уже FAIL — Stage B не запускается).
@@ -909,17 +929,19 @@ git commit -m "Close OCO-straddle Stage A/B: report and handoff"
 
 ## Открытые вопросы и неизвестные (явно зафиксированы для исполнителя)
 
-1. **Live-порог vs batch top-5%.** Замороженный фильтр — batch-сегментация (`top_fraction` per split). Для OCO нужен один замороженный live-порог. Предрегистрация плана выбирает: `cutoff = val_select cutoff (9.015)` как primary live-порог (как в Qoder «k как в определении канала или k=20 фиксируется ДО просмотра PnL»). Альтернатива — использовать уже помеченные `selected` окна из `scores.csv` как есть (что эквивалентно batch-семантике). План фиксирует второй вариант (batch-семантика) как primary, потому что freeze-отчёт явно предупреждает что `top_fraction` нельзя честно трактовать как фиксированный cutoff без нового плана. Исполнитель обязан не менять выбор после просмотра PF.
+1. **Live-порог vs batch top-5% vs дневной топ-5%.** Замороженный фильтр — batch-сегментация (`top_fraction` per split). Для OCO нужен один замороженный live-порог. Предрегистрация плана выбирает два параллельных варианта: (а) глобальный `top-5% per split` (`selected=true` из `scores.csv`, `val_eval cutoff 14.31`) — primary, (б) дневной `топ-5%` — внутри каждых календарных суток берутся топ-5% `score` суток (новый `compute_daily_top5_windows`; если в сутках <20 строк — `skip`; иначе `ceil(0.05·N_sutr)`). Freeze-отчёт явно предупреждает что `top_fraction` нельзя честно трактовать как фиксированный cutoff без нового плана, поэтому оба варианта batch-семантики — primary и дневной — равноправны и не меняются после просмотра PF.
 
-2. **Внутрибаровая хронология fill.** Нерешённая проблема 2.12 — главный блокер. План предрегистрирует пессимистичный контракт `SL first / pessimistic_whipsaw_loss`. Это не доказательство исполнимости. Если Stage B покажет SURVIVED — обязательна тиковая диагностика (правило 7 `best_ideas.md` разрешает тики для симуляции исполнения) перед любым production-выводом.
+2. **Обратная стратегия «затишье перед бурей».** Идея пользователя: ждать когда `ATR_short < ATR_long / x` (краткий `ATR_fast = fractal_atr` или `ATR 14`, долгий `Atr.Slow` из `Nero.csv` / `ATR` из OHLC). `x` выбирается статистикой в Task 2 до просмотра PnL так, чтобы ситуаций было достаточно: строится распределение `ratio = ATR_long / ATR_short` на `train` и `val_select`, выбирается `x` где `доля затишья ∈ [5%,20%]` и `N_затишья ≥ 300` на `val_eval` (аналог `selected_n ≥300` freeze-гейта). Если ни один `x` не даёт `N≥100` — ветка помечается `DIAGNOSTIC_ONLY`. Те же варианты размещения стопов (`close ± d·ATR` и `corridor ± d·ATR`) и те же выходы `SL/TP/trailing/H` перебираются и для затишья — это вторая семья окон, не смешивается с амплитудной в одном PF (два отчёта Stage A/B per семья).
 
-3. **OHLC price convention.** Не задокументировано, является ли `MT/MQL4/Files/XAUUSD_H1_OHLC.csv` bid/mid/ask. План фиксирует `mid`-конвенцию (как в pair-spread спеке §4) и формулу `trigger ± spread/2 + slippage`. Если конвенция иная — PF будет систематически сдвинут (методология 12: проверка SL-триггера по подходящей цене).
+3. **Внутрибаровая хронология fill.** Нерешённая проблема `2.12` — главный блокер. План предрегистрирует пессимистичный контракт `SL first / pessimistic_whipsaw_loss` и `M1/M5` lower-timeframe diagnostic вместо тиков (по уточнению пользователя, `docs/methodology/12-backtest-costs.md:78-110`). Если Stage B покажет `SURVIVED` — `M1/M5` уточнение и stress-спред уже учтены, дополнительный тиковый прогон не требуется.
 
-4. **Hold/выход.** Qoder-протоколы указывают два выхода: фиксированный `H` и `trail ATR 0.2` (из 2.8). План фиксирует primary `fixed_H=3` (H3) и disclosure `H6`; `trail_0_2` — вне primary kill-контура (для post-mortem).
+4. **OHLC price convention.** Не задокументировано, является ли `MT/MQL4/Files/XAUUSD_H1_OHLC.csv` bid/mid/ask. План фиксирует `mid`-конвенцию (как в pair-spread спеке §4) и формулу `trigger ± spread/2 + slippage`. Если конвенция иная — PF будет систематически сдвинут (методология 12: проверка SL-триггера по подходящей цене).
 
-5. **Time+ATR baseline.** Требуется для проверки «календарная доминантность» (2.12). Построение baseline — вне primary kill, но отчёт обязан сравнить OCO PF с `hour+ATR`-базисом (иначе `best_ideas.md:120` риск «режим объясняется временем+ATR» не проверен).
+5. **Hold/выход и трейлинг = стоп.** Пользователь: `трейлинг равен стопу` и перебор `SL/TP ∈ [1,3] ATR`. Детализация в Task 4: `SL` — начальная дистанция от входа, `trailing` — дистанция от текущего экстремума до подтянутого стопа. При `trailing = SL` стоп подтягивается на том же расстоянии что и начальный стоп (консервативно). `trailing < SL` был бы более тесный трейлинг, но по решению пользователя не перебирается — `trailing` всегда `= SL` выбранного `SL`. Primary вердикт — любая прибыльная комбинация `SL/TP/trailing/H` на `canonical 0.4`; `stress 0.8` и `BS_p05` — проверка прочности winner, не отдельный перебор.
 
-6. **Инструмент и ATR-источник.** Freeze обучался на XAUUSD (проверить по `ML/reports/entry_based_amplitude_movement.json: run_config.instrument`). Если инструмент иной — план обязан зафиксировать его до запуска и не менять.
+6. **Почему не «×2 spread» для вердикта.** В первой версии плана `spread` умножал сетку (каждая конфигурация ×2). По уточнению: для вердикта перебирается любая прибыльная комбинация на `canonical 0.4`, затем она проверяется `backtest` + `stress 0.8`/`BS_p05`/yearly. `Stress` не умножает пространство поиска, а лишь отвечает «убивают ли издержки уже найденного winner» (методология 12).
+
+7. **Инструмент и ATR-источник.** Freeze обучался на XAUUSD (проверить по `ML/reports/entry_based_amplitude_movement.json: run_config.instrument`). Если инструмент иной — план обязан зафиксировать его до запуска и не менять.
 
 ## Self-Review
 
