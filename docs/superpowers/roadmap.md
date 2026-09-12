@@ -14,10 +14,14 @@
 
 ## ACTIVE
 
-_(нет активного трека — pair-spread kill-test закрыт 2026-08-27 по отчёту
-`docs/reports/2026-08-27-pair-spread.md`: все 7 кандидатов убиты на Stage 1,
-decision `close`. Следующий ACTIVE-трек определяется решением пользователя:
-идея 2 роэдмэпа — OCO-стрэддл, или другой приоритет.)_
+### OCO-straddle kill-test (idea-02)
+
+Status: план исполняется (`docs/superpowers/plans/2026-09-03-oco-straddle.md`).
+Предрегистрированный двухступенчатый kill-тест амплитудного OCO-стрэддла
+на окнах замороженного movement-фильтра (simple_combined/H3/top5%/extra_trees_small),
+RESEARCH_ONLY / DIAGNOSTIC_ONLY, без `locked_test`, без ML-обучения.
+
+Next action: исполнение плана по задачам; вердикты — по разделу exit_decisions плана.
 
 ---
 
